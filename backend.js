@@ -139,7 +139,7 @@ app.get('/redirect', async (req, res) => {
     }
 
     //Redirect user
-    res.redirect('sign-in.html');
+    res.redirect('/sign-in');
 
   } catch (error) {
     console.error('Error authorizing accounts:', error);
