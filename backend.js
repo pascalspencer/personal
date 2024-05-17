@@ -137,10 +137,10 @@ app.get('/redirect', async (req, res) => {
     if (token2) {
       await basic.authorize(token2);
     }
-    res.sendFile(path.join(__dirname, 'public', 'sign-in.html'));
 
-    // Respond with a success status
-    res.sendStatus(200);
+    //Redirect user
+    res.redirect('sign-in.html');
+
   } catch (error) {
     console.error('Error authorizing accounts:', error);
     // Respond with a server error status
