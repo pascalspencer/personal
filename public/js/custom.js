@@ -1,1 +1,63 @@
-const _0x25136c=_0x3284;(function(_0x582222,_0x5a447e){const _0x1981bc=_0x3284,_0x11f36e=_0x582222();while(!![]){try{const _0x25a486=parseInt(_0x1981bc(0x1fe))/0x1+-parseInt(_0x1981bc(0x1db))/0x2+parseInt(_0x1981bc(0x1f7))/0x3*(parseInt(_0x1981bc(0x1d6))/0x4)+-parseInt(_0x1981bc(0x1f3))/0x5*(parseInt(_0x1981bc(0x1f9))/0x6)+-parseInt(_0x1981bc(0x1da))/0x7+-parseInt(_0x1981bc(0x1ea))/0x8+parseInt(_0x1981bc(0x1dc))/0x9;if(_0x25a486===_0x5a447e)break;else _0x11f36e['push'](_0x11f36e['shift']());}catch(_0x1cf7fb){_0x11f36e['push'](_0x11f36e['shift']());}}}(_0x2790,0x199b6));function getYear(){const _0x4676ae=_0x3284;var _0x229f71=new Date(),_0x1887d3=_0x229f71[_0x4676ae(0x1e3)]();document['querySelector'](_0x4676ae(0x1ef))[_0x4676ae(0x1e9)]=_0x1887d3;}getYear(),$(_0x25136c(0x1e2))['owlCarousel']({'loop':!![],'margin':0x14,'dots':![],'nav':!![],'navText':[],'autoplay':!![],'autoplayHoverPause':!![],'navText':[_0x25136c(0x1ee),_0x25136c(0x1d9)],'responsive':{0x0:{'items':0x1},0x258:{'items':0x2},0x3e8:{'items':0x2}}});function myMap(){const _0x2aeed7=_0x25136c;var _0x2a3d85={'center':new google[(_0x2aeed7(0x1fc))][(_0x2aeed7(0x1fa))](40.712775,-74.005973),'zoom':0x12},_0x56847a=new google[(_0x2aeed7(0x1fc))][(_0x2aeed7(0x1f0))](document[_0x2aeed7(0x1d5)](_0x2aeed7(0x1df)),_0x2a3d85);}function _0x3284(_0x49b572,_0x348651){const _0x27900c=_0x2790();return _0x3284=function(_0x3284f0,_0x2326ec){_0x3284f0=_0x3284f0-0x1d4;let _0x263824=_0x27900c[_0x3284f0];return _0x263824;},_0x3284(_0x49b572,_0x348651);}function renderTemplate(){const _0x1d110a=_0x25136c;fetch(_0x1d110a(0x1e5))['then'](_0x23cda3=>_0x23cda3[_0x1d110a(0x1eb)]())[_0x1d110a(0x1fd)](_0x2b11bd=>{const _0x34dec7=_0x1d110a;window[_0x34dec7(0x1f6)][_0x34dec7(0x1f8)]='/sign-in';});}function handleLogin(){const _0x341e23=_0x25136c,_0x557375=document[_0x341e23(0x1d5)](_0x341e23(0x1f1))['value'],_0x3d044b=document['getElementById'](_0x341e23(0x1e4))[_0x341e23(0x1de)];if(_0x557375[_0x341e23(0x1fb)]()===''||_0x3d044b['trim']()===''){alert(_0x341e23(0x1dd));return;}const _0x45d1ef=_0x341e23(0x1d8),_0x370d26='https://oauth.deriv.com/oauth2/authorize?app_id='+_0x45d1ef;window[_0x341e23(0x1f6)]['href']=_0x370d26;}function _0x2790(){const _0x3aec34=['preventDefault','innerHTML','1096472jdfcxQ','text','error','submit','<i\x20class=\x22fa\x20fa-angle-left\x22\x20aria-hidden=\x22true\x22></i>','#displayYear','Map','username','POST','2890tOQZGD','addEventListener','Error:','location','37131PRIJhG','href','2172csLxPD','LatLng','trim','maps','then','176711srqxsO','An\x20error\x20occurred.\x20Please\x20try\x20again\x20later.','getElementById','16iaWOLp','/trade','61696','<i\x20class=\x22fa\x20fa-angle-right\x22\x20aria-hidden=\x22true\x22></i>','697991DFQBRy','171284pHuzFp','3692853GUxXZl','Please\x20enter\x20both\x20username\x20and\x20password.','value','googleMap','json','catch','.client_owl-carousel','getFullYear','password','/sign-in','login-form','Network\x20response\x20was\x20not\x20ok'];_0x2790=function(){return _0x3aec34;};return _0x2790();}document['addEventListener']('DOMContentLoaded',function(){const _0x44f280=_0x25136c,_0x53fff2=document[_0x44f280(0x1d5)](_0x44f280(0x1e6));_0x53fff2[_0x44f280(0x1f4)](_0x44f280(0x1ed),function(_0x27208b){const _0x385094=_0x44f280;_0x27208b[_0x385094(0x1e8)]();const _0x33737a=new FormData(_0x53fff2);fetch(_0x385094(0x1d7),{'method':_0x385094(0x1f2),'body':_0x33737a})[_0x385094(0x1fd)](_0x701d6a=>{const _0x69bdbe=_0x385094;if(!_0x701d6a['ok'])throw new Error(_0x69bdbe(0x1e7));return _0x701d6a[_0x69bdbe(0x1e0)]();})['then'](_0x272463=>{const _0x50932b=_0x385094;_0x272463[_0x50932b(0x1ec)]?alert(_0x272463[_0x50932b(0x1ec)]):window[_0x50932b(0x1f6)]['href']=_0x50932b(0x1d7);})[_0x385094(0x1e1)](_0x5d741d=>{const _0x234f70=_0x385094;console[_0x234f70(0x1ec)](_0x234f70(0x1f5),_0x5d741d),alert(_0x234f70(0x1d4));});});});
+// Function definitions
+function getYear() {
+    var currentDate = new Date();
+    var currentYear = currentDate.getFullYear();
+    document.querySelector('#displayYear').innerHTML = currentYear;
+}
+
+function myMap() {
+    var mapOptions = {
+        center: new google.maps.LatLng(40.712775, -74.005973),
+        zoom: 18
+    };
+    var map = new google.maps.Map(document.getElementById('googleMap'), mapOptions);
+}
+
+function handleLogin() {
+    var username = document.getElementById('username').value;
+    var password = document.getElementById('password').value;
+
+    if (username.trim() === '' || password.trim() === '') {
+        alert('Please enter both username and password.');
+        return;
+    }
+
+    var app_id = '61696';
+    var loginUrl = 'https://oauth.deriv.com/oauth2/authorize?app_id=' + app_id;
+
+    window.location.href = loginUrl;
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Code to execute once DOM is fully loaded
+    getYear();
+
+    // Owl carousel initialization
+    $('.client_owl-carousel').owlCarousel({
+        loop: true,
+        margin: 20,
+        dots: false,
+        nav: true,
+        navText: ['<i class="fa fa-angle-left" aria-hidden="true"></i>', '<i class="fa fa-angle-right" aria-hidden="true"></i>'],
+        autoplay: true,
+        autoplayHoverPause: true,
+        responsive: {
+            0: {
+                items: 1
+            },
+            600: {
+                items: 2
+            },
+            1000: {
+                items: 2
+            }
+        }
+    });
+
+    // Adding event listener to login form submit button
+    document.getElementById('login-form').addEventListener('submit', function(event) {
+        event.preventDefault(); // Prevent the form from submitting normally
+        handleLogin(); // Call the handleLogin function defined above
+    });
+});
