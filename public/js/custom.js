@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Event listener for rendering a template
-    document.getElementById('renderTemplateButton').addEventListener('click', function(event) {
+    document.getElementById('renderedContent').addEventListener('click', function(event) {
         event.preventDefault(); // Prevent default link behavior
     });
 });
