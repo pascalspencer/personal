@@ -6,7 +6,6 @@ const WebSocket = require('ws');
 const DerivAPI = require('@deriv/deriv-api/dist/DerivAPI');
 
 const app = express();
-const port = 3000;
 
 const connection = new WebSocket('wss://ws.derivws.com/websockets/v3?app_id=1089');
 const api = new DerivAPI({ connection });
@@ -136,3 +135,5 @@ app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
   ping(); // Start the pinging process to keep the WebSocket connection alive
 });
+
+module.exports = app;

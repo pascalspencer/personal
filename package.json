@@ -1,4 +1,10 @@
 {
+  "name": "zodiacalgotrade",
+  "version": "1.0.0",
+  "main": "backend.js",
+  "scripts": {
+    "start": "node backend.js"
+  },
   "dependencies": {
     "@deriv/deriv-api": "^1.0.15",
     "dotenv": "^16.4.5",
