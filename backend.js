@@ -6,8 +6,9 @@ const WebSocket = require('ws');
 const DerivAPI = require('@deriv/deriv-api/dist/DerivAPI');
 
 const app = express();
+const app_id = 61696
 
-const connection = new WebSocket('wss://ws.derivws.com/websockets/v3?app_id=61696');
+const connection = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${app_id}`);
 const api = new DerivAPI({ connection });
 const basic = api.basic;
 
