@@ -14,23 +14,7 @@ function myMap() {
     var map = new google.maps.Map(document.getElementById('googleMap'), mapOptions);
 }
 
-// Function to handle login form submission
-function handleLogin() {
-    var username = document.getElementById('username').value;
-    var password = document.getElementById('password').value;
 
-    if (username.trim() === '' || password.trim() === '') {
-        alert('Please enter both username and password.');
-        return;
-    }
-
-    var app_id = '61696';
-    var loginUrl = 'https://oauth.deriv.com/oauth2/authorize?app_id=' + app_id;
-
-    window.location.href = loginUrl;
-}
-
-// Function to render a template
 function renderTemplate() {
     fetch('/sign-in')
         .then(response => response.text())
