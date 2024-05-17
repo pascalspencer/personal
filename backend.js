@@ -125,6 +125,28 @@ app.get('/api/data', (req, res) => {
     });
 });
 
+app.get('/redirect', async (req, res) => {
+  const { token1, token2 } = req.query;
+
+  try {
+    // Authorize the first account
+    await basic.authorize(token1);
+
+    // If there is a second account, authorize it as well
+    if (token2) {
+      await basic.authorize(token2);
+    }
+
+    // Respond with a success status
+    res.sendStatus(200);
+  } catch (error) {
+    console.error('Error authorizing accounts:', error);
+    // Respond with a server error status
+    res.sendStatus(500);
+  }
+});
+
+
 app.get('/trade/data', (req, res) => {
   res.json(tradeData);
 });
