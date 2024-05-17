@@ -1,18 +1,20 @@
-// Function definitions
+// Function to get current year and display it
 function getYear() {
     var currentDate = new Date();
     var currentYear = currentDate.getFullYear();
     document.querySelector('#displayYear').innerHTML = currentYear;
 }
 
+// Function to initialize Google Map
 function myMap() {
     var mapOptions = {
         center: new google.maps.LatLng(40.712775, -74.005973),
-        zoom: 18
+        zoom: 12
     };
     var map = new google.maps.Map(document.getElementById('googleMap'), mapOptions);
 }
 
+// Function to handle login form submission
 function handleLogin() {
     var username = document.getElementById('username').value;
     var password = document.getElementById('password').value;
@@ -28,12 +30,23 @@ function handleLogin() {
     window.location.href = loginUrl;
 }
 
-// Event listeners
-document.addEventListener('DOMContentLoaded', function() {
-    // Code to execute once DOM is fully loaded
-    getYear();
+// Function to render a template
+function renderTemplate() {
+    fetch('/sign-in')
+        .then(response => response.text())
+        .then(html => {
+            // Redirect to the sign-in page
+            window.location.href = '/sign-in';
+        })
+}
 
-    // Owl carousel initialization
+// Event listener for when DOM content is fully loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize functions that need to run on page load
+    getYear(); // Display current year
+    myMap(); // Initialize Google Map
+
+    // Initialize Owl Carousel for client carousel
     $('.client_owl-carousel').owlCarousel({
         loop: true,
         margin: 20,
@@ -55,9 +68,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Adding event listener to login form submit button
+    // Event listener for login form submission
     document.getElementById('login-form').addEventListener('submit', function(event) {
-        event.preventDefault(); // Prevent the form from submitting normally
-        handleLogin(); // Call the handleLogin function defined above
+        event.preventDefault(); // Prevent default form submission
+    });
+
+    // Event listener for rendering a template
+    document.getElementById('renderTemplateButton').addEventListener('click', function(event) {
+        event.preventDefault(); // Prevent default link behavior
     });
 });
