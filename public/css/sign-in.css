@@ -82,7 +82,7 @@ label {
 input {
     display: block;
     height: 40px;
-    width: 100%;
+    width: 90%;
     background-color: rgba(255, 255, 255, 0.07);
     border-radius: 3px;
     padding: 0 10px;
@@ -157,7 +157,7 @@ button:hover {
     }
 
     form {
-        width: 80%;
+        width: 60%;
         padding: 20px 15px;
     }
 
@@ -188,7 +188,7 @@ button:hover {
     }
 
     form {
-        width: 90%;
+        width: 60%;
         padding: 15px 10px;
     }
 
