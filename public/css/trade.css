@@ -1,0 +1,162 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+body {
+  font-family: "Poppins";
+  color: #0c0c0c;
+  background-color: #ffffff;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+}
+
+form {
+  width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+select {
+  width: 100%;
+  height: 45px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 10px;
+  margin-bottom: 15px;
+  font-family: inherit;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+select:hover,
+select:focus {
+  border-color: #00bbf0;
+}
+
+input[type="submit"] {
+  width: 20%;
+  height: 45px;
+  margin: 0 auto;
+  background-color: #00bbf0;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+input[type="submit"]:hover {
+  background-color: #007fa4;
+}
+
+@keyframes ldio-s69gk832n0l {
+  0% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(22.5deg);
+  }
+  100% {
+    transform: rotate(45deg);
+  }
+}
+.ldio-s69gk832n0l > div {
+  transform-origin: 100px 100px;
+  animation: ldio-s69gk832n0l 0.2s infinite linear;
+}
+.ldio-s69gk832n0l > div div {
+  position: absolute;
+  width: 22px;
+  height: 152px;
+  background: #2c55b9;
+  left: 100px;
+  top: 100px;
+  transform: translate(-50%, -50%);
+}
+
+#loading-message {
+  text-align: center;
+  margin-top: 20px;
+}
+
+
+
+.ldio-s69gk832n0l > div div:nth-child(1) {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+}
+.ldio-s69gk832n0l > div div:nth-child(6) {
+  width: 80px;
+  height: 80px;
+  background: #ffffff;
+  border-radius: 50%;
+}
+.ldio-s69gk832n0l > div div:nth-child(3) {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.ldio-s69gk832n0l > div div:nth-child(4) {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+.ldio-s69gk832n0l > div div:nth-child(5) {
+  transform: translate(-50%, -50%) rotate(135deg);
+}
+.loadingio-spinner-gear-5fyuz6nbepy {
+  width: 200px;
+  height: 200px;
+  display: none;
+  flex-direction: column;
+  text-align: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #ffffff;
+}
+.ldio-s69gk832n0l {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform: translateZ(0) scale(1);
+  backface-visibility: hidden;
+  transform-origin: 0 0; /* see note above */
+}
+.ldio-s69gk832n0l div {
+  box-sizing: content-box;
+}
+
+/* Media Queries */
+@media (max-width: 768px) {
+  form {
+    width: 70%;
+    padding: 15px;
+  }
+
+  
+}
+
+@media (max-width: 480px) {
+  form {
+    padding: 10px;
+  }
+
+  select, input[type="submit"] {
+    font-size: 14px;
+  }
+
+  #loading-message {
+    font-size: 14px;
+  }
+}
+
