@@ -86,8 +86,19 @@ const getActiveSymbols = async () => {
   await basic.activeSymbols(active_symbols_request);
 };
 
+const checkDeviceLimit = async (req, res, next) => {
+  const { usernameClient, deviceId } = req.body;
+  const client = customers.find(customer => customer.clientUsername === usernameClient);
 
-app.post('/trade', (req, res) => {
+  if (client.sessions.length >= 2) {
+    return res.status(403).json({ message: 'Login limit reached. Only two devices are allowed.' });
+  }
+  next();
+}
+
+
+
+app.post('/trade',checkDeviceLimit, (req, res) => {
   const filePath = path.resolve(__dirname, 'public', 'clients.json');
   fs.readFile(filePath, 'utf8', (err, data) => {
     if (err) {
@@ -97,7 +108,7 @@ app.post('/trade', (req, res) => {
 
     try {
       const jsonData = JSON.parse(data);
-      const { usernameClient, passwordClient } = req.body;
+      const { usernameClient, passwordClient, deviceId } = req.body;
       const customers = jsonData.customers;
 
       const client = customers.find(customer => 
@@ -105,6 +116,7 @@ app.post('/trade', (req, res) => {
       );
 
       if (client) {
+        client.sessions.push({ deviceId, createdAt: new Date() });
         return res.sendFile(path.join(__dirname, 'public', 'trade.html'));
       } else {
         return res.status(401).send('Invalid username or password');

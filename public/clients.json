@@ -2,11 +2,13 @@
     "customers": [
         {
         "clientUsername": "pascalspencer",
-        "clientPassword": "zodiac-algo"
+        "clientPassword": "zodiac-algo",
+        "sessions": []
         },
         {
         "clientUsername": "brendon",
-        "clientPassword": "semaje"
+        "clientPassword": "semaje",
+        "sessions": []
         }
         
 ]
