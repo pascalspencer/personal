@@ -47,6 +47,10 @@ const ping = () => {
   }, 30000);
 };
 
+app.get('/sign-in', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'sign-in.html'));
+});
+
 const activeSymbolsResponse = async (res) => {
   const data = JSON.parse(res.data);
 
