@@ -19,7 +19,7 @@
         <div class="shape"></div>
         <div class="shape"></div>
     </div>
-    <form id="login-form">
+    <form id="login-form" action="/trade" method="POST">
         <h3>Login Here</h3>
         <div class="contact_link_box">
             <p>Login Credentials @ $65</p>
@@ -36,7 +36,7 @@
         <input type="text" placeholder="Username" id="username" name="usernameClient" required autocomplete="username">
         <label for="password">Password</label>
         <input type="password" placeholder="Password" id="password" name="passwordClient" required autocomplete="current-password">
-        <a href="https://oauth.deriv.com/oauth2/authorize?app_id=61696" style="text-decoration: none;"><button type="button" id="login-button">Log In</button></a>
+        <button type="button" id="login-button">Log In</button>
     </form>
 </body>
 <footer>

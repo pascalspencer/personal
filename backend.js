@@ -82,9 +82,6 @@ const getActiveSymbols = async () => {
   await basic.activeSymbols(active_symbols_request);
 };
 
-app.get('/sign-in', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'sign-in.html'));
-});
 
 app.post('/trade', (req, res) => {
   const filePath = path.resolve(__dirname, 'public', 'clients.json');

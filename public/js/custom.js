@@ -15,14 +15,6 @@ function myMap() {
 }
 
 
-function renderTemplate() {
-    fetch('/sign-in')
-        .then(response => response.text())
-        .then(html => {
-            // Redirect to the sign-in page
-            window.location.href = '/sign-in';
-        })
-}
 
 // Event listener for when DOM content is fully loaded
 document.addEventListener('DOMContentLoaded', function() {
