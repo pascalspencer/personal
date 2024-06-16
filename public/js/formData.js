@@ -1,1 +1,165 @@
-function _0x216f(){const _0x7629f8=['split','high_and_low','Over','digit-value','Under\x20(','spinner-container','submit','text','Finalizing\x20predictions...','block','addEventListener','36rLGkgw','Matches','5096938egwXIX','createElement','textContent','sentiment','div','Under','submarket','none','body','includes','load','128518zueakH','getElementById','style','option','then','appendChild','963EAFeRS','%)\x20Stop\x20trade\x20after\x20selected\x20Ticks','input-value','required','1987832ybuInW','floor','forEach','Even/Odd','results-container','add','classList','/api/data','market','json','display','trim','remove','199365IEKtmU','Differs\x20(','loading-message','41388KNkaiV','Over\x20(','blur-background','1502DCXLOI','4qLSPln','147wFcxzl','Matches/Differs','innerHTML','Running\x20simulations...','error','contract_type','up_and_down','disabled','DOMContentLoaded','value','change','catch','random','Multipliers','/trade/data','43730PtCawF','Over/Under'];_0x216f=function(){return _0x7629f8;};return _0x216f();}function _0x47d5(_0xdb77e3,_0x3c43fc){const _0x216fab=_0x216f();return _0x47d5=function(_0x47d5e8,_0x1bab40){_0x47d5e8=_0x47d5e8-0xfa;let _0x174fc2=_0x216fab[_0x47d5e8];return _0x174fc2;},_0x47d5(_0xdb77e3,_0x3c43fc);}const _0x20df71=_0x47d5;(function(_0x8ec40,_0x534146){const _0xdcb73c=_0x47d5,_0x3ff54a=_0x8ec40();while(!![]){try{const _0x1e2954=-parseInt(_0xdcb73c(0x12d))/0x1+-parseInt(_0xdcb73c(0x102))/0x2*(-parseInt(_0xdcb73c(0x133))/0x3)+-parseInt(_0xdcb73c(0x103))/0x4*(-parseInt(_0xdcb73c(0xfc))/0x5)+-parseInt(_0xdcb73c(0xff))/0x6*(parseInt(_0xdcb73c(0x104))/0x7)+-parseInt(_0xdcb73c(0x137))/0x8+-parseInt(_0xdcb73c(0x120))/0x9*(-parseInt(_0xdcb73c(0x113))/0xa)+parseInt(_0xdcb73c(0x122))/0xb;if(_0x1e2954===_0x534146)break;else _0x3ff54a['push'](_0x3ff54a['shift']());}catch(_0x5dd0e5){_0x3ff54a['push'](_0x3ff54a['shift']());}}}(_0x216f,0x3a943));import{calculateChances as _0x4e49b1}from'./digit.js';import{determineChances as _0x255d5a}from'./matches.js';document[_0x20df71(0x11f)](_0x20df71(0x10c),function(){const _0x5bfa78=_0x20df71,_0x3ad88d=document['getElementById']('trade-form'),_0x6b120=document[_0x5bfa78(0x12e)](_0x5bfa78(0x11a)),_0x24be3f=document['getElementById'](_0x5bfa78(0xfe)),_0x443aca=document[_0x5bfa78(0x12e)](_0x5bfa78(0x13b));let _0x11ec3f={};function _0x46b2a9(){const _0x31fe7c=_0x5bfa78;_0x6b120[_0x31fe7c(0x12f)]['display']=_0x31fe7c(0x11e),document[_0x31fe7c(0x12a)]['classList'][_0x31fe7c(0x13c)]('blur-background'),_0x24be3f[_0x31fe7c(0x124)]=_0x31fe7c(0x107),setTimeout(()=>{const _0x12c10a=_0x31fe7c;_0x24be3f['textContent']=_0x12c10a(0x11d);},0x1194),setTimeout(()=>{const _0x2b9ef1=_0x31fe7c;_0x6b120[_0x2b9ef1(0x12f)][_0x2b9ef1(0x141)]=_0x2b9ef1(0x129),_0x24be3f[_0x2b9ef1(0x124)]='',document[_0x2b9ef1(0x12a)][_0x2b9ef1(0x13d)][_0x2b9ef1(0xfb)](_0x2b9ef1(0x101)),_0x5e44b0();},0x2134);}function _0x57d8fd(){const _0x51bbf6=_0x5bfa78,_0x85446f=document[_0x51bbf6(0x12e)](_0x51bbf6(0x13f))[_0x51bbf6(0x10d)],_0x4d571a=document['getElementById'](_0x51bbf6(0x128));_0x4d571a[_0x51bbf6(0x106)]='',fetch(_0x51bbf6(0x13e))[_0x51bbf6(0x131)](_0x410d0c=>{const _0x15835f=_0x51bbf6;if(!_0x410d0c['ok'])throw new Error('Network\x20response\x20was\x20not\x20ok');return _0x410d0c[_0x15835f(0x140)]();})[_0x51bbf6(0x131)](_0x3898ec=>{const _0x20320e=_0x51bbf6,_0x4433eb=_0x3898ec[_0x85446f]||[];_0x4433eb['forEach'](_0x551f74=>{_0x13e9cc(_0x4d571a,_0x551f74);}),_0x4d571a[_0x20320e(0x10b)]=![],_0x4d571a[_0x20320e(0x136)]=!![];})[_0x51bbf6(0x10f)](_0x92b38e=>{const _0x360d0d=_0x51bbf6;console[_0x360d0d(0x108)]('There\x20was\x20a\x20problem\x20with\x20the\x20fetch\x20operation:',_0x92b38e);});}function _0x5c110f(){const _0x4ce86b=_0x5bfa78,_0x347477=document[_0x4ce86b(0x12e)](_0x4ce86b(0x109))[_0x4ce86b(0x10d)],_0x5a386c=document['getElementById'](_0x4ce86b(0x125));_0x5a386c[_0x4ce86b(0x106)]='';const _0x180d44=_0x11ec3f[_0x347477]||[];_0x180d44[_0x4ce86b(0x139)](_0x2541a8=>_0x13e9cc(_0x5a386c,_0x2541a8));const _0x211bab=_0x5a386c['value'];if([_0x4ce86b(0x105),'Over/Under'][_0x4ce86b(0x12b)](_0x211bab))document[_0x4ce86b(0x12e)](_0x4ce86b(0x118))['style']['display']=_0x4ce86b(0x11e);else[_0x4ce86b(0x13a)][_0x4ce86b(0x12b)](_0x211bab)&&(document[_0x4ce86b(0x12e)](_0x4ce86b(0x118))[_0x4ce86b(0x12f)][_0x4ce86b(0x141)]=_0x4ce86b(0x129));_0x5a386c[_0x4ce86b(0x10b)]=![];}function _0x13e9cc(_0x36899a,_0x284d84){const _0x555b82=_0x5bfa78,_0x4b1f16=document[_0x555b82(0x123)](_0x555b82(0x130));_0x4b1f16[_0x555b82(0x11c)]=_0x284d84,_0x36899a[_0x555b82(0x13c)](_0x4b1f16);}function _0x5e44b0(){const _0x3f6f2a=_0x5bfa78,_0x1eef58=document[_0x3f6f2a(0x12e)](_0x3f6f2a(0x125)),_0x580c82=_0x1eef58[_0x3f6f2a(0x10d)],_0x3869aa=parseInt(document[_0x3f6f2a(0x12e)](_0x3f6f2a(0x135))[_0x3f6f2a(0x10d)],0xa),{overChance:_0x2746f6,underChance:_0x28ddc2}=_0x4e49b1(_0x3869aa),{matchesChance:_0x20ac3a,differsChance:_0x12c7fc}=_0x255d5a(_0x3869aa),_0x545c76=_0x580c82[_0x3f6f2a(0x115)]('/'),_0x2ed243=_0x545c76['map'](_0x4b8d84);_0x443aca[_0x3f6f2a(0x106)]='',_0x443aca[_0x3f6f2a(0x12f)]['display']=_0x3f6f2a(0x11e);if([_0x3f6f2a(0x105),_0x3f6f2a(0x114)][_0x3f6f2a(0x12b)](_0x580c82))document['getElementById'](_0x3f6f2a(0x118))[_0x3f6f2a(0x12f)]['display']=_0x3f6f2a(0x11e),_0x545c76[_0x3f6f2a(0x139)]((_0xa16975,_0x20a982)=>{const _0x175d5c=_0x3f6f2a,_0xefac47=document[_0x175d5c(0x123)](_0x175d5c(0x126));if(_0xa16975[_0x175d5c(0xfa)]()===_0x175d5c(0x121))_0xefac47[_0x175d5c(0x124)]='Matches\x20('+_0x20ac3a+'%)\x20Stop\x20trade\x20after\x20selected\x20Ticks';else{if(_0xa16975[_0x175d5c(0xfa)]()==='Differs')_0xefac47[_0x175d5c(0x124)]=_0x175d5c(0xfd)+_0x12c7fc+_0x175d5c(0x134);else{if(_0xa16975[_0x175d5c(0xfa)]()===_0x175d5c(0x117))_0xefac47['textContent']=_0x175d5c(0x100)+_0x2746f6+_0x175d5c(0x134);else _0xa16975[_0x175d5c(0xfa)]()===_0x175d5c(0x127)?_0xefac47[_0x175d5c(0x124)]=_0x175d5c(0x119)+_0x28ddc2+'%)\x20Stop\x20trade\x20after\x20selected\x20Ticks':_0xefac47[_0x175d5c(0x124)]=_0xa16975['trim']()+'\x20('+_0x2ed243[_0x20a982]+_0x175d5c(0x134);}}_0x443aca[_0x175d5c(0x132)](_0xefac47);});else['Even/Odd'][_0x3f6f2a(0x12b)](_0x580c82)?document[_0x3f6f2a(0x12e)]('digit-value')[_0x3f6f2a(0x12f)][_0x3f6f2a(0x141)]=_0x3f6f2a(0x129):(document[_0x3f6f2a(0x12e)](_0x3f6f2a(0x118))[_0x3f6f2a(0x12f)][_0x3f6f2a(0x141)]='none',_0x545c76['forEach']((_0x50c768,_0x2bac6b)=>{const _0x37a5a3=_0x3f6f2a,_0x3acdc7=document['createElement']('div');_0x3acdc7['textContent']=_0x50c768['trim']()+'\x20('+_0x2ed243[_0x2bac6b]+_0x37a5a3(0x134),_0x443aca[_0x37a5a3(0x132)](_0x3acdc7);}));}function _0x4b8d84(){const _0x74bb12=_0x5bfa78;let _0x5537e7;do{_0x5537e7=Math[_0x74bb12(0x138)](Math[_0x74bb12(0x110)]()*0x57)+0x1;}while(_0x5537e7===0x32);return _0x5537e7;}fetch(_0x5bfa78(0x112))[_0x5bfa78(0x131)](_0x21f930=>{const _0x567589=_0x5bfa78;if(!_0x21f930['ok'])throw new Error('Network\x20response\x20was\x20not\x20ok');return _0x21f930[_0x567589(0x140)]();})[_0x5bfa78(0x131)](_0x5b01fc=>{const _0x3c2380=_0x5bfa78;_0x11ec3f={'Multipliers':_0x5b01fc[_0x3c2380(0x111)]||[],'up_and_down':_0x5b01fc[_0x3c2380(0x10a)]||[],'high_and_low':_0x5b01fc[_0x3c2380(0x116)]||[],'digits':_0x5b01fc['digits']||[]};})[_0x5bfa78(0x10f)](_0x5b8f70=>{const _0x12d89a=_0x5bfa78;console[_0x12d89a(0x108)]('There\x20was\x20a\x20problem\x20with\x20the\x20fetch\x20operation:',_0x5b8f70);}),document[_0x5bfa78(0x12e)](_0x5bfa78(0x13f))['addEventListener'](_0x5bfa78(0x10e),_0x57d8fd),document[_0x5bfa78(0x12e)](_0x5bfa78(0x109))[_0x5bfa78(0x11f)](_0x5bfa78(0x10e),_0x5c110f),window[_0x5bfa78(0x11f)](_0x5bfa78(0x12c),_0x57d8fd),_0x3ad88d[_0x5bfa78(0x11f)](_0x5bfa78(0x11b),function(_0x444d77){_0x444d77['preventDefault'](),_0x46b2a9();});});
+import { calculateChances  as calculateDigitChances } from "./digit.js"
+import { determineChances as calculateMatchesChances } from "./matches.js"
+document.addEventListener("DOMContentLoaded", function () {
+  const dataForm = document.getElementById("trade-form");
+  const spinnerContainer = document.getElementById("spinner-container");
+  const loadingMessage = document.getElementById("loading-message");
+  const resultsContainer = document.getElementById("results-container");
+  let sentimentsData = {};
+
+  function showSpinnerAndMessages() {
+    spinnerContainer.style.display = "block";
+    document.body.classList.add("blur-background");
+    loadingMessage.textContent = "Running simulations...";
+
+    setTimeout(() => {
+      loadingMessage.textContent = "Finalizing predictions...";
+    }, 4500);
+
+    setTimeout(() => {
+      spinnerContainer.style.display = "none";
+      loadingMessage.textContent = "";
+      document.body.classList.remove("blur-background");
+      displaySelectedOptionsAfterFetch();
+    }, 8500);
+  }
+
+  function populateSubmarkets() {
+    const market = document.getElementById("market").value;
+    const submarketDropdown = document.getElementById("submarket");
+    submarketDropdown.innerHTML = "";
+
+    fetch('/api/data')
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
+    .then(data => {
+      // Ensure data[market] exists and is an array
+      const submarkets = data[market] || [];
+
+      // Populate submarket dropdown
+      submarkets.forEach(submarket => {
+        addOption(submarketDropdown, submarket);
+      });
+
+      // Enable and make submarket dropdown required
+      submarketDropdown.disabled = false;
+      submarketDropdown.required = true;
+    })
+    .catch(error => {
+      console.error('There was a problem with the fetch operation:', error);
+    });
+  }
+
+  function populateSentiments() {
+    const sentimentData = document.getElementById("contract_type").value;
+    const sentimentDropdown = document.getElementById("sentiment");
+    sentimentDropdown.innerHTML = "";
+
+    const sentiments = sentimentsData[sentimentData] || [];
+    sentiments.forEach(sentiment => addOption(sentimentDropdown, sentiment));
+
+    const selectedSentiment = sentimentDropdown.value;
+
+    if (["Matches/Differs", "Over/Under"].includes(selectedSentiment)) {
+      document.getElementById("digit-value").style.display = "block";
+    }
+    else if (["Even/Odd"].includes(selectedSentiment)){
+      document.getElementById("digit-value").style.display = "none";
+    }
+
+    sentimentDropdown.disabled = false;
+  }
+
+  function addOption(selectElement, optionText) {
+    const option = document.createElement("option");
+    option.text = optionText;
+    selectElement.add(option);
+  }
+
+  function displaySelectedOptionsAfterFetch() {
+    const sentimentDropdown = document.getElementById("sentiment");
+    const selectedSentiment = sentimentDropdown.value;
+    const selectedNumber = parseInt(document.getElementById("input-value").value, 10);
+
+    const { overChance, underChance } = calculateDigitChances(selectedNumber);
+    const { matchesChance, differsChance } = calculateMatchesChances(selectedNumber);
+
+    const sentimentParts = selectedSentiment.split("/");
+    const percentages = sentimentParts.map(generatePercentage);
+
+    resultsContainer.innerHTML = "";
+    resultsContainer.style.display = "block";
+
+    if (["Matches/Differs", "Over/Under"].includes(selectedSentiment)) {
+      document.getElementById("digit-value").style.display = "block";
+
+      sentimentParts.forEach((part, index) => {
+        const optionElement = document.createElement("div");
+        if (part.trim() === "Matches") {
+          optionElement.textContent = `Matches (${matchesChance}%) Stop trade after selected Ticks`;
+        } else if (part.trim() === "Differs") {
+          optionElement.textContent = `Differs (${differsChance}%) Stop trade after selected Ticks`;
+        } else if (part.trim() === "Over") {
+          optionElement.textContent = `Over (${overChance}%) Stop trade after selected Ticks`;
+        } else if (part.trim() === "Under") {
+          optionElement.textContent = `Under (${underChance}%) Stop trade after selected Ticks`;
+        } else {
+          optionElement.textContent = `${part.trim()} (${percentages[index]}%) Stop trade after selected Ticks`;
+        }
+        resultsContainer.appendChild(optionElement);
+      });
+    }
+    else if (["Even/Odd"].includes(selectedSentiment)){
+      document.getElementById("digit-value").style.display = "none";
+    }
+     else {
+      document.getElementById("digit-value").style.display = "none";
+      sentimentParts.forEach((part, index) => {
+        const optionElement = document.createElement("div");
+        optionElement.textContent = `${part.trim()} (${percentages[index]}%) Stop trade after selected Ticks`;
+        resultsContainer.appendChild(optionElement);
+      });
+    }
+  }
+
+  function generatePercentage() {
+    let percentage;
+    do {
+      percentage = Math.floor(Math.random() * 87) + 1;
+    } while (percentage === 50);
+    return percentage;
+  }
+
+    fetch('/trade/data')
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
+    .then(data => {
+      // Assuming data structure like { Multipliers: [...], up_and_down: [...], high_and_low: [...], digits: [...] }
+      sentimentsData = {
+        Multipliers: data.Multipliers || [],
+        up_and_down: data.up_and_down || [],
+        high_and_low: data.high_and_low || [],
+        digits: data.digits || []
+      };
+
+    })
+    .catch(error => {
+      console.error('There was a problem with the fetch operation:', error);
+    });
+  document.getElementById("market").addEventListener("change", populateSubmarkets);
+  document.getElementById("contract_type").addEventListener("change", populateSentiments);
+  window.addEventListener("load", populateSubmarkets);
+
+  dataForm.addEventListener("submit", function (event) {
+    event.preventDefault();
+    showSpinnerAndMessages();
+  });
+});
