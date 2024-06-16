@@ -326,17 +326,17 @@ document.addEventListener("DOMContentLoaded", function () {
       sentimentParts.forEach((part, index) => {
         const optionElement = document.createElement("div");
         if (part.trim() === "Matches") {
-          optionElement.textContent = `Matches (${matchesChance}%) Stop trade after selected Ticks`;
+          optionElement.textContent = `Matches (${matchesChance}%) Stop trade`;
         } else if (part.trim() === "Differs") {
-          optionElement.textContent = `Differs (${differsChance}%) Stop trade after selected Ticks`;
+          optionElement.textContent = `Differs (${differsChance}%) Stop trade`;
         } else if (part.trim() === "Over") {
-          optionElement.textContent = `Over (${overChance}%) Stop trade after selected Ticks`;
+          optionElement.textContent = `Over (${overChance}%) Stop trade`;
         } else if (part.trim() === "Under") {
-          optionElement.textContent = `Under (${underChance}%) Stop trade after selected Ticks`;
+          optionElement.textContent = `Under (${underChance}%) Stop trade`;
         } else {
           optionElement.textContent = `${part.trim()} (${
             percentages[index]
-          }%) Stop trade after selected Ticks`;
+          }%) Stop trade`;
         }
         resultsContainer.appendChild(optionElement);
       });
@@ -348,7 +348,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const optionElement = document.createElement("div");
         optionElement.textContent = `${part.trim()} (${
           percentages[index]
-        }%) Stop trade after selected Ticks`;
+        }%) Stop trade`;
         resultsContainer.appendChild(optionElement);
       });
     }
