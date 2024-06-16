@@ -11,5 +11,8 @@
     "ejs": "^3.1.10",
     "express": "^4.19.2",
     "ws": "^8.17.0"
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.24.7"
   }
 }
