@@ -292,6 +292,8 @@ document.addEventListener("DOMContentLoaded", function () {
       document.getElementById("digit-value").style.display = "block";
     } else if (["Even/Odd"].includes(selectedSentiment)) {
       document.getElementById("digit-value").style.display = "none";
+    } else {
+      document.getElementById("digit-value").style.display = "none";
     }
 
     sentimentDropdown.disabled = false;
