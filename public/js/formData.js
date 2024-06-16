@@ -5,6 +5,36 @@ document.addEventListener("DOMContentLoaded", function () {
   const resultsContainer = document.getElementById("results-container");
   let sentimentsData = {};
 
+  const numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+  // Constants
+  const MAX_PERCENTAGE = 93;
+  const MATCH_CHANCE_FREQUENCY = 2 / 11;
+  const RANDOM_DEVIATION_CHANCE = 0.2;
+  const GENERAL_DEVIATION_CHANCE = 0.1;
+  const DEVIATION_BASE = 90.0;
+  const DEVIATION_RANGE = 35.0;
+  const RANDOM_FREQUENCY_MIN = 8.0;
+  const RANDOM_FREQUENCY_RANGE = 5.0;
+
+  const MAX_PERCENTAGE_DIGIT = 93;
+  const DEVIATION_BASE_DIGIT = 50.0;
+  const DEVIATION_RANGE_DIGIT = 35.0;
+  const RANDOM_FREQUENCY_MIN_DIGIT = 7.0;
+  const RANDOM_FREQUENCY_RANGE_DIGIT = 6.0;
+  const RANDOM_DEVIATION_CHANCE_DIGIT = 0.2;
+
+  const deviationFrequenciesDigits = {
+    1: 2,
+    2: 3,
+    3: 4,
+    4: 5,
+    5: 5,
+    6: 4,
+    7: 3,
+    8: 2,
+  };
+
   function showSpinnerAndMessages() {
     spinnerContainer.style.display = "block";
     document.body.classList.add("blur-background");
@@ -35,15 +65,12 @@ document.addEventListener("DOMContentLoaded", function () {
         return response.json();
       })
       .then((data) => {
-        // Ensure data[market] exists and is an array
         const submarkets = data[market] || [];
 
-        // Populate submarket dropdown
         submarkets.forEach((submarket) => {
           addOption(submarketDropdown, submarket);
         });
 
-        // Enable and make submarket dropdown required
         submarketDropdown.disabled = false;
         submarketDropdown.required = true;
       })
@@ -52,26 +79,18 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   }
 
-  const numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-
-  // Constants
-  const MAX_PERCENTAGE = 93;
-  const MATCH_CHANCE_FREQUENCY = 2 / 11; // Probability of high match chance
-  const RANDOM_DEVIATION_CHANCE = 0.2;
-  const GENERAL_DEVIATION_CHANCE = 0.1;
-  const DEVIATION_BASE = 90.0;
-  const DEVIATION_RANGE = 35.0;
-  const RANDOM_FREQUENCY_MIN = 8.0;
-  const RANDOM_FREQUENCY_RANGE = 5.0;
+  function addOption(selectElement, optionText) {
+    const option = document.createElement("option");
+    option.text = optionText;
+    selectElement.add(option);
+  }
 
   function determineBaseChances(selectedNumber) {
-    const totalNumbers = numbers.length; // total numbers from 0 to 9
+    const totalNumbers = numbers.length;
     const chance = 100 / totalNumbers;
 
-    let higherChance, lowerChance;
-
-    // Calculate chances based on selectedNumber
-    higherChance = lowerChance = chance;
+    let higherChance = chance;
+    let lowerChance = chance;
 
     return { higherChance, lowerChance };
   }
@@ -82,7 +101,7 @@ document.addEventListener("DOMContentLoaded", function () {
       selectedNumber > Math.min(...numbers) &&
       selectedNumber < Math.max(...numbers)
     ) {
-      const increaseAmount = Math.random() * 10; // Increase by up to 10%
+      const increaseAmount = Math.random() * 10;
       higherChance = Math.min(higherChance + increaseAmount, MAX_PERCENTAGE);
       lowerChance = Math.max(lowerChance - increaseAmount, 0);
     }
@@ -110,21 +129,17 @@ document.addEventListener("DOMContentLoaded", function () {
       lowerChance
     ));
 
-    // Ensure bounds are respected
     higherChance = Math.min(higherChance, MAX_PERCENTAGE);
     lowerChance = Math.max(lowerChance, 0);
 
-    // Generate a random frequency between RANDOM_FREQUENCY_MIN and (RANDOM_FREQUENCY_MIN + RANDOM_FREQUENCY_RANGE)
     const randomFrequency =
       Math.random() * RANDOM_FREQUENCY_RANGE + RANDOM_FREQUENCY_MIN;
 
-    // Multiply the chosen percentage by the random frequency
     const differs = higherChance * randomFrequency;
     let matches = lowerChance * randomFrequency;
 
-    // Adjust match chance to be low most of the time
     if (Math.random() >= MATCH_CHANCE_FREQUENCY) {
-      matches *= 0.1; // Reduce match chance significantly
+      matches *= 0.1;
     }
 
     return {
@@ -136,39 +151,16 @@ document.addEventListener("DOMContentLoaded", function () {
     };
   }
 
-  // Export a function to determine the chances
   function determineChances(selectedNumber) {
     const { matches, differs } = determinePercentage(selectedNumber);
 
-    // Determine total chance
     const totalChance = matches + differs;
 
-    // Determine matchesChance and differsChance percentages
     const matchesChance = ((matches / totalChance) * 97).toFixed(2);
     const differsChance = ((differs / totalChance) * 97).toFixed(2);
 
     return { matchesChance, differsChance };
   }
-
-  // Deviation frequencies for specific numbers
-  const deviationFrequenciesDigits = {
-    1: 2,
-    2: 3,
-    3: 4,
-    4: 5,
-    5: 5,
-    6: 4,
-    7: 3,
-    8: 2,
-  };
-
-  // Constants
-  const MAX_PERCENTAGE_DIGIT = 93;
-  const DEVIATION_BASE_DIGIT = 50.0;
-  const DEVIATION_RANGE_DIGIT = 35.0;
-  const RANDOM_FREQUENCY_MIN_DIGIT = 7.0;
-  const RANDOM_FREQUENCY_RANGE_DIGIT = 6.0;
-  const RANDOM_DEVIATION_CHANCE_DIGIT = 0.2;
 
   function calculateBaseChances(selectedNumber, max, min) {
     let higherChanceDigit, lowerChanceDigit;
@@ -299,12 +291,6 @@ document.addEventListener("DOMContentLoaded", function () {
     sentimentDropdown.disabled = false;
   }
 
-  function addOption(selectElement, optionText) {
-    const option = document.createElement("option");
-    option.text = optionText;
-    selectElement.add(option);
-  }
-
   function displaySelectedOptionsAfterFetch() {
     const sentimentDropdown = document.getElementById("sentiment");
     const selectedSentiment = sentimentDropdown.value;
@@ -342,8 +328,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         resultsContainer.appendChild(optionElement);
       });
-    } else if (["Even/Odd"].includes(selectedSentiment)) {
-      document.getElementById("digit-value").style.display = "none";
     } else {
       document.getElementById("digit-value").style.display = "none";
       sentimentParts.forEach((part, index) => {
@@ -372,7 +356,6 @@ document.addEventListener("DOMContentLoaded", function () {
       return response.json();
     })
     .then((data) => {
-      // Assuming data structure like { Multipliers: [...], up_and_down: [...], high_and_low: [...], digits: [...] }
       sentimentsData = {
         Multipliers: data.Multipliers || [],
         up_and_down: data.up_and_down || [],
@@ -383,6 +366,7 @@ document.addEventListener("DOMContentLoaded", function () {
     .catch((error) => {
       console.error("There was a problem with the fetch operation:", error);
     });
+
   document
     .getElementById("market")
     .addEventListener("change", populateSubmarkets);
