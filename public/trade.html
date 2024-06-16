@@ -19,7 +19,9 @@
   <title>Zodiac Algo-trade</title>
 </head>
 <body>
-  <form id="trade-form">
+  <form id="trade-form" aria-labelledby="form-heading">
+    <h1 id="form-heading">Zodiac Algo-trade</h1>
+    
     <!-- Market Dropdown -->
     <label for="market">Market:</label>
     <select id="market" name="market" required>
@@ -38,7 +40,6 @@
       <!-- Options will be dynamically populated based on the selected market -->
     </select>
 
-
     <!-- Contract Type Dropdown -->
     <label for="contract_type">Trade Type:</label>
     <select id="contract_type" name="contract_type" required>
@@ -54,13 +55,33 @@
     <label for="sentiment">Sentiment:</label>
     <select id="sentiment" name="sentiment" required>
       <option value="">Select Sentiment</option>
-      
+      <!-- Populate sentiments based on selected contract type -->
     </select>
+
+    <!-- Digits Input (conditionally displayed) -->
+    <div id="digit-value" style="display: none;">
+      <label for="input-value">Digits:</label>
+      <select name="input-value" id="input-value">
+        <option value="">Select Digit</option>
+        <option value="0">0</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+        <option value="9">9</option>
+      </select>
+    </div>
 
     <!-- Submit Button -->
     <input type="submit" value="Run">
   </form>
-  <div class="loadingio-spinner-gear-5fyuz6nbepy" id="spinner-container">
+
+  <!-- Loading Spinner -->
+  <div class="loadingio-spinner-gear-5fyuz6nbepy" id="spinner-container" role="status" aria-live="polite">
     <div class="ldio-s69gk832n0l">
       <div>
         <div></div>
@@ -72,11 +93,11 @@
       </div>
     </div>
   </div>
-  <div id="loading-message"></div>
+  <div id="loading-message" aria-live="polite"></div>
   <div id="results-container"></div>
   
 
-  <script type="text/javascript" src="/js/formData.js">
+  <script type="module" src="/js/formData.js">
   </script>
   <script>
     document.addEventListener('contextmenu', function(event) {
