@@ -1,1 +1,326 @@
-const _0x95771d=_0x4ff6;function _0x4ff6(_0x163109,_0x3cec8e){const _0x20ade1=_0x20ad();return _0x4ff6=function(_0x4ff6a2,_0x3e51b9){_0x4ff6a2=_0x4ff6a2-0x6e;let _0x3bf137=_0x20ade1[_0x4ff6a2];return _0x3bf137;},_0x4ff6(_0x163109,_0x3cec8e);}function _0x20ad(){const _0x3f3048=['max','forEach','Over','trim','body','Under\x20(','toFixed','Matches\x20(','json','Running\x20simulations...','Differs','12JwXucX','Even/Odd','297992Cxouby','3045147DJBRxe','add','Differs\x20(','digit-value','4859830SKZOtv','error','appendChild','720706vEQApK','required','DOMContentLoaded','digits','1253688hAooqI','9cnPfor','Over/Under','%)\x20Stop\x20trade\x20after\x20selected\x20Ticks','text','643600WchikC','preventDefault','display','then','value','Matches','7809910NTmwxi','disabled','innerHTML','min','random','div','11gwRAQJ','blur-background','floor','classList','catch','Network\x20response\x20was\x20not\x20ok','/trade/data','Multipliers','4spAtlW','There\x20was\x20a\x20problem\x20with\x20the\x20fetch\x20operation:','Matches/Differs','market','createElement','3IlXgLI','change','length','addEventListener','Under','style','textContent','sentiment','includes','spinner-container','/api/data','input-value','contract_type','results-container','block','none','map','getElementById'];_0x20ad=function(){return _0x3f3048;};return _0x20ad();}(function(_0x2220d8,_0xa0964e){const _0x4c95f1=_0x4ff6,_0x5a7256=_0x2220d8();while(!![]){try{const _0xa1b1fd=-parseInt(_0x4c95f1(0xab))/0x1+parseInt(_0x4c95f1(0xa2))/0x2*(parseInt(_0x4c95f1(0x7b))/0x3)+parseInt(_0x4c95f1(0x76))/0x4*(parseInt(_0x4c95f1(0x9f))/0x5)+parseInt(_0x4c95f1(0x98))/0x6*(parseInt(_0x4c95f1(0x9b))/0x7)+parseInt(_0x4c95f1(0x9a))/0x8*(-parseInt(_0x4c95f1(0xa7))/0x9)+-parseInt(_0x4c95f1(0xb1))/0xa+parseInt(_0x4c95f1(0x6e))/0xb*(-parseInt(_0x4c95f1(0xa6))/0xc);if(_0xa1b1fd===_0xa0964e)break;else _0x5a7256['push'](_0x5a7256['shift']());}catch(_0x42d647){_0x5a7256['push'](_0x5a7256['shift']());}}}(_0x20ad,0x9b48f),document['addEventListener'](_0x95771d(0xa4),function(){const _0x2168fe=_0x95771d,_0x12e7d2=document['getElementById']('trade-form'),_0x137967=document[_0x2168fe(0x8c)](_0x2168fe(0x84)),_0x4d234a=document[_0x2168fe(0x8c)]('loading-message'),_0x28a50e=document[_0x2168fe(0x8c)](_0x2168fe(0x88));let _0x29f27a={};function _0x2228af(){const _0x50b54a=_0x2168fe;_0x137967['style'][_0x50b54a(0xad)]=_0x50b54a(0x89),document[_0x50b54a(0x91)][_0x50b54a(0x71)][_0x50b54a(0x9c)](_0x50b54a(0x6f)),_0x4d234a[_0x50b54a(0x81)]=_0x50b54a(0x96),setTimeout(()=>{const _0xb317e1=_0x50b54a;_0x4d234a[_0xb317e1(0x81)]='Finalizing\x20predictions...';},0x1194),setTimeout(()=>{const _0x479e9c=_0x50b54a;_0x137967[_0x479e9c(0x80)]['display']='none',_0x4d234a[_0x479e9c(0x81)]='',document[_0x479e9c(0x91)][_0x479e9c(0x71)]['remove'](_0x479e9c(0x6f)),_0x4ce3d2();},0x2134);}function _0x458662(){const _0x316c64=_0x2168fe,_0x465dc6=document[_0x316c64(0x8c)](_0x316c64(0x79))[_0x316c64(0xaf)],_0x508d89=document[_0x316c64(0x8c)]('submarket');_0x508d89[_0x316c64(0xb3)]='',fetch(_0x316c64(0x85))[_0x316c64(0xae)](_0x533edc=>{const _0x47912a=_0x316c64;if(!_0x533edc['ok'])throw new Error('Network\x20response\x20was\x20not\x20ok');return _0x533edc[_0x47912a(0x95)]();})[_0x316c64(0xae)](_0x10ecb2=>{const _0x466d16=_0x316c64,_0x466131=_0x10ecb2[_0x465dc6]||[];_0x466131[_0x466d16(0x8e)](_0x597aa0=>{_0x2d51eb(_0x508d89,_0x597aa0);}),_0x508d89[_0x466d16(0xb2)]=![],_0x508d89[_0x466d16(0xa3)]=!![];})[_0x316c64(0x72)](_0x59e58a=>{const _0x2b2ec5=_0x316c64;console[_0x2b2ec5(0xa0)](_0x2b2ec5(0x77),_0x59e58a);});}const _0x596ec6=[0x0,0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,0x9],_0x1ea2f6=0x5d,_0x48175c=0x2/0xb,_0x242822=0.2,_0x464320=0.1,_0x5b7111=0x5a,_0x4a650e=0x23,_0x2cb3a2=0x8,_0x216074=0x5;function _0x31de18(_0x17b246){const _0x2ae4d0=_0x2168fe,_0x1a1d96=_0x596ec6[_0x2ae4d0(0x7d)],_0x145621=0x64/_0x1a1d96;let _0x508cfc,_0x4f32ff;return _0x508cfc=_0x4f32ff=_0x145621,{'higherChance':_0x508cfc,'lowerChance':_0x4f32ff};}function _0x490102(_0x253e32,_0x4b75e5,_0x13eb53){const _0x23a2f4=_0x2168fe;if(Math['random']()<_0x242822&&_0x13eb53>Math[_0x23a2f4(0xb4)](..._0x596ec6)&&_0x13eb53<Math['max'](..._0x596ec6)){const _0x1b11e4=Math['random']()*0xa;_0x253e32=Math[_0x23a2f4(0xb4)](_0x253e32+_0x1b11e4,_0x1ea2f6),_0x4b75e5=Math[_0x23a2f4(0x8d)](_0x4b75e5-_0x1b11e4,0x0);}return{'higherChance':_0x253e32,'lowerChance':_0x4b75e5};}function _0x247f2f(_0xb1f45d,_0xbd2bcf){const _0x3c0886=_0x2168fe;if(Math[_0x3c0886(0xb5)]()<_0x464320){const _0xc37d5b=_0x5b7111+Math[_0x3c0886(0xb5)]()*_0x4a650e;_0xb1f45d=_0xc37d5b,_0xbd2bcf=_0x1ea2f6-_0xb1f45d;}return{'higherChance':_0xb1f45d,'lowerChance':_0xbd2bcf};}function _0x168b37(_0x2ec84c){const _0x2ea103=_0x2168fe;let {higherChance:_0x2214bf,lowerChance:_0xdea55b}=_0x31de18(_0x2ec84c);({higherChance:_0x2214bf,lowerChance:_0xdea55b}=_0x490102(_0x2214bf,_0xdea55b,_0x2ec84c),{higherChance:_0x2214bf,lowerChance:_0xdea55b}=_0x247f2f(_0x2214bf,_0xdea55b),_0x2214bf=Math[_0x2ea103(0xb4)](_0x2214bf,_0x1ea2f6),_0xdea55b=Math[_0x2ea103(0x8d)](_0xdea55b,0x0));const _0x47146a=Math['random']()*_0x216074+_0x2cb3a2,_0x4d2ad5=_0x2214bf*_0x47146a;let _0x48c52d=_0xdea55b*_0x47146a;return Math['random']()>=_0x48175c&&(_0x48c52d*=0.1),{'higherChance':_0x2214bf,'lowerChance':_0xdea55b,'randomFrequency':_0x47146a,'matches':_0x48c52d,'differs':_0x4d2ad5};}function _0x3bf0d0(_0x2d94bf){const _0x1953c2=_0x2168fe,{matches:_0xd56717,differs:_0x4bf57e}=_0x168b37(_0x2d94bf),_0x912801=_0xd56717+_0x4bf57e,_0x56f341=(_0xd56717/_0x912801*0x61)[_0x1953c2(0x93)](0x2),_0x3f8946=(_0x4bf57e/_0x912801*0x61)[_0x1953c2(0x93)](0x2);return{'matchesChance':_0x56f341,'differsChance':_0x3f8946};}const _0x198ecb={0x1:0x2,0x2:0x3,0x3:0x4,0x4:0x5,0x5:0x5,0x6:0x4,0x7:0x3,0x8:0x2},_0x27dabd=0x5d,_0x3a1e4c=0x32,_0x3aa208=0x23,_0x481bec=0x7,_0x2b4dda=0x6,_0x764942=0.2;function _0x5689ad(_0x29bf7a,_0x18e016,_0x54b744){const _0x11607a=_0x2168fe;let _0x417af9,_0x1b9dbb;if(_0x29bf7a===_0x18e016||_0x29bf7a===0x9)_0x417af9=0x0,_0x1b9dbb=_0x27dabd;else _0x29bf7a===_0x54b744||_0x29bf7a===0x0?(_0x417af9=_0x27dabd,_0x1b9dbb=0x0):(_0x417af9=Math[_0x11607a(0xb4)]((_0x18e016-_0x29bf7a)/(_0x18e016-_0x54b744)*0x64,_0x27dabd),_0x1b9dbb=Math[_0x11607a(0xb4)]((_0x29bf7a-_0x54b744)/(_0x18e016-_0x54b744)*0x64,_0x27dabd));return{'higherChanceDigit':_0x417af9,'lowerChanceDigit':_0x1b9dbb};}function _0x490102(_0x410850,_0x1211f7,_0x21fcf7){const _0x6e7908=_0x2168fe;if(Math[_0x6e7908(0xb5)]()<_0x764942&&_0x21fcf7>0x1&&_0x21fcf7<0x9){const _0x543ffb=Math[_0x6e7908(0xb5)]()*0xa;_0x410850=Math[_0x6e7908(0xb4)](_0x410850+_0x543ffb,_0x27dabd),_0x1211f7=Math[_0x6e7908(0x8d)](_0x1211f7-_0x543ffb,0x0);}return{'higherChanceDigit':_0x410850,'lowerChanceDigit':_0x1211f7};}function _0x31e33e(_0x335862,_0x323d88,_0x26ecac){const _0x1469b6=_0x2168fe,_0x2ed06d=_0x198ecb[_0x26ecac]||0x1;if(Math[_0x1469b6(0xb5)]()<_0x2ed06d/0xa){const _0x91ab70=_0x3a1e4c+Math[_0x1469b6(0xb5)]()*_0x3aa208;_0x335862=_0x91ab70,_0x323d88=_0x27dabd-_0x335862;}return _0x335862=Math[_0x1469b6(0xb4)](_0x335862,_0x27dabd),_0x323d88=Math[_0x1469b6(0x8d)](_0x323d88,0x0),{'higherChanceDigit':_0x335862,'lowerChanceDigit':_0x323d88};}function _0x4ead38(_0x4c25d9){const _0x52f759=_0x2168fe,_0x59b8eb=Math[_0x52f759(0x8d)](..._0x596ec6),_0x871b89=Math['min'](..._0x596ec6);let {higherChanceDigit:_0x39ae3d,lowerChanceDigit:_0x568f70}=_0x5689ad(_0x4c25d9,_0x59b8eb,_0x871b89);({higherChanceDigit:_0x39ae3d,lowerChanceDigit:_0x568f70}=_0x490102(_0x39ae3d,_0x568f70,_0x4c25d9),{higherChanceDigit:_0x39ae3d,lowerChanceDigit:_0x568f70}=_0x31e33e(_0x39ae3d,_0x568f70,_0x4c25d9));const _0x96917f=Math[_0x52f759(0xb5)]()*_0x2b4dda+_0x481bec,_0x2ed88d=_0x39ae3d*_0x96917f,_0x58f4cb=_0x568f70*_0x96917f;return{'higherChanceDigit':_0x39ae3d,'lowerChanceDigit':_0x568f70,'randomFrequency':_0x96917f,'over':_0x2ed88d,'under':_0x58f4cb};}function _0x17d37b(_0x3f9957){const _0x120620=_0x2168fe,{over:_0x30fd27,under:_0x4f95ca}=_0x4ead38(_0x3f9957),_0xf301dd=_0x30fd27+_0x4f95ca,_0x445c4f=(_0x30fd27/_0xf301dd*0x61)[_0x120620(0x93)](0x2),_0x51cee3=(_0x4f95ca/_0xf301dd*0x61)[_0x120620(0x93)](0x2);return{'overChance':_0x445c4f,'underChance':_0x51cee3};}function _0x384ffa(){const _0x2041c7=_0x2168fe,_0x28cfd7=document[_0x2041c7(0x8c)](_0x2041c7(0x87))[_0x2041c7(0xaf)],_0x347527=document[_0x2041c7(0x8c)](_0x2041c7(0x82));_0x347527[_0x2041c7(0xb3)]='';const _0x44735e=_0x29f27a[_0x28cfd7]||[];_0x44735e[_0x2041c7(0x8e)](_0x1b358e=>_0x2d51eb(_0x347527,_0x1b358e));const _0x3d7dbb=_0x347527[_0x2041c7(0xaf)];if([_0x2041c7(0x78),_0x2041c7(0xa8)][_0x2041c7(0x83)](_0x3d7dbb))document['getElementById'](_0x2041c7(0x9e))[_0x2041c7(0x80)][_0x2041c7(0xad)]='block';else[_0x2041c7(0x99)][_0x2041c7(0x83)](_0x3d7dbb)&&(document[_0x2041c7(0x8c)]('digit-value')[_0x2041c7(0x80)]['display']=_0x2041c7(0x8a));_0x347527[_0x2041c7(0xb2)]=![];}function _0x2d51eb(_0x3fa487,_0x3eb935){const _0xca5ff6=_0x2168fe,_0x831d37=document[_0xca5ff6(0x7a)]('option');_0x831d37[_0xca5ff6(0xaa)]=_0x3eb935,_0x3fa487[_0xca5ff6(0x9c)](_0x831d37);}function _0x4ce3d2(){const _0x20d6cd=_0x2168fe,_0x15611e=document[_0x20d6cd(0x8c)](_0x20d6cd(0x82)),_0x5306d7=_0x15611e[_0x20d6cd(0xaf)],_0x42d573=parseInt(document['getElementById'](_0x20d6cd(0x86))['value'],0xa),{overChance:_0x36ad38,underChance:_0x4ef54f}=_0x17d37b(_0x42d573),{matchesChance:_0x284667,differsChance:_0x245708}=_0x3bf0d0(_0x42d573),_0x3633f9=_0x5306d7['split']('/'),_0x3e2d6b=_0x3633f9[_0x20d6cd(0x8b)](_0x1c6de9);_0x28a50e[_0x20d6cd(0xb3)]='',_0x28a50e[_0x20d6cd(0x80)]['display']=_0x20d6cd(0x89);if(['Matches/Differs',_0x20d6cd(0xa8)][_0x20d6cd(0x83)](_0x5306d7))document['getElementById']('digit-value')[_0x20d6cd(0x80)][_0x20d6cd(0xad)]=_0x20d6cd(0x89),_0x3633f9[_0x20d6cd(0x8e)]((_0x63c879,_0x12f4ce)=>{const _0x2b2ba2=_0x20d6cd,_0x28feb8=document[_0x2b2ba2(0x7a)](_0x2b2ba2(0xb6));if(_0x63c879[_0x2b2ba2(0x90)]()===_0x2b2ba2(0xb0))_0x28feb8[_0x2b2ba2(0x81)]=_0x2b2ba2(0x94)+_0x284667+_0x2b2ba2(0xa9);else{if(_0x63c879[_0x2b2ba2(0x90)]()===_0x2b2ba2(0x97))_0x28feb8[_0x2b2ba2(0x81)]=_0x2b2ba2(0x9d)+_0x245708+_0x2b2ba2(0xa9);else{if(_0x63c879[_0x2b2ba2(0x90)]()===_0x2b2ba2(0x8f))_0x28feb8[_0x2b2ba2(0x81)]='Over\x20('+_0x36ad38+_0x2b2ba2(0xa9);else _0x63c879[_0x2b2ba2(0x90)]()===_0x2b2ba2(0x7f)?_0x28feb8['textContent']=_0x2b2ba2(0x92)+_0x4ef54f+_0x2b2ba2(0xa9):_0x28feb8['textContent']=_0x63c879[_0x2b2ba2(0x90)]()+'\x20('+_0x3e2d6b[_0x12f4ce]+_0x2b2ba2(0xa9);}}_0x28a50e['appendChild'](_0x28feb8);});else['Even/Odd'][_0x20d6cd(0x83)](_0x5306d7)?document['getElementById'](_0x20d6cd(0x9e))[_0x20d6cd(0x80)]['display']=_0x20d6cd(0x8a):(document[_0x20d6cd(0x8c)](_0x20d6cd(0x9e))[_0x20d6cd(0x80)][_0x20d6cd(0xad)]=_0x20d6cd(0x8a),_0x3633f9[_0x20d6cd(0x8e)]((_0x1110e9,_0xd8d3be)=>{const _0xabd7e7=_0x20d6cd,_0x338d92=document[_0xabd7e7(0x7a)](_0xabd7e7(0xb6));_0x338d92[_0xabd7e7(0x81)]=_0x1110e9[_0xabd7e7(0x90)]()+'\x20('+_0x3e2d6b[_0xd8d3be]+_0xabd7e7(0xa9),_0x28a50e[_0xabd7e7(0xa1)](_0x338d92);}));}function _0x1c6de9(){const _0x383248=_0x2168fe;let _0x5e8b25;do{_0x5e8b25=Math[_0x383248(0x70)](Math['random']()*0x57)+0x1;}while(_0x5e8b25===0x32);return _0x5e8b25;}fetch(_0x2168fe(0x74))[_0x2168fe(0xae)](_0x4381ab=>{const _0x17424a=_0x2168fe;if(!_0x4381ab['ok'])throw new Error(_0x17424a(0x73));return _0x4381ab[_0x17424a(0x95)]();})[_0x2168fe(0xae)](_0x29c1b1=>{const _0x478633=_0x2168fe;_0x29f27a={'Multipliers':_0x29c1b1[_0x478633(0x75)]||[],'up_and_down':_0x29c1b1['up_and_down']||[],'high_and_low':_0x29c1b1['high_and_low']||[],'digits':_0x29c1b1[_0x478633(0xa5)]||[]};})[_0x2168fe(0x72)](_0x1a1d03=>{const _0x24e09e=_0x2168fe;console[_0x24e09e(0xa0)](_0x24e09e(0x77),_0x1a1d03);}),document[_0x2168fe(0x8c)]('market')[_0x2168fe(0x7e)](_0x2168fe(0x7c),_0x458662),document[_0x2168fe(0x8c)](_0x2168fe(0x87))[_0x2168fe(0x7e)](_0x2168fe(0x7c),_0x384ffa),window[_0x2168fe(0x7e)]('load',_0x458662),_0x12e7d2[_0x2168fe(0x7e)]('submit',function(_0x59ae5b){const _0x22fdbe=_0x2168fe;_0x59ae5b[_0x22fdbe(0xac)](),_0x2228af();});}));
+document.addEventListener("DOMContentLoaded", function () {
+    const dataForm = document.getElementById("trade-form");
+    const spinnerContainer = document.getElementById("spinner-container");
+    const loadingMessage = document.getElementById("loading-message");
+    const resultsContainer = document.getElementById("results-container");
+    let sentimentsData = {};
+  
+    function showSpinnerAndMessages() {
+      spinnerContainer.style.display = "block";
+      document.body.classList.add("blur-background");
+      loadingMessage.textContent = "Running simulations...";
+  
+      setTimeout(() => {
+        loadingMessage.textContent = "Finalizing predictions...";
+      }, 4500);
+  
+      setTimeout(() => {
+        spinnerContainer.style.display = "none";
+        loadingMessage.textContent = "";
+        document.body.classList.remove("blur-background");
+        displaySelectedOptionsAfterFetch();
+      }, 8500);
+    }
+  
+    function populateSubmarkets() {
+      const market = document.getElementById("market").value;
+      const submarketDropdown = document.getElementById("submarket");
+      submarketDropdown.innerHTML = "";
+  
+      fetch('/api/data')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.json();
+        })
+        .then(data => {
+          const submarkets = data[market] || [];
+  
+          submarkets.forEach(submarket => {
+            addOption(submarketDropdown, submarket);
+          });
+  
+          submarketDropdown.disabled = false;
+          submarketDropdown.required = true;
+        })
+        .catch(error => {
+          console.error('There was a problem with the fetch operation:', error);
+        });
+    }
+  
+    const numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+  
+    const MAX_PERCENTAGE = 93;
+    const MATCH_CHANCE_FREQUENCY = 2 / 11; // Probability of high match chance
+    const RANDOM_DEVIATION_CHANCE = 0.2;
+    const GENERAL_DEVIATION_CHANCE = 0.1;
+    const DEVIATION_BASE = 90.0;
+    const DEVIATION_RANGE = 35.0;
+    const RANDOM_FREQUENCY_MIN = 8.0;
+    const RANDOM_FREQUENCY_RANGE = 5.0;
+  
+    function determineBaseChances(selectedNumber) {
+      const totalNumbers = numbers.length;
+      const chance = 100 / totalNumbers;
+  
+      let higherChance = chance;
+      let lowerChance = chance;
+  
+      return { higherChance, lowerChance };
+    }
+  
+    function applyRandomDeviation(higherChance, lowerChance, selectedNumber) {
+      if (Math.random() < RANDOM_DEVIATION_CHANCE && selectedNumber > Math.min(...numbers) && selectedNumber < Math.max(...numbers)) {
+        const increaseAmount = Math.random() * 10;
+        higherChance = Math.min(higherChance + increaseAmount, MAX_PERCENTAGE);
+        lowerChance = Math.max(lowerChance - increaseAmount, 0);
+      }
+      return { higherChance, lowerChance };
+    }
+  
+    function applyGeneralDeviation(higherChance, lowerChance) {
+      if (Math.random() < GENERAL_DEVIATION_CHANCE) {
+        const deviationAmount = DEVIATION_BASE + (Math.random() * DEVIATION_RANGE);
+        higherChance = deviationAmount;
+        lowerChance = MAX_PERCENTAGE - higherChance;
+      }
+      return { higherChance, lowerChance };
+    }
+  
+    function determinePercentage(selectedNumber) {
+      let { higherChance, lowerChance } = determineBaseChances(selectedNumber);
+      ({ higherChance, lowerChance } = applyRandomDeviation(higherChance, lowerChance, selectedNumber));
+      ({ higherChance, lowerChance } = applyGeneralDeviation(higherChance, lowerChance));
+  
+      higherChance = Math.min(higherChance, MAX_PERCENTAGE);
+      lowerChance = Math.max(lowerChance, 0);
+  
+      const randomFrequency = Math.random() * RANDOM_FREQUENCY_RANGE + RANDOM_FREQUENCY_MIN;
+  
+      const differs = higherChance * randomFrequency;
+      let matches = lowerChance * randomFrequency;
+  
+      if (Math.random() >= MATCH_CHANCE_FREQUENCY) {
+        matches *= 0.1;
+      }
+  
+      return {
+        higherChance,
+        lowerChance,
+        randomFrequency,
+        matches,
+        differs
+      };
+    }
+  
+    function determineChances(selectedNumber) {
+      const { matches, differs } = determinePercentage(selectedNumber);
+  
+      const totalChance = matches + differs;
+  
+      const matchesChance = ((matches / totalChance) * 97).toFixed(2);
+      const differsChance = ((differs / totalChance) * 97).toFixed(2);
+  
+      return { matchesChance, differsChance };
+    }
+  
+    const deviationFrequenciesDigits = {
+      1: 2,
+      2: 3,
+      3: 4,
+      4: 5,
+      5: 5,
+      6: 4,
+      7: 3,
+      8: 2,
+    };
+  
+    const MAX_PERCENTAGE_DIGIT = 93;
+    const DEVIATION_BASE_DIGIT = 50.0;
+    const DEVIATION_RANGE_DIGIT = 35.0;
+    const RANDOM_FREQUENCY_MIN_DIGIT = 7.0;
+    const RANDOM_FREQUENCY_RANGE_DIGIT = 6.0;
+    const RANDOM_DEVIATION_CHANCE_DIGIT = 0.2;
+  
+    function calculateBaseChances(selectedNumber, max, min) {
+      let higherChanceDigit, lowerChanceDigit;
+  
+      if (selectedNumber === max || selectedNumber === 9) {
+        higherChanceDigit = 0;
+        lowerChanceDigit = MAX_PERCENTAGE_DIGIT;
+      } else if (selectedNumber === min || selectedNumber === 0) {
+        higherChanceDigit = MAX_PERCENTAGE_DIGIT;
+        lowerChanceDigit = 0;
+      } else {
+        higherChanceDigit = Math.min(((max - selectedNumber) / (max - min)) * 100, MAX_PERCENTAGE_DIGIT);
+        lowerChanceDigit = Math.min(((selectedNumber - min) / (max - min)) * 100, MAX_PERCENTAGE_DIGIT);
+      }
+  
+      return { higherChanceDigit, lowerChanceDigit };
+    }
+  
+    function applyRandomDeviation(higherChanceDigit, lowerChanceDigit, selectedNumber) {
+      if (Math.random() < RANDOM_DEVIATION_CHANCE_DIGIT && selectedNumber > 1 && selectedNumber < 9) {
+        const increaseAmount = Math.random() * 10;
+        higherChanceDigit = Math.min(higherChanceDigit + increaseAmount, MAX_PERCENTAGE_DIGIT);
+        lowerChanceDigit = Math.max(lowerChanceDigit - increaseAmount, 0);
+      }
+      return { higherChanceDigit, lowerChanceDigit };
+    }
+  
+    function applyFrequencyDeviation(higherChanceDigit, lowerChanceDigit, selectedNumber) {
+      const deviationFrequencyDigit = deviationFrequenciesDigits[selectedNumber] || 1;
+  
+      if (Math.random() < (deviationFrequencyDigit / 10)) {
+        const deviationAmountDigit = DEVIATION_BASE_DIGIT + (Math.random() * DEVIATION_RANGE_DIGIT);
+        higherChanceDigit = deviationAmountDigit;
+        lowerChanceDigit = MAX_PERCENTAGE_DIGIT - higherChanceDigit;
+      }
+  
+      higherChanceDigit = Math.min(higherChanceDigit, MAX_PERCENTAGE_DIGIT);
+      lowerChanceDigit = Math.max(lowerChanceDigit, 0);
+  
+      return { higherChanceDigit, lowerChanceDigit };
+    }
+  
+    function calculatePercentage(selectedNumber) {
+      const max = Math.max(...numbers);
+      const min = Math.min(...numbers);
+  
+      let { higherChanceDigit, lowerChanceDigit } = calculateBaseChances(selectedNumber, max, min);
+      ({ higherChanceDigit, lowerChanceDigit } = applyRandomDeviation(higherChanceDigit, lowerChanceDigit, selectedNumber));
+      ({ higherChanceDigit, lowerChanceDigit } = applyFrequencyDeviation(higherChanceDigit, lowerChanceDigit, selectedNumber));
+  
+      const randomFrequency = Math.random() * RANDOM_FREQUENCY_RANGE_DIGIT + RANDOM_FREQUENCY_MIN_DIGIT;
+      const over = higherChanceDigit * randomFrequency;
+      const under = lowerChanceDigit * randomFrequency;
+  
+      return {
+        higherChanceDigit,
+        lowerChanceDigit,
+        randomFrequency,
+        over,
+        under
+      };
+    }
+  
+    function calculateChances(selectedNumber) {
+      const { over, under } = calculatePercentage(selectedNumber);
+  
+      const totalChance = over + under;
+      const overChance = ((over / totalChance) * 97).toFixed(2);
+      const underChance = ((under / totalChance) * 97).toFixed(2);
+  
+      return { overChance, underChance };
+    }
+  
+    function populateSentiments() {
+      const sentimentData = document.getElementById("contract_type").value;
+      const sentimentDropdown = document.getElementById("sentiment");
+      sentimentDropdown.innerHTML = "";
+  
+      const sentiments = sentimentsData[sentimentData] || [];
+      sentiments.forEach(sentiment => addOption(sentimentDropdown, sentiment));
+  
+      const selectedSentiment = sentimentDropdown.value;
+  
+      if (["Matches/Differs", "Over/Under"].includes(selectedSentiment)) {
+        document.getElementById("digit-value").style.display = "block";
+      }
+      else if (["Even/Odd"].includes(selectedSentiment)){
+        document.getElementById("digit-value").style.display = "none";
+      }
+  
+      sentimentDropdown.disabled = false;
+    }
+  
+    function addOption(selectElement, optionText) {
+      const option = document.createElement("option");
+      option.text = optionText;
+      selectElement.add(option);
+    }
+  
+    function displaySelectedOptionsAfterFetch() {
+      const sentimentDropdown = document.getElementById("sentiment");
+      const selectedSentiment = sentimentDropdown.value;
+      const selectedNumber = parseInt(document.getElementById("input-value").value, 10);
+  
+      const { overChance, underChance } = calculateChances(selectedNumber);
+      const { matchesChance, differsChance } = determineChances(selectedNumber);
+  
+      const sentimentParts = selectedSentiment.split("/");
+      const percentages = sentimentParts.map(generatePercentage);
+  
+      resultsContainer.innerHTML = "";
+      resultsContainer.style.display = "block";
+  
+      if (["Matches/Differs", "Over/Under"].includes(selectedSentiment)) {
+        document.getElementById("digit-value").style.display = "block";
+  
+        sentimentParts.forEach((part, index) => {
+          const optionElement = document.createElement("div");
+          if (part.trim() === "Matches") {
+            optionElement.textContent = `Matches (${matchesChance}%) Stop trade after selected Ticks`;
+          } else if (part.trim() === "Differs") {
+            optionElement.textContent = `Differs (${differsChance}%) Stop trade after selected Ticks`;
+          } else if (part.trim() === "Over") {
+            optionElement.textContent = `Over (${overChance}%) Stop trade after selected Ticks`;
+          } else if (part.trim() === "Under") {
+            optionElement.textContent = `Under (${underChance}%) Stop trade after selected Ticks`;
+          } else {
+            optionElement.textContent = `${part.trim()} (${percentages[index]}%) Stop trade after selected Ticks`;
+          }
+          resultsContainer.appendChild(optionElement);
+        });
+      }
+      else if (["Even/Odd"].includes(selectedSentiment)){
+        document.getElementById("digit-value").style.display = "none";
+      }
+       else {
+        document.getElementById("digit-value").style.display = "none";
+        sentimentParts.forEach((part, index) => {
+          const optionElement = document.createElement("div");
+          optionElement.textContent = `${part.trim()} (${percentages[index]}%) Stop trade after selected Ticks`;
+          resultsContainer.appendChild(optionElement);
+        });
+      }
+    }
+  
+    function generatePercentage() {
+      let percentage;
+      do {
+        percentage = Math.floor(Math.random() * 87) + 1;
+      } while (percentage === 50);
+      return percentage;
+    }
+  
+    fetch('/trade/data')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => {
+        sentimentsData = {
+          Multipliers: data.Multipliers || [],
+          up_and_down: data.up_and_down || [],
+          high_and_low: data.high_and_low || [],
+          digits: data.digits || []
+        };
+      })
+      .catch(error => {
+        console.error('There was a problem with the fetch operation:', error);
+      });
+  
+    document.getElementById("market").addEventListener("change", populateSubmarkets);
+    document.getElementById("contract_type").addEventListener("change", populateSentiments);
+    window.addEventListener("load", populateSubmarkets);
+  
+    dataForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+      showSpinnerAndMessages();
+    });
+  });
+  
