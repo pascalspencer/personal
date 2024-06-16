@@ -1,5 +1,3 @@
-import { calculateChances  as calculateDigitChances } from "./digit.js"
-import { determineChances as calculateMatchesChances } from "./matches.js"
 document.addEventListener("DOMContentLoaded", function () {
   const dataForm = document.getElementById("trade-form");
   const spinnerContainer = document.getElementById("spinner-container");
@@ -54,6 +52,187 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  const numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+  // Constants
+const MAX_PERCENTAGE = 93;
+const MATCH_CHANCE_FREQUENCY = 2 / 11; // Probability of high match chance
+const RANDOM_DEVIATION_CHANCE = 0.2;
+const GENERAL_DEVIATION_CHANCE = 0.1;
+const DEVIATION_BASE = 90.0;
+const DEVIATION_RANGE = 35.0;
+const RANDOM_FREQUENCY_MIN = 8.0;
+const RANDOM_FREQUENCY_RANGE = 5.0;
+
+function determineBaseChances(selectedNumber) {
+    const totalNumbers = numbers.length; // total numbers from 0 to 9
+    const chance = 100 / totalNumbers;
+
+    let higherChance, lowerChance;
+
+    // Calculate chances based on selectedNumber
+    higherChance = lowerChance = chance;
+
+    return { higherChance, lowerChance };
+}
+
+function applyRandomDeviation(higherChance, lowerChance, selectedNumber) {
+    if (Math.random() < RANDOM_DEVIATION_CHANCE && selectedNumber > Math.min(...numbers) && selectedNumber < Math.max(...numbers)) {
+        const increaseAmount = Math.random() * 10; // Increase by up to 10%
+        higherChance = Math.min(higherChance + increaseAmount, MAX_PERCENTAGE);
+        lowerChance = Math.max(lowerChance - increaseAmount, 0);
+    }
+    return { higherChance, lowerChance };
+}
+
+function applyGeneralDeviation(higherChance, lowerChance) {
+    if (Math.random() < GENERAL_DEVIATION_CHANCE) {
+        const deviationAmount = DEVIATION_BASE + (Math.random() * DEVIATION_RANGE);
+        higherChance = deviationAmount;
+        lowerChance = MAX_PERCENTAGE - higherChance;
+    }
+    return { higherChance, lowerChance };
+}
+
+function determinePercentage(selectedNumber) {
+    let { higherChance, lowerChance } = determineBaseChances(selectedNumber);
+    ({ higherChance, lowerChance } = applyRandomDeviation(higherChance, lowerChance, selectedNumber));
+    ({ higherChance, lowerChance } = applyGeneralDeviation(higherChance, lowerChance));
+
+    // Ensure bounds are respected
+    higherChance = Math.min(higherChance, MAX_PERCENTAGE);
+    lowerChance = Math.max(lowerChance, 0);
+
+    // Generate a random frequency between RANDOM_FREQUENCY_MIN and (RANDOM_FREQUENCY_MIN + RANDOM_FREQUENCY_RANGE)
+    const randomFrequency = Math.random() * RANDOM_FREQUENCY_RANGE + RANDOM_FREQUENCY_MIN;
+
+    // Multiply the chosen percentage by the random frequency
+    const differs = higherChance * randomFrequency;
+    let matches = lowerChance * randomFrequency;
+
+    // Adjust match chance to be low most of the time
+    if (Math.random() >= MATCH_CHANCE_FREQUENCY) {
+        matches *= 0.1; // Reduce match chance significantly
+    }
+
+    return {
+        higherChance,
+        lowerChance,
+        randomFrequency,
+        matches,
+        differs
+    };
+}
+
+// Export a function to determine the chances
+function determineChances(selectedNumber) {
+    const { matches, differs } = determinePercentage(selectedNumber);
+
+    // Determine total chance
+    const totalChance = matches + differs;
+
+    // Determine matchesChance and differsChance percentages
+    const matchesChance = ((matches / totalChance) * 97).toFixed(2);
+    const differsChance = ((differs / totalChance) * 97).toFixed(2);
+
+    return { matchesChance, differsChance };
+}
+
+
+    // Deviation frequencies for specific numbers
+    const deviationFrequenciesDigits = {
+        1: 2,
+        2: 3,
+        3: 4,
+        4: 5,
+        5: 5,
+        6: 4,
+        7: 3,
+        8: 2,
+    };
+
+    // Constants
+    const MAX_PERCENTAGE_DIGIT = 93;
+    const DEVIATION_BASE_DIGIT = 50.0;
+    const DEVIATION_RANGE_DIGIT = 35.0;
+    const RANDOM_FREQUENCY_MIN_DIGIT = 7.0;
+    const RANDOM_FREQUENCY_RANGE_DIGIT = 6.0;
+    const RANDOM_DEVIATION_CHANCE_DIGIT = 0.2;
+
+    function calculateBaseChances(selectedNumber, max, min) {
+        let higherChanceDigit, lowerChanceDigit;
+
+        if (selectedNumber === max || selectedNumber === 9) {
+            higherChanceDigit = 0;
+            lowerChanceDigit = MAX_PERCENTAGE_DIGIT;
+        } else if (selectedNumber === min || selectedNumber === 0) {
+            higherChanceDigit = MAX_PERCENTAGE_DIGIT;
+            lowerChanceDigit = 0;
+        } else {
+            higherChanceDigit = Math.min(((max - selectedNumber) / (max - min)) * 100, MAX_PERCENTAGE_DIGIT);
+            lowerChanceDigit = Math.min(((selectedNumber - min) / (max - min)) * 100, MAX_PERCENTAGE_DIGIT);
+        }
+
+        return { higherChanceDigit, lowerChanceDigit };
+    }
+
+    function applyRandomDeviation(higherChanceDigit, lowerChanceDigit, selectedNumber) {
+        if (Math.random() < RANDOM_DEVIATION_CHANCE_DIGIT && selectedNumber > 1 && selectedNumber < 9) {
+            const increaseAmount = Math.random() * 10;
+            higherChanceDigit = Math.min(higherChanceDigit + increaseAmount, MAX_PERCENTAGE_DIGIT);
+            lowerChanceDigit = Math.max(lowerChanceDigit - increaseAmount, 0);
+        }
+        return { higherChanceDigit, lowerChanceDigit };
+    }
+
+    function applyFrequencyDeviation(higherChanceDigit, lowerChanceDigit, selectedNumber) {
+        const deviationFrequencyDigit = deviationFrequenciesDigits[selectedNumber] || 1;
+
+        if (Math.random() < (deviationFrequencyDigit / 10)) {
+            const deviationAmountDigit = DEVIATION_BASE_DIGIT + (Math.random() * DEVIATION_RANGE_DIGIT);
+            higherChanceDigit = deviationAmountDigit;
+            lowerChanceDigit = MAX_PERCENTAGE_DIGIT - higherChanceDigit;
+        }
+
+        higherChanceDigit = Math.min(higherChanceDigit, MAX_PERCENTAGE_DIGIT);
+        lowerChanceDigit = Math.max(lowerChanceDigit, 0);
+
+        return { higherChanceDigit, lowerChanceDigit };
+    }
+
+    function calculatePercentage(selectedNumber) {
+        const max = Math.max(...numbers);
+        const min = Math.min(...numbers);
+
+        let { higherChanceDigit, lowerChanceDigit } = calculateBaseChances(selectedNumber, max, min);
+        ({ higherChanceDigit, lowerChanceDigit } = applyRandomDeviation(higherChanceDigit, lowerChanceDigit, selectedNumber));
+        ({ higherChanceDigit, lowerChanceDigit } = applyFrequencyDeviation(higherChanceDigit, lowerChanceDigit, selectedNumber));
+
+        const randomFrequency = Math.random() * RANDOM_FREQUENCY_RANGE_DIGIT + RANDOM_FREQUENCY_MIN_DIGIT;
+        const over = higherChanceDigit * randomFrequency;
+        const under = lowerChanceDigit * randomFrequency;
+
+        return {
+            higherChanceDigit,
+            lowerChanceDigit,
+            randomFrequency,
+            over,
+            under
+        };
+    }
+
+    function calculateChances(selectedNumber) {
+        const { over, under } = calculatePercentage(selectedNumber);
+
+        const totalChance = over + under;
+        const overChance = ((over / totalChance) * 97).toFixed(2);
+        const underChance = ((under / totalChance) * 97).toFixed(2);
+
+        return { overChance, underChance };
+    }
+
+
+
   function populateSentiments() {
     const sentimentData = document.getElementById("contract_type").value;
     const sentimentDropdown = document.getElementById("sentiment");
@@ -85,8 +264,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const selectedSentiment = sentimentDropdown.value;
     const selectedNumber = parseInt(document.getElementById("input-value").value, 10);
 
-    const { overChance, underChance } = calculateDigitChances(selectedNumber);
-    const { matchesChance, differsChance } = calculateMatchesChances(selectedNumber);
+    const { overChance, underChance } = calculateChances(selectedNumber);
+    const { matchesChance, differsChance } = determineChances(selectedNumber);
 
     const sentimentParts = selectedSentiment.split("/");
     const percentages = sentimentParts.map(generatePercentage);

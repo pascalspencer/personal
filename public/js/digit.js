@@ -1,7 +1,7 @@
 const numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
 // Deviation frequencies for specific numbers
-const deviationFrequencies = {
+const deviationFrequenciesDigits = {
     1: 2,
     2: 3,
     3: 4,
@@ -13,69 +13,69 @@ const deviationFrequencies = {
 };
 
 // Constants
-const MAX_PERCENTAGE = 93;
-const DEVIATION_BASE = 50.0;
-const DEVIATION_RANGE = 35.0;
-const RANDOM_FREQUENCY_MIN = 7.0;
-const RANDOM_FREQUENCY_RANGE = 6.0;
-const RANDOM_DEVIATION_CHANCE = 0.2;
+const MAX_PERCENTAGE_DIGIT = 93;
+const DEVIATION_BASE_DIGIT = 50.0;
+const DEVIATION_RANGE_DIGIT = 35.0;
+const RANDOM_FREQUENCY_MIN_DIGIT = 7.0;
+const RANDOM_FREQUENCY_RANGE_DIGIT = 6.0;
+const RANDOM_DEVIATION_CHANCE_DIGIT = 0.2;
 
 function calculateBaseChances(selectedNumber, max, min) {
-    let higherChance, lowerChance;
+    let higherChanceDigit, lowerChanceDigit;
 
     if (selectedNumber === max || selectedNumber === 9) {
-        higherChance = 0;
-        lowerChance = MAX_PERCENTAGE;
+        higherChanceDigit = 0;
+        lowerChanceDigit = MAX_PERCENTAGE_DIGIT;
     } else if (selectedNumber === min || selectedNumber === 0) {
-        higherChance = MAX_PERCENTAGE;
-        lowerChance = 0;
+        higherChanceDigit = MAX_PERCENTAGE_DIGIT;
+        lowerChanceDigit = 0;
     } else {
-        higherChance = Math.min(((max - selectedNumber) / (max - min)) * 100, MAX_PERCENTAGE);
-        lowerChance = Math.min(((selectedNumber - min) / (max - min)) * 100, MAX_PERCENTAGE);
+        higherChanceDigit = Math.min(((max - selectedNumber) / (max - min)) * 100, MAX_PERCENTAGE_DIGIT);
+        lowerChanceDigit = Math.min(((selectedNumber - min) / (max - min)) * 100, MAX_PERCENTAGE_DIGIT);
     }
 
-    return { higherChance, lowerChance };
+    return { higherChanceDigit, lowerChanceDigit };
 }
 
-function applyRandomDeviation(higherChance, lowerChance, selectedNumber) {
-    if (Math.random() < RANDOM_DEVIATION_CHANCE && selectedNumber > 1 && selectedNumber < 9) {
+function applyRandomDeviation(higherChanceDigit, lowerChanceDigit, selectedNumber) {
+    if (Math.random() < RANDOM_DEVIATION_CHANCE_DIGIT && selectedNumber > 1 && selectedNumber < 9) {
         const increaseAmount = Math.random() * 10;
-        higherChance = Math.min(higherChance + increaseAmount, MAX_PERCENTAGE);
-        lowerChance = Math.max(lowerChance - increaseAmount, 0);
+        higherChanceDigit = Math.min(higherChanceDigit + increaseAmount, MAX_PERCENTAGE_DIGIT);
+        lowerChanceDigit = Math.max(lowerChanceDigit - increaseAmount, 0);
     }
-    return { higherChance, lowerChance };
+    return { higherChanceDigit, lowerChanceDigit };
 }
 
-function applyFrequencyDeviation(higherChance, lowerChance, selectedNumber) {
-    const deviationFrequency = deviationFrequencies[selectedNumber] || 1;
+function applyFrequencyDeviation(higherChanceDigit, lowerChanceDigit, selectedNumber) {
+    const deviationFrequencyDigit = deviationFrequenciesDigits[selectedNumber] || 1;
 
-    if (Math.random() < (deviationFrequency / 10)) {
-        const deviationAmount = DEVIATION_BASE + (Math.random() * DEVIATION_RANGE);
-        higherChance = deviationAmount;
-        lowerChance = MAX_PERCENTAGE - higherChance;
+    if (Math.random() < (deviationFrequencyDigit / 10)) {
+        const deviationAmountDigit = DEVIATION_BASE_DIGIT + (Math.random() * DEVIATION_RANGE_DIGIT);
+        higherChanceDigit = deviationAmountDigit;
+        lowerChanceDigit = MAX_PERCENTAGE_DIGIT - higherChanceDigit;
     }
 
-    higherChance = Math.min(higherChance, MAX_PERCENTAGE);
-    lowerChance = Math.max(lowerChance, 0);
+    higherChanceDigit = Math.min(higherChanceDigit, MAX_PERCENTAGE_DIGIT);
+    lowerChanceDigit = Math.max(lowerChanceDigit, 0);
 
-    return { higherChance, lowerChance };
+    return { higherChanceDigit, lowerChanceDigit };
 }
 
 function calculatePercentage(selectedNumber) {
     const max = Math.max(...numbers);
     const min = Math.min(...numbers);
 
-    let { higherChance, lowerChance } = calculateBaseChances(selectedNumber, max, min);
-    ({ higherChance, lowerChance } = applyRandomDeviation(higherChance, lowerChance, selectedNumber));
-    ({ higherChance, lowerChance } = applyFrequencyDeviation(higherChance, lowerChance, selectedNumber));
+    let { higherChanceDigit, lowerChanceDigit } = calculateBaseChances(selectedNumber, max, min);
+    ({ higherChanceDigit, lowerChanceDigit } = applyRandomDeviation(higherChanceDigit, lowerChanceDigit, selectedNumber));
+    ({ higherChanceDigit, lowerChanceDigit } = applyFrequencyDeviation(higherChanceDigit, lowerChanceDigit, selectedNumber));
 
-    const randomFrequency = Math.random() * RANDOM_FREQUENCY_RANGE + RANDOM_FREQUENCY_MIN;
-    const over = higherChance * randomFrequency;
-    const under = lowerChance * randomFrequency;
+    const randomFrequency = Math.random() * RANDOM_FREQUENCY_RANGE_DIGIT + RANDOM_FREQUENCY_MIN_DIGIT;
+    const over = higherChanceDigit * randomFrequency;
+    const under = lowerChanceDigit * randomFrequency;
 
     return {
-        higherChance,
-        lowerChance,
+        higherChanceDigit,
+        lowerChanceDigit,
         randomFrequency,
         over,
         under
@@ -92,5 +92,3 @@ function calculateChances(selectedNumber) {
     return { overChance, underChance };
 }
 
-// Export the function to calculate chances and use them in other modules
-export { calculateChances };
