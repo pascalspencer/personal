@@ -99,34 +99,43 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function determinePercentage(selectedNumber) {
-    let { higherChance, lowerChance } = determineBaseChances(selectedNumber);
-    ({ higherChance, lowerChance } = applyRandomDeviation(
-      higherChance,
-      lowerChance,
-      selectedNumber
-    ));
-    ({ higherChance, lowerChance } = applyGeneralDeviation(
-      higherChance,
-      lowerChance
-    ));
-
-    // Ensure bounds are respected
-    higherChance = Math.min(higherChance, MAX_PERCENTAGE);
-    lowerChance = Math.max(lowerChance, 0);
-
-    // Generate a random frequency between RANDOM_FREQUENCY_MIN and (RANDOM_FREQUENCY_MIN + RANDOM_FREQUENCY_RANGE)
-    const randomFrequency =
-      Math.random() * RANDOM_FREQUENCY_RANGE + RANDOM_FREQUENCY_MIN;
-
-    // Multiply the chosen percentage by the random frequency
-    const differs = higherChance * randomFrequency;
-    let matches = lowerChance * randomFrequency;
-
-    // Adjust match chance to be low most of the time
-    if (Math.random() >= MATCH_CHANCE_FREQUENCY) {
-      matches *= 0.1; // Reduce match chance significantly
-    }
-
+      let { higherChance, lowerChance } = determineBaseChances(selectedNumber);
+      ({ higherChance, lowerChance } = applyRandomDeviation(
+        higherChance,
+        lowerChance,
+        selectedNumber
+      ));
+      ({ higherChance, lowerChance } = applyGeneralDeviation(
+        higherChance,
+        lowerChance
+      ));
+    
+      // Ensure bounds are respected
+      higherChance = Math.min(higherChance, MAX_PERCENTAGE);
+      lowerChance = Math.max(lowerChance, 0);
+    
+      // Generate a random frequency between RANDOM_FREQUENCY_MIN and (RANDOM_FREQUENCY_MIN + RANDOM_FREQUENCY_RANGE)
+      const randomFrequency =
+        Math.random() * RANDOM_FREQUENCY_RANGE + RANDOM_FREQUENCY_MIN;
+    
+      // Multiply the chosen percentage by the random frequency
+      const differs = higherChance * randomFrequency;
+      let matches = lowerChance * randomFrequency;
+    
+      // Adjust match chance to be higher when deviation occurs
+      if (
+        Math.random() < RANDOM_DEVIATION_CHANCE &&
+        selectedNumber > Math.min(...numbers) &&
+        selectedNumber < Math.max(...numbers)
+      ) {
+        matches *= 2; // Increase match chance significantly during deviation
+      } else {
+        // Adjust match chance to be low most of the time
+        if (Math.random() >= MATCH_CHANCE_FREQUENCY) {
+          matches *= 0.1; // Reduce match chance significantly
+        }
+      }
+  
     return {
       higherChance,
       lowerChance,
