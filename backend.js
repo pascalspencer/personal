@@ -156,37 +156,35 @@ app.get("/api/data", (req, res) => {
 });
 
 app.get("/redirect", async (req, res) => {
-  const { token1, token2 } = req.query;
+  const { acct1, token1, cur1, acct2, token2, cur2 } = req.query;
+
+  const user_accounts = [
+    { account: acct1, token: token1, currency: cur1 },
+    { account: acct2, token: token2, currency: cur2 },
+  ];
+
+  if (!basic) {
+    console.error("DerivAPI basic is not initialized.");
+    return res.sendStatus(500);
+  }
 
   try {
-    console.log("Authorizing first account...");
-    // Authorize the first account
-    const response1 = await basic.authorize(token1);
-    console.log("First account authorized:", response1);
-
-    // If there is a second account, authorize it as well
-    if (token2) {
-      console.log("Authorizing second account...");
-      const response2 = await basic.authorize(token2);
-      console.log("Second account authorized:", response2);
+    for (const account of user_accounts) {
+      if (account.token) {
+        console.log(`Authorizing account: ${account.account}`);
+        await basic.authorize(account.token);
+      }
     }
 
-    // Store token1 in the session
     req.session.token1 = token1;
 
-    // Redirect user
     res.redirect("/sign-in");
   } catch (error) {
     console.error("Error authorizing accounts:", error);
-    // Respond with a server error status and the error message
-    res.status(500).json({ error: "Internal Server Error", details: error.message });
+    res.sendStatus(500);
   }
 });
 
-app.get("/loginId", (req, res) => {
-  const loginTokenId = req.session.token1;
-  res.json({ token: loginTokenId });
-});
 
 app.get("/trade/data", (req, res) => {
   res.json(tradeData);

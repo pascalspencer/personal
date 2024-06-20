@@ -372,9 +372,6 @@ document.addEventListener("DOMContentLoaded", function () {
     connection.onopen = async () => {
       try {
         api = new DerivAPI({ connection });
-        const response = await fetch("/loginId");
-        const data = await response.json();
-        const derivTokenID = data["token"];
 
         const buyContractRequest = {
           proposal: 1,
@@ -385,7 +382,6 @@ document.addEventListener("DOMContentLoaded", function () {
           duration: duration,
           duration_unit: "t",
           symbol: symbol,
-          loginid: derivTokenID,
         };
 
         const proposalResponse = await api.basic.proposal(buyContractRequest);
