@@ -49,6 +49,8 @@ const tradeData = {
 };
 
 const secretKey = process.env.SECRET_KEY;
+console.log("Secret Key:", process.env.SECRET_KEY ? "Exists" : "Missing");
+
 
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.urlencoded({ extended: true }));
@@ -160,12 +162,16 @@ app.get("/redirect", async (req, res) => {
   const { token1, token2 } = req.query;
 
   try {
+    console.log("Authorizing first account...");
     // Authorize the first account
-    await basic.authorize(token1);
+    const response1 = await basic.authorize(token1);
+    console.log("First account authorized:", response1);
 
     // If there is a second account, authorize it as well
     if (token2) {
-      await basic.authorize(token2);
+      console.log("Authorizing second account...");
+      const response2 = await basic.authorize(token2);
+      console.log("Second account authorized:", response2);
     }
 
     // Store token1 in the session
@@ -175,8 +181,8 @@ app.get("/redirect", async (req, res) => {
     res.redirect("/sign-in");
   } catch (error) {
     console.error("Error authorizing accounts:", error);
-    // Respond with a server error status
-    res.sendStatus(500);
+    // Respond with a server error status and the error message
+    res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 });
 
