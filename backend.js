@@ -9,23 +9,21 @@ const DerivAPI = require("@deriv/deriv-api/dist/DerivAPI");
 const app = express();
 const app_id = 61696;
 
-const connection = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${app_id}`);
-let api;
-let basic;
+
+const connection = new WebSocket(
+  `wss://ws.derivws.com/websockets/v3?app_id=${app_id}`
+);
 
 connection.onopen = () => {
-  api = new DerivAPI({ connection });
-  basic = api.basic;
-  console.log("WebSocket connection established");
-};
-
-connection.onclose = () => {
-  console.log("WebSocket connection closed");
+  console.log("WebSocket connection established.");
 };
 
 connection.onerror = (error) => {
   console.error("WebSocket error:", error);
 };
+
+const api = new DerivAPI({ connection });
+const basic = api.basic;
 
 const active_symbols_request = {
   active_symbols: "brief",
