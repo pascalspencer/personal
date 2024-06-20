@@ -9,11 +9,23 @@ const DerivAPI = require("@deriv/deriv-api/dist/DerivAPI");
 const app = express();
 const app_id = 61696;
 
-const connection = new WebSocket(
-  `wss://ws.derivws.com/websockets/v3?app_id=${app_id}`
-);
-const api = new DerivAPI({ connection });
-const basic = api.basic;
+const connection = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${app_id}`);
+let api;
+let basic;
+
+connection.onopen = () => {
+  api = new DerivAPI({ connection });
+  basic = api.basic;
+  console.log("WebSocket connection established");
+};
+
+connection.onclose = () => {
+  console.log("WebSocket connection closed");
+};
+
+connection.onerror = (error) => {
+  console.error("WebSocket error:", error);
+};
 
 const active_symbols_request = {
   active_symbols: "brief",
@@ -56,7 +68,9 @@ app.get("/", (req, res) => {
 
 const ping = () => {
   setInterval(() => {
-    basic.ping();
+    if (basic) {
+      basic.ping();
+    }
   }, 30000);
 };
 
@@ -119,6 +133,7 @@ app.post("/trade", (req, res) => {
       );
 
       if (client) {
+        req.session.authenticated = true;
         return res.sendFile(path.join(__dirname, "public", "trade.html"));
       } else {
         return res.status(401).send("Invalid username or password");
@@ -156,7 +171,7 @@ app.get("/redirect", async (req, res) => {
     // Store token1 in the session
     req.session.token1 = token1;
 
-    //Redirect user
+    // Redirect user
     res.redirect("/sign-in");
   } catch (error) {
     console.error("Error authorizing accounts:", error);
