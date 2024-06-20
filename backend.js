@@ -181,8 +181,8 @@ app.get("/redirect", async (req, res) => {
 });
 
 app.get("/loginId", (req, res) => {
-  const token1 = req.session.token1;
-  res.json({ token: token1 });
+  const loginTokenId = req.session.token1;
+  res.json({ token: loginTokenId });
 });
 
 app.get("/trade/data", (req, res) => {
