@@ -142,6 +142,19 @@ app.post("/trade", (req, res) => {
   });
 });
 
+app.get('/trade/instruments', (req, res) => {
+  const filePath = path.join(__dirname, 'public', 'trading_instruments.json');
+  fs.readFile(filePath, 'utf8', (err, data) => {
+    if (err) {
+      console.error('Error reading JSON file:', err);
+      res.status(500).json({ error: 'Internal server error' });
+      return;
+    }
+    res.json(JSON.parse(data));
+  });
+});
+
+
 app.get("/api/data", (req, res) => {
   getActiveSymbols()
     .then(() => {
