@@ -48,16 +48,13 @@ const tradeData = {
   digits: ["Matches/Differs", "Even/Odd", "Over/Under"],
 };
 
-const secretKey = process.env.SECRET_KEY;
-console.log("Secret Key:", process.env.SECRET_KEY ? "Exists" : "Missing");
-
 
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(
   session({
-    secret: secretKey,
+    secret: "zodiac_deriv",
     resave: false,
     saveUninitialized: true,
     cookie: { secure: true }, // Set to true if using HTTPS
