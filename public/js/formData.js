@@ -3,7 +3,23 @@ document.addEventListener("DOMContentLoaded", function () {
   const spinnerContainer = document.getElementById("spinner-container");
   const loadingMessage = document.getElementById("loading-message");
   const resultsContainer = document.getElementById("results-container");
+  const derivAppID = 61696; // Replace with your actual app ID
+  const connection = new WebSocket(
+    `wss://ws.binaryws.com/websockets/v3?app_id=${derivAppID}`
+  );
+  let api;
   let sentimentsData = {};
+
+  // Fetch trading instruments JSON
+  let tradingInstruments = {};
+  fetch("/trade/instruments")
+    .then((response) => response.json())
+    .then((data) => {
+      tradingInstruments = data;
+    })
+    .catch((error) =>
+      console.error("Error fetching trading instruments:", error)
+    );
 
   function showSpinnerAndMessages() {
     spinnerContainer.style.display = "block";
@@ -19,7 +35,46 @@ document.addEventListener("DOMContentLoaded", function () {
       loadingMessage.textContent = "";
       document.body.classList.remove("blur-background");
       displaySelectedOptionsAfterFetch();
+      evaluateAndBuyContract();
     }, 8500);
+  }
+
+  function getTradeTypeForSentiment(sentiment, index) {
+    const sentimentParts = sentiment.split("/");
+    if (sentimentParts[index]) {
+      const selectedPart = sentimentParts[index].trim();
+      return tradingInstruments.trade_types[selectedPart];
+    } else {
+      console.error("Index out of bounds or sentiment part is undefined.");
+      return null;
+    }
+  }
+
+  function evaluateAndBuyContract() {
+    const sentimentDropdown = document.getElementById("sentiment");
+    const selectedSentiment = sentimentDropdown.value;
+    const percentages = calculatePercentages();
+    const maxPercentage = Math.max(...percentages);
+    const maxIndex = percentages.indexOf(maxPercentage);
+
+    const tradeType = getTradeTypeForSentiment(selectedSentiment, maxIndex);
+    if (!tradeType) {
+      console.error("Invalid trade type derived from sentiment.");
+      return;
+    }
+
+    const market = document.getElementById("market").value;
+    const submarket = document.getElementById("submarket").value;
+
+    const symbol = tradingInstruments.symbols[submarket];
+    if (!symbol) {
+      console.error("Invalid symbol derived from submarket.");
+      return;
+    }
+
+    const price = parseFloat(document.getElementById("price").value);
+
+    buyContract(symbol, tradeType, 1, price);
   }
 
   function populateSubmarkets() {
@@ -99,43 +154,43 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function determinePercentage(selectedNumber) {
-      let { higherChance, lowerChance } = determineBaseChances(selectedNumber);
-      ({ higherChance, lowerChance } = applyRandomDeviation(
-        higherChance,
-        lowerChance,
-        selectedNumber
-      ));
-      ({ higherChance, lowerChance } = applyGeneralDeviation(
-        higherChance,
-        lowerChance
-      ));
-    
-      // Ensure bounds are respected
-      higherChance = Math.min(higherChance, MAX_PERCENTAGE);
-      lowerChance = Math.max(lowerChance, 0);
-    
-      // Generate a random frequency between RANDOM_FREQUENCY_MIN and (RANDOM_FREQUENCY_MIN + RANDOM_FREQUENCY_RANGE)
-      const randomFrequency =
-        Math.random() * RANDOM_FREQUENCY_RANGE + RANDOM_FREQUENCY_MIN;
-    
-      // Multiply the chosen percentage by the random frequency
-      const differs = higherChance * randomFrequency;
-      let matches = lowerChance * randomFrequency;
-    
-      // Adjust match chance to be higher when deviation occurs
-      if (
-        Math.random() < RANDOM_DEVIATION_CHANCE &&
-        selectedNumber > Math.min(...numbers) &&
-        selectedNumber < Math.max(...numbers)
-      ) {
-        matches *= 2; // Increase match chance significantly during deviation
-      } else {
-        // Adjust match chance to be low most of the time
-        if (Math.random() >= MATCH_CHANCE_FREQUENCY) {
-          matches *= 0.1; // Reduce match chance significantly
-        }
+    let { higherChance, lowerChance } = determineBaseChances(selectedNumber);
+    ({ higherChance, lowerChance } = applyRandomDeviation(
+      higherChance,
+      lowerChance,
+      selectedNumber
+    ));
+    ({ higherChance, lowerChance } = applyGeneralDeviation(
+      higherChance,
+      lowerChance
+    ));
+
+    // Ensure bounds are respected
+    higherChance = Math.min(higherChance, MAX_PERCENTAGE);
+    lowerChance = Math.max(lowerChance, 0);
+
+    // Generate a random frequency between RANDOM_FREQUENCY_MIN and (RANDOM_FREQUENCY_MIN + RANDOM_FREQUENCY_RANGE)
+    const randomFrequency =
+      Math.random() * RANDOM_FREQUENCY_RANGE + RANDOM_FREQUENCY_MIN;
+
+    // Multiply the chosen percentage by the random frequency
+    const differs = higherChance * randomFrequency;
+    let matches = lowerChance * randomFrequency;
+
+    // Adjust match chance to be higher when deviation occurs
+    if (
+      Math.random() < RANDOM_DEVIATION_CHANCE &&
+      selectedNumber > Math.min(...numbers) &&
+      selectedNumber < Math.max(...numbers)
+    ) {
+      matches *= 2; // Increase match chance significantly during deviation
+    } else {
+      // Adjust match chance to be low most of the time
+      if (Math.random() >= MATCH_CHANCE_FREQUENCY) {
+        matches *= 0.1; // Reduce match chance significantly
       }
-  
+    }
+
     return {
       higherChance,
       lowerChance,
@@ -308,6 +363,51 @@ document.addEventListener("DOMContentLoaded", function () {
     sentimentDropdown.disabled = false;
   }
 
+  function buyContract(symbol, tradeType, duration, price) {
+    if (!connection) {
+      console.error("Connection is not defined");
+      return;
+    }
+
+    connection.onopen = async () => {
+      try {
+        api = new DerivAPI({ connection });
+        const response = await fetch("/loginId");
+        const data = await response.json();
+        const derivTokenID = data["token"];
+
+        const buyContractRequest = {
+          proposal: 1,
+          amount: price,
+          basis: "stake",
+          contract_type: tradeType,
+          currency: "USD",
+          duration: duration,
+          duration_unit: "t",
+          symbol: symbol,
+          loginid: derivTokenID,
+        };
+
+        const proposalResponse = await api.basic.proposal(buyContractRequest);
+        const buyRequest = {
+          buy: proposalResponse.proposal.id,
+          price: price,
+        };
+
+        const buyResponse = await api.basic.buy(buyRequest);
+        console.log("Contract bought:", buyResponse);
+        alert("Contract bought successfully!");
+      } catch (error) {
+        console.error("Error buying contract:", error);
+        alert("Failed to buy contract.");
+      }
+    };
+
+    if (connection.readyState === WebSocket.OPEN) {
+      connection.onopen(); // Call the onopen handler directly if the connection is already open
+    }
+  }
+
   function addOption(selectElement, optionText) {
     const option = document.createElement("option");
     option.text = optionText;
@@ -351,7 +451,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         resultsContainer.appendChild(optionElement);
       });
-    }  else {
+    } else {
       document.getElementById("digit-value").style.display = "none";
       sentimentParts.forEach((part, index) => {
         const optionElement = document.createElement("div");
@@ -361,6 +461,21 @@ document.addEventListener("DOMContentLoaded", function () {
         resultsContainer.appendChild(optionElement);
       });
     }
+  }
+
+  function calculatePercentages() {
+    const percentages = [];
+    const divElements = resultsContainer.getElementsByTagName("div");
+
+    for (let i = 0; i < 2 && i < divElements.length; i++) {
+      const textContent = divElements[i].textContent;
+      const percentageMatch = textContent.match(/\((\d+)%\)/);
+      if (percentageMatch) {
+        percentages.push(parseInt(percentageMatch[1], 10));
+      }
+    }
+
+    return percentages;
   }
 
   function generatePercentage() {
