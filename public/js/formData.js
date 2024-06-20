@@ -208,8 +208,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const totalChance = matches + differs;
 
     // Determine matchesChance and differsChance percentages
-    const matchesChance = ((matches / totalChance) * 97).toFixed(2);
-    const differsChance = ((differs / totalChance) * 97).toFixed(2);
+    const matchesChance = Math.floor((matches / totalChance) * 97);
+    const differsChance = Math.floor((differs / totalChance) * 97);
 
     return { matchesChance, differsChance };
   }
@@ -336,8 +336,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const { over, under } = calculatePercentageDigit(selectedNumber);
 
     const totalChanceDigit = over + under;
-    const overChance = ((over / totalChanceDigit) * 97).toFixed(2);
-    const underChance = ((under / totalChanceDigit) * 97).toFixed(2);
+    const overChance = Math.floor((over / totalChanceDigit) * 97);
+    const underChance = Math.floor((under / totalChanceDigit) * 97);
 
     return { overChance, underChance };
   }
