@@ -1,3 +1,7 @@
+import DerivAPIBasic from 'https://cdn.skypack.dev/@deriv/deriv-api/dist/DerivAPIBasic';
+import WebSocket from 'ws';
+
+
 document.addEventListener("DOMContentLoaded", function () {
   const dataForm = document.getElementById("trade-form");
   const spinnerContainer = document.getElementById("spinner-container");
@@ -363,16 +367,44 @@ document.addEventListener("DOMContentLoaded", function () {
     sentimentDropdown.disabled = false;
   }
 
-  function buyContract(symbol, tradeType, duration, price) {
-    if (!connection) {
-      console.error("Connection is not defined");
-      return;
+  connection.onopen = function () {
+    api = new DerivAPIBasic({ connection });
+
+    // Call ping once the connection is open
+    ping();
+
+    console.log("WebSocket connection established.");
+
+    // Fetch sentiments data once the WebSocket connection is open
+    fetch("/api/data")
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        sentimentsData = data;
+        populateSentimentDropdown();
+      })
+      .catch((error) => {
+        console.error("There was a problem with the fetch operation:", error);
+      });
+  };
+
+  connection.onerror = function (error) {
+    console.error("WebSocket error:", error);
+  };
+
+  function ping() {
+    if (api) {
+      setInterval(() => {
+        api.ping();
+      }, 30000);
     }
+  }
 
-    connection.onopen = async () => {
-      try {
-        api = new DerivAPI({ connection });
-
+  function buyContract(symbol, tradeType, duration, price) {
         const buyContractRequest = {
           proposal: 1,
           amount: price,
@@ -382,27 +414,39 @@ document.addEventListener("DOMContentLoaded", function () {
           duration: duration,
           duration_unit: "t",
           symbol: symbol,
-        };
+        };        
 
-        const proposalResponse = await api.basic.proposal(buyContractRequest);
-        const buyRequest = {
-          buy: proposalResponse.proposal.id,
-          price: price,
-        };
-
-        const buyResponse = await api.basic.buy(buyRequest);
-        console.log("Contract bought:", buyResponse);
-        alert("Contract bought successfully!");
-      } catch (error) {
-        console.error("Error buying contract:", error);
-        alert("Failed to buy contract.");
-      }
+        async function executeBuyContract() {
+          try {
+            const proposalResponse = await api.proposal(buyContractRequest);
+            const buyRequest = {
+              buy: proposalResponse.proposal.id,
+              price: price,
+            };
+      
+            const buyResponse = await api.buy(buyRequest);
+            console.log("Contract bought:", buyResponse);
+            alert("Contract bought successfully!");
+          } catch (error) {
+            console.error("Error buying contract:", error);
+            alert("Error buying contract. Please try again.");
+          }
+        }
+        executeBuyContract();
+      
     };
 
     if (connection.readyState === WebSocket.OPEN) {
       connection.onopen(); // Call the onopen handler directly if the connection is already open
+    } 
+    else {
+      connection.onopen = function () {
+        api = new DerivAPIBasic({ connection });
+        ping(); // Ensure ping is called once the connection is open
+        console.log("WebSocket connection established.");
+      };
     }
-  }
+  
 
   function addOption(selectElement, optionText) {
     const option = document.createElement("option");
