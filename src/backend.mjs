@@ -3,7 +3,6 @@ import session from "express-session";
 import path from "path";
 import dotenv from "dotenv";
 import fs from "fs";
-import  WebSocket  from "ws";
 import DerivAPI from "@deriv/deriv-api/dist/DerivAPI.js";
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
