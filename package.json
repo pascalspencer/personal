@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "src/backend.js",
   "scripts": {
-    "start": "node src/backend.js"
+    "start": "node src/backend.js",
+    "vercel-build": "babel src --out-dir dist"
   },
   "dependencies": {
     "@deriv/deriv-api": "^1.0.15",
