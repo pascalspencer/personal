@@ -1,5 +1,0 @@
-{
-    "imports": {
-      "ws": "./node_modules/ws/index.js"
-    }
-}

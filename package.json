@@ -4,7 +4,7 @@
   "main": "src/backend.mjs",
   "type": "module",
   "scripts": {
-    "start": "node -r import-map/register src/backend.mjs"
+    "start": "node src/backend.mjs"
   },
   "dependencies": {
     "@deriv/deriv-api": "^1.0.15",
