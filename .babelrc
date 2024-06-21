@@ -3,13 +3,14 @@
       [
         "@babel/preset-env",
         {
-          "targets": {
-            "esmodules": true  // Target ES modules only
-          },
           "useBuiltIns": "entry",
           "corejs": "3.22"
         }
       ]
-    ]
+    ],
+    "plugins": [
+      ["@babel/plugin-transform-modules-commonjs", { "strictMode": false }]
+    ],
+    "ignore": ["node_modules"]
   }
   
