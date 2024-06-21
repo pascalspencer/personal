@@ -182,7 +182,7 @@ app.get("/redirect", async (req, res) => {
   try {
     for (const account of user_accounts) {
       if (account.token) {
-        console.log(`Authorizing account: ${account.account}`);
+        console.log("Authorizing account ...");
         await basic.authorize(account.token);
       }
     }
