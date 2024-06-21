@@ -4,11 +4,10 @@
         "@babel/preset-env",
         {
           "targets": {
-            "browsers": ["last 2 versions"]
+            "node": "current"
           }
         }
       ]
-    ],
-    "ignore": ["src/backed.js"]
+    ]
   }
   

@@ -4,8 +4,7 @@
   "main": "src/backend.js",
   "type": "module",
   "scripts": {
-    "build": "babel src --out-dir dist",
-    "start": "node dist/backend.js"
+    "start": "src/backend.js"
   },
   "dependencies": {
     "@deriv/deriv-api": "^1.0.15",
