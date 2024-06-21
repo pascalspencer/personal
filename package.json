@@ -1,10 +1,10 @@
 {
   "name": "zodiacalgotrade",
   "version": "1.0.0",
-  "main": "src/backend.js",
+  "main": "src/backend.mjs",
   "type": "module",
   "scripts": {
-    "start": "src/backend.js",
+    "start": "src/backend.mjs",
     "vercel-build": "babel src --out-dir dist"
   },
   "dependencies": {
