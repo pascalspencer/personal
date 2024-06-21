@@ -374,7 +374,7 @@ document.addEventListener("DOMContentLoaded", function () {
     console.log("WebSocket connection established.");
 
     // Fetch sentiments data once the WebSocket connection is open
-    fetch("/api/data")
+    fetch("/trade/data")
       .then((response) => {
         if (!response.ok) {
           throw new Error("Network response was not ok");
@@ -383,7 +383,7 @@ document.addEventListener("DOMContentLoaded", function () {
       })
       .then((data) => {
         sentimentsData = data;
-        populateSentimentDropdown();
+        populateSentiments();
       })
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
@@ -403,36 +403,47 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function buyContract(symbol, tradeType, duration, price) {
-        const buyContractRequest = {
-          proposal: 1,
-          amount: price,
-          basis: "stake",
-          contract_type: tradeType,
-          currency: "USD",
-          duration: duration,
-          duration_unit: "t",
-          symbol: symbol,
-        };        
-
-        async function executeBuyContract() {
-          try {
-            const proposalResponse = await api.proposal(buyContractRequest);
-            const buyRequest = {
-              buy: proposalResponse.proposal.id,
-              price: price,
-            };
-      
-            const buyResponse = await api.buy(buyRequest);
-            console.log("Contract bought:", buyResponse);
-            alert("Contract bought successfully!");
-          } catch (error) {
-            console.error("Error buying contract:", error);
-            alert("Error buying contract. Please try again.");
-          }
-        }
-        executeBuyContract();
-      
+    // Define the request object for the contract proposal
+    const buyContractRequest = {
+      proposal: 1,
+      amount: price,
+      basis: "stake",
+      contract_type: tradeType,
+      currency: "USD",
+      duration: duration,
+      duration_unit: "t",
+      symbol: symbol,
     };
+  
+    // Asynchronous function to execute the buy contract process
+    async function executeBuyContract() {
+      try {
+        // Send proposal request to the API and await the response
+        const proposalResponse = await api.proposal(buyContractRequest);
+  
+        // Define the request object to buy the contract using the proposal ID
+        const buyRequest = {
+          buy: proposalResponse.proposal.id,
+          price: price,
+        };
+  
+        // Send buy request to the API and await the response
+        const buyResponse = await api.buy(buyRequest);
+  
+        // Log the successful response and notify the user
+        console.log("Contract bought:", buyResponse);
+        alert("Contract bought successfully!");
+      } catch (error) {
+        // Log any errors and notify the user
+        console.error("Error buying contract:", error);
+        alert("Error buying contract. Please try again.");
+      }
+    }
+  
+    // Execute the buy contract process
+    executeBuyContract();
+  }
+  
 
     if (connection.readyState === WebSocket.OPEN) {
       connection.onopen(); // Call the onopen handler directly if the connection is already open
