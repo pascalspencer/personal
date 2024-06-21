@@ -5,6 +5,8 @@ import dotenv from "dotenv";
 import fs from "fs";
 import { WebSocket } from "ws";
 import DerivAPI from "@deriv/deriv-api/dist/DerivAPI.js";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
 dotenv.config();
 
@@ -12,6 +14,9 @@ dotenv.config();
 const app = express();
 const app_id = 61696;
 
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const connection = new WebSocket(
   `wss://ws.derivws.com/websockets/v3?app_id=${app_id}`
@@ -211,4 +216,4 @@ app.listen(PORT, () => {
   ping(); // Start the pinging process to keep the WebSocket connection alive
 });
 
-module.exports = app;
+export default app;
