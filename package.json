@@ -4,8 +4,7 @@
   "main": "src/backend.mjs",
   "type": "module",
   "scripts": {
-    "start": "src/backend.mjs",
-    "vercel-build": "babel src --out-dir dist"
+    "start": "src/backend.mjs"
   },
   "dependencies": {
     "@deriv/deriv-api": "^1.0.15",
