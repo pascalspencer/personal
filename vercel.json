@@ -2,14 +2,14 @@
     "version": 2,
     "builds": [
       {
-        "src": "src/backend.js",
+        "src": "src/backend.cjs",
         "use": "@now/node"
       }
     ],
     "routes": [
       {
         "src": "/(.*)",
-        "dest": "src/backend.js"
+        "dest": "src/backend.cjs"
       }
     ]
   }
