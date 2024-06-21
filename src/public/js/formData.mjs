@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", function () {
   );
   let api;
   let sentimentsData = {};
+  let submarkets = {}
 
   // Fetch trading instruments JSON
   let tradingInstruments = {};
@@ -93,7 +94,7 @@ document.addEventListener("DOMContentLoaded", function () {
       })
       .then((data) => {
         // Ensure data[market] exists and is an array
-        const submarkets = data[market] || [];
+        submarkets = data[market] || [];
 
         // Populate submarket dropdown
         submarkets.forEach((submarket) => {
@@ -388,6 +389,19 @@ document.addEventListener("DOMContentLoaded", function () {
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
       });
+
+      fetch("/api/data")
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        // Ensure data exists and is an array
+      submarkets = data;
+      populateSubmarkets();
+      })
   };
 
   connection.onerror = function (error) {
