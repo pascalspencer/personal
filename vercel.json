@@ -1,19 +1,19 @@
 {
-    "version": 2,
-    "builds": [
-      {
-        "src": "src/backend.cjs",
-        "use": "@now/node"
-      },
-      {
-        "src": "package.json",
-        "use": "@vercel/static-build"
-      }
-    ],
-    "routes": [
-      {
-        "src": "/(.*)",
-        "dest": "src/backend.cjs"
-      }
-    ]
-  }
+  "version": 2,
+  "builds": [
+    {
+      "src": "src/backend.cjs",
+      "use": "@now/node"
+    },
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "src/backend.cjs"
+    }
+  ]
+}

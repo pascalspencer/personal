@@ -4,7 +4,8 @@
   "main": "src/backend.cjs",
   "type": "module",
   "scripts": {
-    "start": "src/backend.cjs"
+    "start": "src/backend.cjs",
+    "vercel-build": "babel src --out-dir dist"
   },
   "dependencies": {
     "@deriv/deriv-api": "^1.0.15",
