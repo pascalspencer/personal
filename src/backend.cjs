@@ -1,10 +1,13 @@
-const express = require("express");
-const session = require("express-session");
-const path = require("path");
-require("dotenv").config();
-const fs = require("fs");
-const WebSocket = require("ws");
-const DerivAPI = require("@deriv/deriv-api/dist/DerivAPI");
+import express from "express";
+import session from "express-session";
+import path from "path";
+import dotenv from "dotenv";
+import fs from "fs";
+import { WebSocket } from "ws";
+import DerivAPI from "@deriv/deriv-api/dist/DerivAPI";
+
+dotenv.config();
+
 
 const app = express();
 const app_id = 61696;
