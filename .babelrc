@@ -9,6 +9,6 @@
         }
       ]
     ],
-    "ignore": ["src/public/js/formData.js"]
+    "ignore": ["src/public/js/formData.mjs"]
   }
   

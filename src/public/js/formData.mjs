@@ -1,5 +1,5 @@
 import DerivAPIBasic from 'https://cdn.skypack.dev/@deriv/deriv-api/dist/DerivAPIBasic';
-import WebSocket from '../../ws/index.js';
+import WebSocket from 'ws';
 
 document.addEventListener("DOMContentLoaded", function () {
   const dataForm = document.getElementById("trade-form");
