@@ -6,7 +6,7 @@
       "use": "@vercel/node"
     },
     {
-      "src": "src/public/js/formData.js",
+      "src": "package.json",
       "use": "@vercel/static-build"
     }
   ],
