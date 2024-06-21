@@ -1,15 +1,19 @@
 {
-    "version": 2,
-    "builds": [
-      {
-        "src": "backend.js",
-        "use": "@vercel/node"
-      }
-    ],
-    "routes": [
-      {
-        "src": "/(.*)",
-        "dest": "backend.js"
-      }
-    ]
-  }
+  "version": 2,
+  "builds": [
+    {
+      "src": "src/backend.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "src/public/js/formData.js",
+      "use": "@vercel/static-build"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/dist/backend.js"
+    }
+  ]
+}

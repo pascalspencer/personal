@@ -1,10 +1,11 @@
 {
   "name": "zodiacalgotrade",
   "version": "1.0.0",
-  "main": "backend.js",
+  "main": "src/backend.js",
   "type": "module",
   "scripts": {
-    "start": "node backend.js"
+    "build": "babel src --out-dir dist",
+    "start": "node dist/backend.js"
   },
   "dependencies": {
     "@deriv/deriv-api": "^1.0.15",
