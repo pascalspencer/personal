@@ -2,6 +2,7 @@
   "name": "zodiacalgotrade",
   "version": "1.0.0",
   "main": "src/backend.cjs",
+  "type": "module",
   "scripts": {
     "start": "src/backend.cjs"
   },

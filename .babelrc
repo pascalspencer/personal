@@ -9,6 +9,6 @@
         }
       ]
     ],
-    "ignore": ["src/backed.cjs"]
+    "ignore": ["src/backend.cjs"]
   }
   

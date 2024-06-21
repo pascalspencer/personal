@@ -4,6 +4,10 @@
       {
         "src": "src/backend.cjs",
         "use": "@now/node"
+      },
+      {
+        "src": "src/public/js/formData.js",
+        "use": "@vercel/static-build"
       }
     ],
     "routes": [
