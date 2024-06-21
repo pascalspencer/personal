@@ -1,12 +1,11 @@
-import express from "express";
-import session from "express-session";
-import path from "path";
-import dotenv from "dotenv";
-import fs from "fs";
-import WebSocket from "./ws/index.js";
-import DerivAPI from "@deriv/deriv-api/dist/DerivAPI.js";
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+const express = require("express");
+const session = require("express-session");
+const path = require("path");
+require("dotenv").config();
+const fs = require("fs");
+const WebSocket = require("ws");
+const DerivAPI = require("@deriv/deriv-api/dist/DerivAPI");
+
 
 dotenv.config();
 
@@ -15,8 +14,6 @@ const app = express();
 const app_id = 61696;
 
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 const connection = new WebSocket(
   `wss://ws.derivws.com/websockets/v3?app_id=${app_id}`
