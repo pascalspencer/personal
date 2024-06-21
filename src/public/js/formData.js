@@ -1,5 +1,5 @@
 import DerivAPIBasic from 'https://cdn.skypack.dev/@deriv/deriv-api/dist/DerivAPIBasic';
-import WebSocket from 'ws';
+import { WebSocket } from 'ws';
 
 
 document.addEventListener("DOMContentLoaded", function () {
