@@ -4,10 +4,6 @@
     {
       "src": "src/backend.mjs",
       "use": "@now/node"
-    },
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build"
     }
   ],
   "routes": [
