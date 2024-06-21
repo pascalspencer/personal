@@ -7,8 +7,6 @@ const WebSocket = require("ws");
 const DerivAPI = require("@deriv/deriv-api/dist/DerivAPI");
 
 
-dotenv.config();
-
 
 const app = express();
 const app_id = 61696;
