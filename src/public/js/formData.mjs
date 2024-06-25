@@ -430,8 +430,10 @@ document.addEventListener("DOMContentLoaded", function () {
     };
   
     // Asynchronous function to execute the buy contract process
-    async function executeBuyContract() {
+    
+    async function executeBuyContract(api) {
       try {
+        
         // Send proposal request to the API and await the response
         const proposalResponse = await api.proposal(buyContractRequest);
   
@@ -455,7 +457,10 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   
     // Execute the buy contract process
-    executeBuyContract();
+    connection.onopen = function () {
+      api = new DerivAPIBasic({ connection });
+        executeBuyContract(api);
+    };
   }
   
 
