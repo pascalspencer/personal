@@ -183,20 +183,42 @@ app.get("/redirect", async (req, res) => {
   }
 
   try {
+
+    const loginIds = [];
+    let currentLoginId = null;
+
     for (const account of user_accounts) {
       if (account.token) {
         console.log("Authorizing account ...");
-        await basic.authorize(account.token);
+        const response = await basic.authorize(account.token);
+        if (response && response.account_list) {
+          response.account_list.forEach(acc => {
+            loginIds.push(acc.loginid);
+            console.log(loginIds)
+          });
+        }
+        if (response && response.loginid) {
+          currentLoginId = response.loginid;
+          console.log(currentLoginId)
+        }
       }
     }
 
-    req.session.token1 = token1;
+    // Store the login IDs in the session
+    req.session.loginIds = loginIds;
+    req.session.currentLoginId = currentLoginId;
 
     res.redirect("/sign-in");
   } catch (error) {
     console.error("Error authorizing accounts:", error);
     res.sendStatus(500);
   }
+});
+
+app.get("/loginId", (req, res) => {
+  const currentLoginId = req.session.currentLoginId;
+  console.log(currentLoginId)
+  res.json(currentLoginId);
 });
 
 

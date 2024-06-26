@@ -13,7 +13,8 @@ document.addEventListener("DOMContentLoaded", function () {
   );
   let api;
   let sentimentsData = {};
-  let submarkets = {}
+  let submarkets = {};
+  let currentLoginId = {};
 
   // Fetch trading instruments JSON
   let tradingInstruments = {};
@@ -187,73 +188,71 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function buyContract(symbol, tradeType, duration, price) {
-    // Define the request object for the contract proposal
-    const buyContractRequest = {
-      proposal: 1,
-      amount: price,
-      basis: "stake",
-      contract_type: tradeType,
-      currency: "USD",
-      duration: duration,
-      duration_unit: "t",
-      symbol: symbol,
-    };
+    fetch("/loginId")
+      .then(response => response.json())
+      .then(data => {
+        const currentLoginId = data;
   
-    // Initialize the WebSocket connection and Deriv API instance
-  
-    connection.onopen = function () {
-      const api = new DerivAPIBasic({ connection });
-  
-      // Send proposal request to the API
-      api.proposal(buyContractRequest, function (proposalResponse) {
-        if (proposalResponse.error) {
-          console.error("Error in proposal response:", proposalResponse.error);
-          alert("Error in proposal response. Please try again.");
-          return;
-        }
-  
-        // Define the request object to buy the contract using the proposal ID
-        const buyRequest = {
-          buy: proposalResponse.proposal.id,
-          price: price,
+        // Define the request object for the contract proposal
+        const buyContractRequest = {
+          proposal: 1,
+          amount: price,
+          basis: "stake",
+          contract_type: tradeType,
+          currency: "USD",
+          duration: duration,
+          duration_unit: "t",
+          symbol: symbol,
+          loginid: currentLoginId
         };
   
-        // Send buy request to the API
-        api.buy(buyRequest, function (buyResponse) {
-          if (buyResponse.error) {
-            console.error("Error buying contract:", buyResponse.error);
-            alert("Error buying contract. Please try again.");
-          } else {
-            // Log the successful response and notify the user
-            console.log("Contract bought:", buyResponse);
-            alert("Contract bought successfully!");
-          }
-        });
+        // Initialize the WebSocket connection and Deriv API instance
+        connection.onopen = function () {
+          const api = new DerivAPIBasic({ connection });
+  
+          // Send proposal request to the API
+          api.proposal(buyContractRequest).then(proposalResponse => {
+            if (proposalResponse.error) {
+              console.error("Error in proposal response:", proposalResponse.error);
+              alert("Error in proposal response. Please try again.");
+              return;
+            }
+  
+            // Define the request object to buy the contract using the proposal ID
+            const buyRequest = {
+              buy: proposalResponse.proposal.id,
+              price: price
+            };
+  
+            // Send buy request to the API
+            api.buy(buyRequest).then(buyResponse => {
+              if (buyResponse.error) {
+                console.error("Error buying contract:", buyResponse.error);
+                alert("Error buying contract. Please try again.");
+              } else {
+                // Log the successful response and notify the user
+                console.log("Contract bought:", buyResponse);
+                alert("Contract bought successfully!");
+              }
+            });
+          });
+        };
+  
+        connection.onerror = function (error) {
+          console.error("WebSocket error:", error);
+          alert("WebSocket error. Please try again.");
+        };
+  
+        connection.onclose = function () {
+          console.log("WebSocket connection closed.");
+        };
+      })
+      .catch(error => {
+        console.error("Error fetching login ID:", error);
+        alert("Error fetching login ID. Please try again.");
       });
-    };
-  
-    connection.onerror = function (error) {
-      console.error("WebSocket error:", error);
-      alert("WebSocket error. Please try again.");
-    };
-  
-    connection.onclose = function () {
-      console.log("WebSocket connection closed.");
-    };
   }
   
-    
-
-    if (connection.readyState === WebSocket.OPEN) {
-      connection.onopen(); // Call the onopen handler directly if the connection is already open
-    } 
-    else {
-      connection.onopen = function () {
-        api = new DerivAPIBasic({ connection });
-        ping(); // Ensure ping is called once the connection is open
-        console.log("WebSocket connection established.");
-      };
-    }
   
 
   function addOption(selectElement, optionText) {
