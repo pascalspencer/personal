@@ -186,7 +186,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  async function buyContract(symbol, tradeType, duration, price) {
+  function buyContract(symbol, tradeType, duration, price) {
     // Define the request object for the contract proposal
     const buyContractRequest = {
       proposal: 1,
@@ -199,11 +199,18 @@ document.addEventListener("DOMContentLoaded", function () {
       symbol: symbol,
     };
   
+    // Initialize the WebSocket connection and Deriv API instance
   
-    connection.onopen = async function () {
-      try {
-        // Send proposal request to the API and await the response
-        const proposalResponse = await api.proposal(buyContractRequest);
+    connection.onopen = function () {
+      const api = new DerivAPIBasic({ connection });
+  
+      // Send proposal request to the API
+      api.proposal(buyContractRequest, function (proposalResponse) {
+        if (proposalResponse.error) {
+          console.error("Error in proposal response:", proposalResponse.error);
+          alert("Error in proposal response. Please try again.");
+          return;
+        }
   
         // Define the request object to buy the contract using the proposal ID
         const buyRequest = {
@@ -211,19 +218,30 @@ document.addEventListener("DOMContentLoaded", function () {
           price: price,
         };
   
-        // Send buy request to the API and await the response
-        const buyResponse = await api.buy(buyRequest);
+        // Send buy request to the API
+        api.buy(buyRequest, function (buyResponse) {
+          if (buyResponse.error) {
+            console.error("Error buying contract:", buyResponse.error);
+            alert("Error buying contract. Please try again.");
+          } else {
+            // Log the successful response and notify the user
+            console.log("Contract bought:", buyResponse);
+            alert("Contract bought successfully!");
+          }
+        });
+      });
+    };
   
-        // Log the successful response and notify the user
-        console.log("Contract bought:", buyResponse);
-        alert("Contract bought successfully!");
-      } catch (error) {
-        // Log any errors and notify the user
-        console.error("Error buying contract:", error);
-        alert("Error buying contract. Please try again.");
-      }
+    connection.onerror = function (error) {
+      console.error("WebSocket error:", error);
+      alert("WebSocket error. Please try again.");
+    };
+  
+    connection.onclose = function () {
+      console.log("WebSocket connection closed.");
     };
   }
+  
     
 
     if (connection.readyState === WebSocket.OPEN) {
