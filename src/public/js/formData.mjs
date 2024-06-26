@@ -14,7 +14,6 @@ document.addEventListener("DOMContentLoaded", function () {
   let api;
   let sentimentsData = {};
   let submarkets = {};
-  let currentLoginId = {};
 
   // Fetch trading instruments JSON
   let tradingInstruments = {};
@@ -190,8 +189,9 @@ document.addEventListener("DOMContentLoaded", function () {
   function buyContract(symbol, tradeType, duration, price) {
     fetch("/loginId")
       .then(response => response.json())
-      .then(data => {
-        currentLoginId = data;
+      .then((currentLoginId) => {
+        const currentUserLoginId = currentLoginId;
+        console.log("Current Login ID:", currentUserLoginId);
   
         // Define the request object for the contract proposal
         const buyContractRequest = {
@@ -203,7 +203,7 @@ document.addEventListener("DOMContentLoaded", function () {
           duration: duration,
           duration_unit: "t",
           symbol: symbol,
-          loginid: currentLoginId
+          loginid: currentUserLoginId
         };
   
         // Send proposal request to the API
