@@ -191,7 +191,7 @@ document.addEventListener("DOMContentLoaded", function () {
     fetch("/loginId")
       .then(response => response.json())
       .then(data => {
-        const currentLoginId = data;
+        currentLoginId = data;
   
         // Define the request object for the contract proposal
         const buyContractRequest = {
@@ -206,47 +206,34 @@ document.addEventListener("DOMContentLoaded", function () {
           loginid: currentLoginId
         };
   
-        // Initialize the WebSocket connection and Deriv API instance
-        connection.onopen = function () {
-          const api = new DerivAPIBasic({ connection });
-  
-          // Send proposal request to the API
-          api.proposal(buyContractRequest).then(proposalResponse => {
-            if (proposalResponse.error) {
-              console.error("Error in proposal response:", proposalResponse.error);
-              alert("Error in proposal response. Please try again.");
-              return;
+        // Send proposal request to the API
+        api.proposal(buyContractRequest).then(proposalResponse => {
+          if (proposalResponse.error) {
+            console.error("Error in proposal response:", proposalResponse.error);
+            alert("Error in proposal response. Please try again.");
+            return;
+          }
+
+          // Define the request object to buy the contract using the proposal ID
+          const buyRequest = {
+            buy: proposalResponse.proposal.id,
+            price: price
+          };
+
+          // Send buy request to the API
+          api.buy(buyRequest).then(buyResponse => {
+            if (buyResponse.error) {
+              console.error("Error buying contract:", buyResponse.error);
+              alert("Error buying contract. Please try again.");
+            } else {
+              // Log the successful response and notify the user
+              console.log("Contract bought:", buyResponse);
+              alert("Contract bought successfully!");
             }
-  
-            // Define the request object to buy the contract using the proposal ID
-            const buyRequest = {
-              buy: proposalResponse.proposal.id,
-              price: price
-            };
-  
-            // Send buy request to the API
-            api.buy(buyRequest).then(buyResponse => {
-              if (buyResponse.error) {
-                console.error("Error buying contract:", buyResponse.error);
-                alert("Error buying contract. Please try again.");
-              } else {
-                // Log the successful response and notify the user
-                console.log("Contract bought:", buyResponse);
-                alert("Contract bought successfully!");
-              }
-            });
           });
-        };
-  
-        connection.onerror = function (error) {
-          console.error("WebSocket error:", error);
-          alert("WebSocket error. Please try again.");
-        };
-  
-        connection.onclose = function () {
-          console.log("WebSocket connection closed.");
-        };
+        });
       })
+  
       .catch(error => {
         console.error("Error fetching login ID:", error);
         alert("Error fetching login ID. Please try again.");

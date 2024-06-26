@@ -189,18 +189,28 @@ app.get("/redirect", async (req, res) => {
 
     for (const account of user_accounts) {
       if (account.token) {
-        console.log("Authorizing account ...");
-        const response = await basic.authorize(account.token);
-        if (response && response.account_list) {
-          response.account_list.forEach(acc => {
-            loginIds.push(acc.loginid);
-            console.log(loginIds)
-          });
+        console.log(`Authorizing account with token: ${account.token}`);
+        try {
+          const response = await basic.authorize(account.token);
+          console.log('Authorization response:', response);
+
+          if (response && response.account_list) {
+            response.account_list.forEach(acc => {
+              loginIds.push(acc.loginid);
+              console.log(`Added login ID: ${acc.loginid}`);
+            });
+            console.log('Current login IDs:', loginIds);
+          }
+
+          if (response && response.loginid) {
+            currentLoginId = response.loginid;
+            console.log(`Current login ID set to: ${currentLoginId}`);
+          }
+        } catch (error) {
+          console.error('Error authorizing account:', error);
         }
-        if (response && response.loginid) {
-          currentLoginId = response.loginid;
-          console.log(currentLoginId)
-        }
+      } else {
+        console.log('No token found for this account.');
       }
     }
 
@@ -208,6 +218,8 @@ app.get("/redirect", async (req, res) => {
     req.session.loginIds = loginIds;
     req.session.currentLoginId = currentLoginId;
 
+    console.log('Session login IDs:', req.session.loginIds);
+    console.log('Session current login ID:', req.session.currentLoginId);
     res.redirect("/sign-in");
   } catch (error) {
     console.error("Error authorizing accounts:", error);
