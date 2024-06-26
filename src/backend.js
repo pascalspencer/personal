@@ -1,5 +1,5 @@
 const express = require("express");
-const session = require("express-session");
+const NodeCache = require("node-cache");
 const path = require("path");
 require("dotenv").config();
 const fs = require("fs");
@@ -11,6 +11,7 @@ const DerivAPI = require("@deriv/deriv-api/dist/DerivAPI");
 const app = express();
 const app_id = 61696;
 
+const cache = new NodeCache();
 
 
 const connection = new WebSocket(
@@ -214,12 +215,10 @@ app.get("/redirect", async (req, res) => {
       }
     }
 
-    // Store the login IDs in the session
-    req.session.loginIds = loginIds;
-    req.session.currentLoginId = currentLoginId;
+    // Store the login IDs in the cache
+    cache.set("loginIds", loginIds, 3600); // Store for 1 hour
+    cache.set("currentLoginId", currentLoginId, 3600); // Store for 1 hour
 
-    console.log('Session login IDs:', req.session.loginIds);
-    console.log('Session current login ID:', req.session.currentLoginId);
     res.redirect("/sign-in");
   } catch (error) {
     console.error("Error authorizing accounts:", error);
@@ -228,7 +227,7 @@ app.get("/redirect", async (req, res) => {
 });
 
 app.get("/loginId", (req, res) => {
-  const currentLoginId = req.session.currentLoginId;
+  const currentLoginId = cache.get("currentLoginId");
   console.log(currentLoginId)
   res.json(currentLoginId);
 });

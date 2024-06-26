@@ -16,6 +16,7 @@
     "express-session": "^1.18.0",
     "import-maps": "^0.2.4",
     "mongodb": "6.7",
+    "node-cache": "^5.1.2",
     "ws": "^8.17.1"
   },
   "devDependencies": {
