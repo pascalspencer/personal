@@ -12,14 +12,14 @@ function calculateChances(selectedNumber) {
 
   // Deviation frequencies for specific numbers
   const deviationFrequenciesDigits = {
-    1: 2,
-    2: 3,
-    3: 4,
-    4: 5,
-    5: 5,
-    6: 4,
-    7: 3,
-    8: 2,
+    1: 1,
+    2: 2,
+    3: 3,
+    4: 4,
+    5: 4,
+    6: 3,
+    7: 2,
+    8: 1,
   };
 
   // Constants

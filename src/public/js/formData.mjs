@@ -199,8 +199,6 @@ document.addEventListener("DOMContentLoaded", function () {
       symbol: symbol,
     };
   
-    // Initialize the WebSocket connection and Deriv API instance
-    const api = new DerivAPIBasic({ connection });
   
     connection.onopen = async function () {
       try {
