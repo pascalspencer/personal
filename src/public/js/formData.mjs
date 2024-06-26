@@ -416,7 +416,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  function buyContract(symbol, tradeType, duration, price) {
+  async function buyContract(symbol, tradeType, duration, price) {
     // Define the request object for the contract proposal
     const buyContractRequest = {
       proposal: 1,
@@ -429,11 +429,11 @@ document.addEventListener("DOMContentLoaded", function () {
       symbol: symbol,
     };
   
-    // Asynchronous function to execute the buy contract process
-    
-    async function executeBuyContract(api) {
+    // Initialize the WebSocket connection and Deriv API instance
+    const api = new DerivAPIBasic({ connection });
+  
+    connection.onopen = async function () {
       try {
-        
         // Send proposal request to the API and await the response
         const proposalResponse = await api.proposal(buyContractRequest);
   
@@ -454,15 +454,9 @@ document.addEventListener("DOMContentLoaded", function () {
         console.error("Error buying contract:", error);
         alert("Error buying contract. Please try again.");
       }
-    }
-  
-    // Execute the buy contract process
-    connection.onopen = function () {
-      api = new DerivAPIBasic({ connection });
-        executeBuyContract(api);
     };
   }
-  
+    
 
     if (connection.readyState === WebSocket.OPEN) {
       connection.onopen(); // Call the onopen handler directly if the connection is already open
