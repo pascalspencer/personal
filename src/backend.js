@@ -1,18 +1,27 @@
 const express = require("express");
 const session = require("express-session");
-const NodeCache = require("node-cache");
 const path = require("path");
 require("dotenv").config();
 const fs = require("fs");
 const WebSocket = require("ws");
 const DerivAPI = require("@deriv/deriv-api/dist/DerivAPI");
+const mongoose = require('mongoose');
 
+mongoose.connect('mongodb+srv://spencerincdev:<pZMei3VJQfkoWP4p>@zodiac.k8rucbs.mongodb.net/?retryWrites=true&w=majority&appName=Zodiac', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+}).then(() => {
+  console.log('Connected to MongoDB');
+}).catch((error) => {
+  console.error('Error connecting to MongoDB:', error);
+});
+
+const MongoStore = require('connect-mongo');
 
 
 const app = express();
 const app_id = 61696;
 
-const cache = new NodeCache();
 
 
 const connection = new WebSocket(
@@ -60,6 +69,10 @@ app.use(
     secret: "zodiac_deriv",
     resave: false,
     saveUninitialized: true,
+    store: MongoStore.create({
+      mongoUrl: 'mongodb+srv://spencerincdev:<pZMei3VJQfkoWP4p>@zodiac.k8rucbs.mongodb.net/?retryWrites=true&w=majority&appName=Zodiac',
+      collectionName: 'sessions'
+    }),
     cookie: { secure: true }, // Set to true if using HTTPS
   })
 );
@@ -193,8 +206,9 @@ app.get("/redirect", async (req, res) => {
       if (account.token) {
         console.log(`Authorizing account with token: ${account.token}`);
         try {
-          const response = await basic.authorize(account.token);
-          console.log(JSON.stringify(response, null, 2));
+          const jsonResponse = await basic.authorize(account.token);
+          const response = JSON.stringify(jsonResponse, null, 2);
+          console.log(response)
 
           if (response && response.account_list) {
             response.account_list.forEach(acc => {
@@ -216,9 +230,9 @@ app.get("/redirect", async (req, res) => {
       }
     }
 
-    // Store the login IDs in the cache
-    cache.set("loginIds", loginIds, 3600); // Store for 1 hour
-    cache.set("currentLoginId", currentLoginId, 3600); // Store for 1 hour
+     // Store the login IDs in the session
+     req.session.loginIds = loginIds;
+     req.session.currentLoginId = currentLoginId;
 
     res.redirect("/sign-in");
   } catch (error) {
@@ -228,7 +242,7 @@ app.get("/redirect", async (req, res) => {
 });
 
 app.get("/loginId", (req, res) => {
-  const currentLoginId = cache.get("currentLoginId");
+  const currentLoginId = req.session.currentLoginId;
   console.log(currentLoginId)
   res.json(currentLoginId);
 });
