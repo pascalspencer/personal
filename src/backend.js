@@ -7,10 +7,10 @@ const WebSocket = require("ws");
 const DerivAPI = require("@deriv/deriv-api/dist/DerivAPI");
 const mongoose = require('mongoose');
 
-mongoose.connect('mongodb+srv://spencerincdev:<pZMei3VJQfkoWP4p>@zodiac.k8rucbs.mongodb.net/?retryWrites=true&w=majority&appName=Zodiac', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-}).then(() => {
+
+const mongoUri = 'mongodb+srv://spencerincdev:badyspensa7480@zodiac.k8rucbs.mongodb.net/?retryWrites=true&w=majority&appName=Zodiac'
+mongoose.connect(mongoUri)
+.then(() => {
   console.log('Connected to MongoDB');
 }).catch((error) => {
   console.error('Error connecting to MongoDB:', error);
@@ -70,7 +70,7 @@ app.use(
     resave: false,
     saveUninitialized: true,
     store: MongoStore.create({
-      mongoUrl: 'mongodb+srv://spencerincdev:<pZMei3VJQfkoWP4p>@zodiac.k8rucbs.mongodb.net/?retryWrites=true&w=majority&appName=Zodiac',
+      mongoUrl: mongoUri,
       collectionName: 'sessions'
     }),
     cookie: { secure: true }, // Set to true if using HTTPS
