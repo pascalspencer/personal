@@ -5,18 +5,18 @@ require("dotenv").config();
 const fs = require("fs");
 const WebSocket = require("ws");
 const DerivAPI = require("@deriv/deriv-api/dist/DerivAPI");
-const mongoose = require('mongoose');
+// const mongoose = require('mongoose');
 
 
-const mongoUri = 'mongodb+srv://spencerincdev:badyspensa7480@zodiac.k8rucbs.mongodb.net/?retryWrites=true&w=majority&appName=Zodiac'
-mongoose.connect(mongoUri)
-.then(() => {
-  console.log('Connected to MongoDB');
-}).catch((error) => {
-  console.error('Error connecting to MongoDB:', error);
-});
+// const mongoUri = 'mongodb+srv://spencerincdev:badyspensa7480@zodiac.k8rucbs.mongodb.net/?retryWrites=true&w=majority&appName=Zodiac'
+// mongoose.connect(mongoUri)
+// .then(() => {
+//   console.log('Connected to MongoDB');
+// }).catch((error) => {
+//   console.error('Error connecting to MongoDB:', error);
+// });
 
-const MongoStore = require('connect-mongo');
+// const MongoStore = require('connect-mongo');
 
 
 const app = express();
@@ -69,10 +69,10 @@ app.use(
     secret: "zodiac_deriv",
     resave: false,
     saveUninitialized: true,
-    store: MongoStore.create({
-      mongoUrl: mongoUri,
-      collectionName: 'sessions'
-    }),
+    // store: MongoStore.create({
+    //   mongoUrl: mongoUri,
+    //   collectionName: 'sessions'
+    // }),
     cookie: { secure: true }, // Set to true if using HTTPS
   })
 );
