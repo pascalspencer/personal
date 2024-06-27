@@ -211,7 +211,7 @@ app.get("/redirect", async (req, res) => {
         console.log(`Authorizing account with token: ${account.token}`);
         try {
           const jsonResponse = await basic.authorize(account.token);
-          const response = JSON.parse(JSON.stringify(jsonResponse, null, 2));
+          const response = JSON.stringify(jsonResponse, null, 2);
           console.log(response)
 
           if (response && response.account_list) {
