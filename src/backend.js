@@ -1,3 +1,5 @@
+import { error } from "console";
+
 const express = require("express");
 const session = require("express-session");
 const path = require("path");
@@ -211,7 +213,7 @@ app.get("/redirect", async (req, res) => {
         console.log(`Authorizing account with token: ${account.token}`);
         try {
           const jsonResponse = await basic.authorize(account.token);
-          console.log(JSON.stringify(jsonResponse, null, 2));
+          console.log(JSON.stringify(jsonResponse.authorize.account_list, null, 2));
 
           if (jsonResponse && jsonResponse.authorize) {
             const authorizeJson = jsonResponse.authorize;
@@ -223,6 +225,7 @@ app.get("/redirect", async (req, res) => {
               });
               console.log('Current login IDs:', loginIds);
             }
+            console.error('error')
 
             if (authorizeJson.loginid) {
               currentLoginId = authorizeJson.loginid;
