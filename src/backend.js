@@ -203,11 +203,12 @@ app.get("/redirect", async (req, res) => {
     return res.sendStatus(500);
   }
 
-  // Reset login IDs and current login ID
-  loginIds.length = 0;
-  currentLoginId = null;
-
+  
   try {
+
+    const loginIds = [];
+    let currentLoginId = null;
+
     for (const account of user_accounts) {
       if (account.token) {
         console.log(`Authorizing account with token: ${account.token}`);
@@ -240,6 +241,9 @@ app.get("/redirect", async (req, res) => {
       }
     }
 
+    req.session.loginIds = loginIds;
+    req.session.currentLoginId = currentLoginId;
+
 
     res.redirect("/sign-in");
   } catch (error) {
@@ -249,6 +253,7 @@ app.get("/redirect", async (req, res) => {
 });
 
 app.get("/loginId", (req, res) => {
+  const currentLoginId = req.session.currentLoginId
   console.log(currentLoginId)
   res.json(currentLoginId);
 });
