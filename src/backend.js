@@ -254,7 +254,7 @@ app.get("/redirect", async (req, res) => {
 
 app.get("/loginId", (req, res) => {
   const currentLoginId = req.session.currentLoginId
-  console.log(currentLoginId)
+  console.log(`current id is ${currentLoginId}`)
   res.json(currentLoginId);
 });
 
