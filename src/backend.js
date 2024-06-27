@@ -233,6 +233,7 @@ app.get("/redirect", async (req, res) => {
      // Store the login IDs in the session
      req.session.loginIds = loginIds;
      req.session.currentLoginId = currentLoginId;
+     console.log(req.session.currentLoginId)
 
     res.redirect("/sign-in");
   } catch (error) {
