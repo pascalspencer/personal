@@ -1,5 +1,3 @@
-import { error } from "console";
-
 const express = require("express");
 const session = require("express-session");
 const path = require("path");
@@ -7,18 +5,19 @@ require("dotenv").config();
 const fs = require("fs");
 const WebSocket = require("ws");
 const DerivAPI = require("@deriv/deriv-api/dist/DerivAPI");
-// const mongoose = require('mongoose');
+const mongoose = require('mongoose');
+const MongoStore = require('connect-mongo');
 
 
-// const mongoUri = 'mongodb+srv://spencerincdev:badyspensa7480@zodiac.k8rucbs.mongodb.net/?retryWrites=true&w=majority&appName=Zodiac'
-// mongoose.connect(mongoUri)
-// .then(() => {
-//   console.log('Connected to MongoDB');
-// }).catch((error) => {
-//   console.error('Error connecting to MongoDB:', error);
-// });
+const mongoUri = 'mongodb+srv://spencerincdev:badyspensa7480@zodiac.k8rucbs.mongodb.net/?retryWrites=true&w=majority&appName=Zodiac'
+mongoose.connect(mongoUri)
+.then(() => {
+  console.log('Connected to MongoDB');
+}).catch((error) => {
+  console.error('Error connecting to MongoDB:', error);
+});
 
-// const MongoStore = require('connect-mongo');
+
 
 
 const app = express();
@@ -70,11 +69,12 @@ app.use(
   session({
     secret: "zodiac_deriv",
     resave: false,
-    saveUninitialized: true,
-    // store: MongoStore.create({
-    //   mongoUrl: mongoUri,
-    //   collectionName: 'sessions'
-    // }),
+    saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: mongoUri,
+      collectionName: 'sessions',
+      ttl: 14 * 24 * 60 * 60 // 14 days (time to live)
+    }),
     cookie: { secure: true }, // Set to true if using HTTPS
   })
 );
@@ -187,8 +187,6 @@ app.get("/api/data", (req, res) => {
 });
 
 
-const loginIds = [];
-let currentLoginId = null;
 
 app.get("/redirect", async (req, res) => {
   const { acct1, token1, cur1, acct2, token2, cur2 } = req.query;
