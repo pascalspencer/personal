@@ -211,20 +211,23 @@ app.get("/redirect", async (req, res) => {
         console.log(`Authorizing account with token: ${account.token}`);
         try {
           const jsonResponse = await basic.authorize(account.token);
-          const response = JSON.stringify(jsonResponse, null, 2);
-          console.log(response)
+          console.log(JSON.stringify(jsonResponse, null, 2));
 
-          if (response && response.account_list) {
-            response.account_list.forEach(acc => {
-              loginIds.push(acc.loginid);
-              console.log(`Added login ID: ${acc.loginid}`);
-            });
-            console.log('Current login IDs:', loginIds);
-          }
+          if (jsonResponse && jsonResponse.authorize) {
+            const authorizeJson = jsonResponse.authorize;
+            
+            if (authorizeJson.account_list) {
+              authorizeJson.account_list.forEach(acc => {
+                loginIds.push(acc.loginid);
+                console.log(`Added login ID: ${acc.loginid}`);
+              });
+              console.log('Current login IDs:', loginIds);
+            }
 
-          if (response && response.loginid) {
-            currentLoginId = response.loginid;
-            console.log(`Current login ID set to: ${currentLoginId}`);
+            if (authorizeJson.loginid) {
+              currentLoginId = authorizeJson.loginid;
+              console.log(`Current login ID set to: ${currentLoginId}`);
+            }
           }
         } catch (error) {
           console.error('Error authorizing account:', error);
