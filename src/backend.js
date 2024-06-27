@@ -226,7 +226,6 @@ app.get("/redirect", async (req, res) => {
               });
               console.log('Current login IDs:', loginIds);
             }
-            console.error('error')
 
             if (authorizeJson.loginid) {
               currentLoginId = authorizeJson.loginid;
@@ -243,6 +242,7 @@ app.get("/redirect", async (req, res) => {
 
     req.session.loginIds = loginIds;
     req.session.currentLoginId = currentLoginId;
+    console.log(req.session.currentLoginId)
 
 
     res.redirect("/sign-in");
