@@ -191,7 +191,7 @@ app.get("/api/data", (req, res) => {
     });
 });
 
-
+const currentLoginId = [];
 
 app.get("/redirect", async (req, res) => {
   const { acct1, token1, cur1, acct2, token2, cur2 } = req.query;
@@ -210,7 +210,8 @@ app.get("/redirect", async (req, res) => {
   try {
 
     const loginIds = [];
-    let currentLoginId = null;
+    currentLoginId.length = 0;
+    
 
     for (const account of user_accounts) {
       if (account.token) {
@@ -231,7 +232,7 @@ app.get("/redirect", async (req, res) => {
             }
 
             if (authorizeJson.loginid) {
-              currentLoginId = authorizeJson.loginid;
+              currentLoginId.push(authorizeJson.loginid);
               console.log(`Current login ID set to: ${currentLoginId}`);
             }
           }
@@ -243,9 +244,7 @@ app.get("/redirect", async (req, res) => {
       }
     }
 
-    req.session.loginIds = loginIds;
-    req.session.currentLoginId = currentLoginId;
-    console.log(`Current login id stored in session ${req.session.currentLoginId}`)
+    console.log(`Current login id stored in session ${currentLoginId}`)
 
 
     res.redirect("/sign-in");
@@ -256,8 +255,7 @@ app.get("/redirect", async (req, res) => {
 });
 
 app.get("/loginId", (req, res) => {
-  if (req.session.currentLoginId) {
-    const currentLoginId = req.session.currentLoginId;
+  if (currentLoginId.length > 0) {
     console.log(`current id is ${currentLoginId}`);
     res.json(currentLoginId);
   } else {
