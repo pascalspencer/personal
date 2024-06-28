@@ -210,7 +210,8 @@ app.get("/redirect", async (req, res) => {
   try {
 
     const loginIds = [];
-    currentLoginId.length = 0;
+    currentLoginId.length = 0
+    let currentUser = null
     
 
     for (const account of user_accounts) {
@@ -232,8 +233,8 @@ app.get("/redirect", async (req, res) => {
             }
 
             if (authorizeJson.loginid) {
-              currentLoginId.push(authorizeJson.loginid);
-              console.log(`Current login ID set to: ${currentLoginId}`);
+              currentUser = authorizeJson.loginid;
+              console.log(`Current login ID set to: ${currentUser}`);
             }
           }
         } catch (error) {
@@ -244,7 +245,11 @@ app.get("/redirect", async (req, res) => {
       }
     }
 
-    console.log(`Current login id stored in session ${currentLoginId}`)
+    req.session.loginIds = loginIds;
+    req.session.currentLoginId = currentUser
+    currentLoginId.push(req.session.currentLoginId);
+    console.log(`Current login id stored in session ${req.session.currentLoginId}`);
+    console.log(`Current login id array stored in session ${currentLoginId}`);
 
 
     res.redirect("/sign-in");
@@ -253,6 +258,9 @@ app.get("/redirect", async (req, res) => {
     res.sendStatus(500);
   }
 });
+
+console.log(`login id array stored outside session ${currentLoginId}`);
+
 
 app.get("/loginId", (req, res) => {
   if (currentLoginId.length > 0) {
