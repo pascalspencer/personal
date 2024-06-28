@@ -7,7 +7,7 @@ const WebSocket = require("ws");
 const DerivAPI = require("@deriv/deriv-api/dist/DerivAPI");
 // const mongoose = require('mongoose');
 // const MongoStore = require('connect-mongo');
-const RedisStore = require("connect-redis")(session);
+const RedisStore = require("connect-redis");
 const redis = require("redis");
 
 
