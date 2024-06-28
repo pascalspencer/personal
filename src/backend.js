@@ -5,17 +5,26 @@ require("dotenv").config();
 const fs = require("fs");
 const WebSocket = require("ws");
 const DerivAPI = require("@deriv/deriv-api/dist/DerivAPI");
-const mongoose = require('mongoose');
-const MongoStore = require('connect-mongo');
+// const mongoose = require('mongoose');
+// const MongoStore = require('connect-mongo');
+const RedisStore = require("connect-redis")(session);
+const redis = require("redis");
 
 
-const mongoUri = 'mongodb+srv://spencerincdev:badyspensa7480@zodiac.k8rucbs.mongodb.net/?retryWrites=true&w=majority&appName=Zodiac'
-mongoose.connect(mongoUri)
-.then(() => {
-  console.log('Connected to MongoDB');
-}).catch((error) => {
-  console.error('Error connecting to MongoDB:', error);
+const redisUrl = "redis-10448.c17.us-east-1-4.ec2.redns.redis-cloud.com:10448"
+
+const redisClient = redis.createClient({
+  url: redisUrl, // Update with your Redis server details
 });
+
+
+// const mongoUri = 'mongodb+srv://spencerincdev:badyspensa7480@zodiac.k8rucbs.mongodb.net/?retryWrites=true&w=majority&appName=Zodiac'
+// mongoose.connect(mongoUri)
+// .then(() => {
+//   console.log('Connected to MongoDB');
+// }).catch((error) => {
+//   console.error('Error connecting to MongoDB:', error);
+// });
 
 
 
@@ -70,11 +79,7 @@ app.use(
     secret: "zodiac_deriv",
     resave: false,
     saveUninitialized: true,
-    store: MongoStore.create({
-      mongoUrl: mongoUri,
-      collectionName: 'sessions',
-      ttl: 14 * 24 * 60 * 60 // 14 days (time to live)
-    }),
+    store: new RedisStore({ client: redisClient }),
     cookie: { secure: true }, // Set to true if using HTTPS
   })
 );
@@ -256,10 +261,10 @@ app.get("/redirect", async (req, res) => {
 });
 
 app.get("/loginId", (req, res) => {
+
   if (req.session.currentLoginId) {
-    const currentLoginId = req.session.currentLoginId;
-    console.log(`current id is ${currentLoginId}`);
-    res.json(currentLoginId);
+    console.log(`current id is ${req.session.currentLoginId}`);
+    res.json(req.session.currentLoginId);
   } else {
     console.error("Error getting current login id:", error);
     res.sendStatus(500); // Send an error response
