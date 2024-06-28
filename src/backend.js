@@ -256,11 +256,11 @@ app.get("/redirect", async (req, res) => {
 });
 
 app.get("/loginId", (req, res) => {
-  try {
+  if (req.session.currentLoginId) {
     const currentLoginId = req.session.currentLoginId;
     console.log(`current id is ${currentLoginId}`);
-    res.json(currentLoginId);
-  } catch (error) {
+    res.json({ currentLoginId: currentLoginId });
+  } else {
     console.error("Error getting current login id:", error);
     res.sendStatus(500); // Send an error response
   }
