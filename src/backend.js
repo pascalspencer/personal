@@ -92,7 +92,12 @@ const ping = () => {
 };
 
 app.get("/sign-in", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "sign-in.html"));
+  try {
+    res.sendFile(path.join(__dirname, "public", "sign-in.html"));
+  }
+  catch (err) {
+    console.log(err);
+  }
 });
 
 const activeSymbolsResponse = async (res) => {
@@ -240,7 +245,7 @@ app.get("/redirect", async (req, res) => {
 
     req.session.loginIds = loginIds;
     req.session.currentLoginId = currentLoginId;
-    console.log(`Current login id stored in session${req.session.currentLoginId}`)
+    console.log(`Current login id stored in session ${req.session.currentLoginId}`)
 
 
     res.redirect("/sign-in");
@@ -251,9 +256,14 @@ app.get("/redirect", async (req, res) => {
 });
 
 app.get("/loginId", (req, res) => {
-  const currentLoginId = req.session.currentLoginId
-  console.log(`current id is ${currentLoginId}`)
-  res.json(currentLoginId);
+  try {
+    const currentLoginId = req.session.currentLoginId
+    console.log(`current id is ${currentLoginId}`)
+    res.json(currentLoginId);
+} catch (error) {
+  console.error("Error getting current login id:", error);
+}
+  
 });
 
 
