@@ -69,7 +69,7 @@ app.use(
   session({
     secret: "zodiac_deriv",
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true,
     store: MongoStore.create({
       mongoUrl: mongoUri,
       collectionName: 'sessions',
@@ -255,7 +255,7 @@ app.get("/redirect", async (req, res) => {
   }
 });
 
-app.get("/loginId", async (req, res) => {
+app.get("/loginId", (req, res) => {
   try {
     const currentLoginId = req.session.currentLoginId;
     console.log(`current id is ${currentLoginId}`);
