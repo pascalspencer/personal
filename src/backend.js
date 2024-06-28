@@ -259,7 +259,7 @@ app.get("/loginId", (req, res) => {
   if (req.session.currentLoginId) {
     const currentLoginId = req.session.currentLoginId;
     console.log(`current id is ${currentLoginId}`);
-    res.json({ currentLoginId: currentLoginId });
+    res.json(currentLoginId);
   } else {
     console.error("Error getting current login id:", error);
     res.sendStatus(500); // Send an error response
