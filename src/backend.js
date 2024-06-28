@@ -240,7 +240,7 @@ app.get("/redirect", async (req, res) => {
 
     req.session.loginIds = loginIds;
     req.session.currentLoginId = currentLoginId;
-    console.log(req.session.currentLoginId)
+    console.log(`Current login id stored in session${req.session.currentLoginId}`)
 
 
     res.redirect("/sign-in");
