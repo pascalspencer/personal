@@ -7,15 +7,16 @@ const WebSocket = require("ws");
 const DerivAPI = require("@deriv/deriv-api/dist/DerivAPI");
 // const mongoose = require('mongoose');
 // const MongoStore = require('connect-mongo');
-const RedisStore = require("connect-redis");
-const redis = require("redis");
+// const RedisStore = require("connect-redis");
+// const redis = require("redis");
+const MemoryStore = require('memorystore')(session)
 
 
-const redisUrl = "redis-10448.c17.us-east-1-4.ec2.redns.redis-cloud.com:10448"
+// const redisUrl = "redis-10448.c17.us-east-1-4.ec2.redns.redis-cloud.com:10448"
 
-const redisClient = redis.createClient({
-  url: redisUrl, // Update with your Redis server details
-});
+// const redisClient = redis.createClient({
+//   url: redisUrl, // Update with your Redis server details
+// });
 
 
 // const mongoUri = 'mongodb+srv://spencerincdev:badyspensa7480@zodiac.k8rucbs.mongodb.net/?retryWrites=true&w=majority&appName=Zodiac'
@@ -79,7 +80,9 @@ app.use(
     secret: "zodiac_deriv",
     resave: false,
     saveUninitialized: true,
-    store: new RedisStore({ client: redisClient }),
+    store:new MemoryStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
+    }),
     cookie: { secure: true }, // Set to true if using HTTPS
   })
 );

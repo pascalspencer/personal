@@ -17,6 +17,7 @@
     "express": "^4.19.2",
     "express-session": "^1.18.0",
     "import-maps": "^0.2.4",
+    "memorystore": "^1.6.7",
     "mongodb": "6.7",
     "mongoose": "^8.4.4",
     "node-cache": "^5.1.2",
