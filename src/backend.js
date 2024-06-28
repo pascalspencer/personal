@@ -255,15 +255,15 @@ app.get("/redirect", async (req, res) => {
   }
 });
 
-app.get("/loginId", (req, res) => {
+app.get("/loginId", async (req, res) => {
   try {
-    const currentLoginId = req.session.currentLoginId
-    console.log(`current id is ${currentLoginId}`)
+    const currentLoginId = req.session.currentLoginId;
+    console.log(`current id is ${currentLoginId}`);
     res.json(currentLoginId);
-} catch (error) {
-  console.error("Error getting current login id:", error);
-}
-  
+  } catch (error) {
+    console.error("Error getting current login id:", error);
+    res.sendStatus(500); // Send an error response
+  }
 });
 
 
