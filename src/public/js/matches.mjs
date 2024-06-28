@@ -102,6 +102,15 @@ function determineChances(selectedNumber) {
     const matchesChance = Math.floor((matches / totalChance) * 97);
     const differsChance = Math.floor((differs / totalChance) * 97);
 
+
+    // Ensure matchesChance is always greater than differsChance if they are the same
+    if (matchesChance === differsChance) {
+      matchesChance += 1;
+      if (matchesChance > 97) {
+        matchesChance = 97;
+      }
+    }
+
     return { matchesChance, differsChance };
   }
 
