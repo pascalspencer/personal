@@ -44,6 +44,11 @@
         "clientUsername": "KABURA",
         "clientPassword": "KABURA999",
         "sessions": []
+        },
+        {
+        "clientUsername": "Antony",
+        "clientPassword": "deriv@254",
+        "sessions": []
         }
         
 ]

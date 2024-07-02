@@ -1,6 +1,7 @@
 import DerivAPIBasic from 'https://cdn.skypack.dev/@deriv/deriv-api/dist/DerivAPIBasic';
 import { calculateChances } from './over_under.mjs';
 import { determineChances } from './matches.mjs';
+// import { evaluateAndBuyContract } from './buyContract.mjs';
 
 document.addEventListener("DOMContentLoaded", function () {
   const dataForm = document.getElementById("trade-form");
@@ -15,16 +16,6 @@ document.addEventListener("DOMContentLoaded", function () {
   let sentimentsData = {};
   let submarkets = {};
 
-  // Fetch trading instruments JSON
-  let tradingInstruments = {};
-  fetch("/trade/instruments")
-    .then((response) => response.json())
-    .then((data) => {
-      tradingInstruments = data;
-    })
-    .catch((error) =>
-      console.error("Error fetching trading instruments:", error)
-    );
 
   function showSpinnerAndMessages() {
     spinnerContainer.style.display = "block";

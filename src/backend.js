@@ -191,7 +191,6 @@ app.get("/api/data", (req, res) => {
     });
 });
 
-const currentLoginId = [];
 
 app.get("/redirect", async (req, res) => {
   const { acct1, token1, cur1, acct2, token2, cur2 } = req.query;
@@ -210,8 +209,7 @@ app.get("/redirect", async (req, res) => {
   try {
 
     const loginIds = [];
-    currentLoginId.length = 0
-    let currentUser = null
+    let currentLoginId = null
     
 
     for (const account of user_accounts) {
@@ -233,8 +231,8 @@ app.get("/redirect", async (req, res) => {
             }
 
             if (authorizeJson.loginid) {
-              currentUser = authorizeJson.loginid;
-              console.log(`Current login ID set to: ${currentUser}`);
+              currentLoginId = authorizeJson.loginid;
+              console.log(`Current login ID set to: ${currentLoginId}`);
             }
           }
         } catch (error) {
@@ -246,13 +244,11 @@ app.get("/redirect", async (req, res) => {
     }
 
     req.session.loginIds = loginIds;
-    req.session.currentLoginId = currentUser
-    currentLoginId.push(req.session.currentLoginId);
+    req.session.currentLoginId = currentLoginId
     console.log(`Current login id stored in session ${req.session.currentLoginId}`);
-    console.log(`Current login id array stored in session ${currentLoginId}`);
 
 
-    res.redirect("/sign-in");
+    res.redirect(`/sign-in?currentLoginId=${req.session.currentLoginId}`);
   } catch (error) {
     console.error("Error authorizing accounts:", error);
     res.sendStatus(500);
@@ -262,15 +258,6 @@ app.get("/redirect", async (req, res) => {
 console.log(`login id array stored outside session ${currentLoginId}`);
 
 
-app.get("/loginId", (req, res) => {
-  if (currentLoginId.length > 0) {
-    console.log(`current id is ${currentLoginId}`);
-    res.json(currentLoginId);
-  } else {
-    console.log("Error getting current login id");
-    res.sendStatus(500); // Send an error response
-  }
-});
 
 
 app.get("/trade/data", (req, res) => {
