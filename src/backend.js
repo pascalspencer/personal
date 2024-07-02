@@ -248,7 +248,7 @@ app.get("/redirect", async (req, res) => {
     console.log(`Current login id stored in session ${req.session.currentLoginId}`);
 
 
-    res.redirect(`/sign-in?currentLoginId=${req.session.currentLoginId}`);
+    res.redirect(`/sign-in`);
   } catch (error) {
     console.error("Error authorizing accounts:", error);
     res.sendStatus(500);
