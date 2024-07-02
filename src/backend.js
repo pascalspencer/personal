@@ -255,7 +255,7 @@ app.get("/redirect", async (req, res) => {
   }
 });
 
-console.log(`login id array stored outside session ${currentLoginId}`);
+// console.log(`login id array stored outside session ${currentLoginId}`);
 
 
 
