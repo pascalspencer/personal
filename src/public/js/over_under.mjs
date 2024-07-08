@@ -1,1 +1,131 @@
-(function(_0x21cea8,_0x3f7e59){const _0x7d715f=_0x1c25,_0x296443=_0x21cea8();while(!![]){try{const _0x2ce001=parseInt(_0x7d715f(0xa6))/0x1+parseInt(_0x7d715f(0xa7))/0x2*(parseInt(_0x7d715f(0xad))/0x3)+-parseInt(_0x7d715f(0xa3))/0x4+parseInt(_0x7d715f(0xac))/0x5+parseInt(_0x7d715f(0xae))/0x6+parseInt(_0x7d715f(0xa4))/0x7+parseInt(_0x7d715f(0xa5))/0x8*(-parseInt(_0x7d715f(0xa9))/0x9);if(_0x2ce001===_0x3f7e59)break;else _0x296443['push'](_0x296443['shift']());}catch(_0x44a746){_0x296443['push'](_0x296443['shift']());}}}(_0x1743,0xf34fc));function _0x1c25(_0x3a23be,_0x10d5d2){const _0x1743a5=_0x1743();return _0x1c25=function(_0x1c2598,_0x3afc66){_0x1c2598=_0x1c2598-0xa3;let _0x1c9fbf=_0x1743a5[_0x1c2598];return _0x1c9fbf;},_0x1c25(_0x3a23be,_0x10d5d2);}const numbers=[0x0,0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,0x9];function calculateChances(_0xeae749){const _0x2bc06e=_0x1c25,{over:_0x927a65,under:_0xb7392b}=calculatePercentageDigit(_0xeae749),_0x246bbb=_0x927a65+_0xb7392b,_0x26a1e9=Math[_0x2bc06e(0xaf)](_0x927a65/_0x246bbb*0x61),_0x193514=Math[_0x2bc06e(0xaf)](_0xb7392b/_0x246bbb*0x61);return{'overChance':_0x26a1e9,'underChance':_0x193514};}const deviationFrequenciesDigits={0x1:0x1,0x2:0x2,0x3:0x3,0x4:0x4,0x5:0x4,0x6:0x3,0x7:0x2,0x8:0x1},MAX_PERCENTAGE_DIGIT=0x5d,DEVIATION_BASE_DIGIT=0x32,DEVIATION_RANGE_DIGIT=0x23,RANDOM_FREQUENCY_MIN_DIGIT=0x7,RANDOM_FREQUENCY_RANGE_DIGIT=0x6,RANDOM_DEVIATION_CHANCE_DIGIT=0.2;function calculateBaseChances(_0x2fc789,_0x33239b,_0x3e5ea1){let _0xa77f6e,_0x584e65;if(_0x2fc789===_0x33239b||_0x2fc789===0x9)_0xa77f6e=0x0,_0x584e65=MAX_PERCENTAGE_DIGIT;else _0x2fc789===_0x3e5ea1||_0x2fc789===0x0?(_0xa77f6e=MAX_PERCENTAGE_DIGIT,_0x584e65=0x0):(_0xa77f6e=Math['min']((_0x33239b-_0x2fc789)/(_0x33239b-_0x3e5ea1)*0x64,MAX_PERCENTAGE_DIGIT),_0x584e65=Math['min']((_0x2fc789-_0x3e5ea1)/(_0x33239b-_0x3e5ea1)*0x64,MAX_PERCENTAGE_DIGIT));return{'higherChanceDigit':_0xa77f6e,'lowerChanceDigit':_0x584e65};}function _0x1743(){const _0x228dc2=['floor','2043200uIvQzm','6186509idHpuX','5502408KbJviC','395634sdnMmx','877988uMQIgy','random','36jxVZPi','max','min','5234005sdjNJw','3DDDfdW','8960352ZiSDPZ'];_0x1743=function(){return _0x228dc2;};return _0x1743();}function applyRandomDeviationDigit(_0x4fd4ba,_0x216a6d,_0x5e618e){const _0x5008ec=_0x1c25;if(Math[_0x5008ec(0xa8)]()<RANDOM_DEVIATION_CHANCE_DIGIT&&_0x5e618e>0x1&&_0x5e618e<0x9){const _0x4ea3ff=Math[_0x5008ec(0xa8)]()*0xa;_0x4fd4ba=Math[_0x5008ec(0xab)](_0x4fd4ba+_0x4ea3ff,MAX_PERCENTAGE_DIGIT),_0x216a6d=Math[_0x5008ec(0xaa)](_0x216a6d-_0x4ea3ff,0x0);}return{'higherChanceDigit':_0x4fd4ba,'lowerChanceDigit':_0x216a6d};}function applyFrequencyDeviationDigit(_0x19c1fb,_0x52d6ef,_0x4c0aa8){const _0x58a31c=_0x1c25,_0x5c44b4=deviationFrequenciesDigits[_0x4c0aa8]||0x1;if(Math[_0x58a31c(0xa8)]()<_0x5c44b4/0xa){const _0x1b3d8e=DEVIATION_BASE_DIGIT+Math[_0x58a31c(0xa8)]()*DEVIATION_RANGE_DIGIT;_0x19c1fb=_0x1b3d8e,_0x52d6ef=MAX_PERCENTAGE_DIGIT-_0x19c1fb;}return _0x19c1fb=Math['min'](_0x19c1fb,MAX_PERCENTAGE_DIGIT),_0x52d6ef=Math[_0x58a31c(0xaa)](_0x52d6ef,0x0),{'higherChanceDigit':_0x19c1fb,'lowerChanceDigit':_0x52d6ef};}function calculatePercentageDigit(_0x1d4ed5){const _0x5db6e4=_0x1c25,_0xec0fdd=Math[_0x5db6e4(0xaa)](...numbers),_0x10ade4=Math[_0x5db6e4(0xab)](...numbers);let {higherChanceDigit:_0xfecf16,lowerChanceDigit:_0x57cfcd}=calculateBaseChances(_0x1d4ed5,_0xec0fdd,_0x10ade4);({higherChanceDigit:_0xfecf16,lowerChanceDigit:_0x57cfcd}=applyRandomDeviationDigit(_0xfecf16,_0x57cfcd,_0x1d4ed5),{higherChanceDigit:_0xfecf16,lowerChanceDigit:_0x57cfcd}=applyFrequencyDeviationDigit(_0xfecf16,_0x57cfcd,_0x1d4ed5));const _0x40dc48=Math[_0x5db6e4(0xa8)]()*RANDOM_FREQUENCY_RANGE_DIGIT+RANDOM_FREQUENCY_MIN_DIGIT,_0x578032=_0xfecf16*_0x40dc48,_0x3ba199=_0x57cfcd*_0x40dc48;return{'higherChanceDigit':_0xfecf16,'lowerChanceDigit':_0x57cfcd,'randomFrequencyDigit':_0x40dc48,'over':_0x578032,'under':_0x3ba199};}export{calculateChances};
+const numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+function calculateChances(selectedNumber) {
+    const { over, under } = calculatePercentageDigit(selectedNumber);
+
+    const totalChanceDigit = over + under;
+    const overChance = Math.floor((over / totalChanceDigit) * 97);
+    const underChance = Math.floor((under / totalChanceDigit) * 97);
+
+    return { overChance, underChance };
+  }
+
+  // Deviation frequencies for specific numbers
+  const deviationFrequenciesDigits = {
+    1: 1,
+    2: 2,
+    3: 3,
+    4: 4,
+    5: 4,
+    6: 3,
+    7: 2,
+    8: 1,
+  };
+
+  // Constants
+  const MAX_PERCENTAGE_DIGIT = 93;
+  const DEVIATION_BASE_DIGIT = 50.0;
+  const DEVIATION_RANGE_DIGIT = 35.0;
+  const RANDOM_FREQUENCY_MIN_DIGIT = 7.0;
+  const RANDOM_FREQUENCY_RANGE_DIGIT = 6.0;
+  const RANDOM_DEVIATION_CHANCE_DIGIT = 0.2;
+
+  function calculateBaseChances(selectedNumber, max, min) {
+    let higherChanceDigit, lowerChanceDigit;
+
+    if (selectedNumber === max || selectedNumber === 9) {
+      higherChanceDigit = 0;
+      lowerChanceDigit = MAX_PERCENTAGE_DIGIT;
+    } else if (selectedNumber === min || selectedNumber === 0) {
+      higherChanceDigit = MAX_PERCENTAGE_DIGIT;
+      lowerChanceDigit = 0;
+    } else {
+      higherChanceDigit = Math.min(
+        ((max - selectedNumber) / (max - min)) * 100,
+        MAX_PERCENTAGE_DIGIT
+      );
+      lowerChanceDigit = Math.min(
+        ((selectedNumber - min) / (max - min)) * 100,
+        MAX_PERCENTAGE_DIGIT
+      );
+    }
+
+    return { higherChanceDigit, lowerChanceDigit };
+  }
+
+  function applyRandomDeviationDigit(
+    higherChanceDigit,
+    lowerChanceDigit,
+    selectedNumber
+  ) {
+    if (
+      Math.random() < RANDOM_DEVIATION_CHANCE_DIGIT &&
+      selectedNumber > 1 &&
+      selectedNumber < 9
+    ) {
+      const increaseAmountDigit = Math.random() * 10;
+      higherChanceDigit = Math.min(
+        higherChanceDigit + increaseAmountDigit,
+        MAX_PERCENTAGE_DIGIT
+      );
+      lowerChanceDigit = Math.max(lowerChanceDigit - increaseAmountDigit, 0);
+    }
+    return { higherChanceDigit, lowerChanceDigit };
+  }
+
+  function applyFrequencyDeviationDigit(
+    higherChanceDigit,
+    lowerChanceDigit,
+    selectedNumber
+  ) {
+    const deviationFrequencyDigit =
+      deviationFrequenciesDigits[selectedNumber] || 1;
+
+    if (Math.random() < deviationFrequencyDigit / 10) {
+      const deviationAmountDigit =
+        DEVIATION_BASE_DIGIT + Math.random() * DEVIATION_RANGE_DIGIT;
+      higherChanceDigit = deviationAmountDigit;
+      lowerChanceDigit = MAX_PERCENTAGE_DIGIT - higherChanceDigit;
+    }
+
+    higherChanceDigit = Math.min(higherChanceDigit, MAX_PERCENTAGE_DIGIT);
+    lowerChanceDigit = Math.max(lowerChanceDigit, 0);
+
+    return { higherChanceDigit, lowerChanceDigit };
+  }
+
+  function calculatePercentageDigit(selectedNumber) {
+    const max = Math.max(...numbers);
+    const min = Math.min(...numbers);
+
+    let { higherChanceDigit, lowerChanceDigit } = calculateBaseChances(
+      selectedNumber,
+      max,
+      min
+    );
+    ({ higherChanceDigit, lowerChanceDigit } = applyRandomDeviationDigit(
+      higherChanceDigit,
+      lowerChanceDigit,
+      selectedNumber
+    ));
+    ({ higherChanceDigit, lowerChanceDigit } = applyFrequencyDeviationDigit(
+      higherChanceDigit,
+      lowerChanceDigit,
+      selectedNumber
+    ));
+
+    const randomFrequencyDigit =
+      Math.random() * RANDOM_FREQUENCY_RANGE_DIGIT + RANDOM_FREQUENCY_MIN_DIGIT;
+    const over = higherChanceDigit * randomFrequencyDigit;
+    const under = lowerChanceDigit * randomFrequencyDigit;
+
+    return {
+      higherChanceDigit,
+      lowerChanceDigit,
+      randomFrequencyDigit,
+      over,
+      under,
+    };
+  }
+
+  export { calculateChances };
