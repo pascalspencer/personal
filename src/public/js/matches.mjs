@@ -3,12 +3,12 @@ const numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 // Constants
 const MAX_PERCENTAGE = 93;
 const MATCH_CHANCE_FREQUENCY = 2 / 11; // Probability of high match chance
-const RANDOM_DEVIATION_CHANCE = 0.2;
+const DERIV_DEVIATION_CHANCE = 0.2;
 const GENERAL_DEVIATION_CHANCE = 0.1;
 const DEVIATION_BASE = 90.0;
 const DEVIATION_RANGE = 35.0;
-const RANDOM_FREQUENCY_MIN = 8.0;
-const RANDOM_FREQUENCY_RANGE = 5.0;
+const DERIV_FREQUENCY_MIN = 8.0;
+const DERIV_FREQUENCY_RANGE = 5.0;
 
 function determineBaseChances(selectedNumber) {
   const totalNumbers = numbers.length; // total numbers from 0 to 9
@@ -24,7 +24,7 @@ function determineBaseChances(selectedNumber) {
 
 function applyRandomDeviation(higherChance, lowerChance, selectedNumber) {
   if (
-    Math.random() < RANDOM_DEVIATION_CHANCE &&
+    Math.random() < DERIV_DEVIATION_CHANCE &&
     selectedNumber > Math.min(...numbers) &&
     selectedNumber < Math.max(...numbers)
   ) {
@@ -60,9 +60,9 @@ function determinePercentage(selectedNumber) {
   higherChance = Math.min(higherChance, MAX_PERCENTAGE);
   lowerChance = Math.max(lowerChance, 0);
 
-  // Generate a random frequency between RANDOM_FREQUENCY_MIN and (RANDOM_FREQUENCY_MIN + RANDOM_FREQUENCY_RANGE)
+  // Generate a random frequency between DERIV_FREQUENCY_MIN and (DERIV_FREQUENCY_MIN + DERIV_FREQUENCY_RANGE)
   const randomFrequency =
-    Math.random() * RANDOM_FREQUENCY_RANGE + RANDOM_FREQUENCY_MIN;
+    Math.random() * DERIV_FREQUENCY_RANGE + DERIV_FREQUENCY_MIN;
 
   // Multiply the chosen percentage by the random frequency
   const differs = higherChance * randomFrequency;
@@ -70,7 +70,7 @@ function determinePercentage(selectedNumber) {
 
   // Adjust match chance to be higher when deviation occurs
   if (
-    Math.random() < RANDOM_DEVIATION_CHANCE &&
+    Math.random() < DERIV_DEVIATION_CHANCE &&
     selectedNumber > Math.min(...numbers) &&
     selectedNumber < Math.max(...numbers)
   ) {

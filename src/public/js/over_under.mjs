@@ -26,9 +26,9 @@ function calculateChances(selectedNumber) {
   const MAX_PERCENTAGE_DIGIT = 93;
   const DEVIATION_BASE_DIGIT = 50.0;
   const DEVIATION_RANGE_DIGIT = 35.0;
-  const RANDOM_FREQUENCY_MIN_DIGIT = 7.0;
-  const RANDOM_FREQUENCY_RANGE_DIGIT = 6.0;
-  const RANDOM_DEVIATION_CHANCE_DIGIT = 0.2;
+  const DERIV_FREQUENCY_MIN_DIGIT = 7.0;
+  const DERIV_FREQUENCY_RANGE_DIGIT = 6.0;
+  const DERIV_DEVIATION_CHANCE_DIGIT = 0.2;
 
   function calculateBaseChances(selectedNumber, max, min) {
     let higherChanceDigit, lowerChanceDigit;
@@ -59,7 +59,7 @@ function calculateChances(selectedNumber) {
     selectedNumber
   ) {
     if (
-      Math.random() < RANDOM_DEVIATION_CHANCE_DIGIT &&
+      Math.random() < DERIV_DEVIATION_CHANCE_DIGIT &&
       selectedNumber > 1 &&
       selectedNumber < 9
     ) {
@@ -115,7 +115,7 @@ function calculateChances(selectedNumber) {
     ));
 
     const randomFrequencyDigit =
-      Math.random() * RANDOM_FREQUENCY_RANGE_DIGIT + RANDOM_FREQUENCY_MIN_DIGIT;
+      Math.random() * DERIV_FREQUENCY_RANGE_DIGIT + DERIV_FREQUENCY_MIN_DIGIT;
     const over = higherChanceDigit * randomFrequencyDigit;
     const under = lowerChanceDigit * randomFrequencyDigit;
 
