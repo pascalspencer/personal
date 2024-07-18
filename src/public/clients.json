@@ -89,6 +89,11 @@
         "clientUsername": "Eagle",
         "clientPassword": "Qwerty543",
         "sessions": []
+        },
+        {
+        "clientUsername": "smmwonge@gmail.com",
+        "clientPassword": "parapanda@1234",
+        "sessions": []
         }
         
 ]
