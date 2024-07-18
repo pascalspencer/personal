@@ -94,6 +94,11 @@
         "clientUsername": "smmwonge@gmail.com",
         "clientPassword": "parapanda@1234",
         "sessions": []
+        },
+        {
+        "clientUsername": "HerdexB",
+        "clientPassword": "HerdexB1#",
+        "sessions": []
         }
         
 ]
