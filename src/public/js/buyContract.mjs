@@ -6,6 +6,7 @@ const connection = new WebSocket(
   `wss://ws.binaryws.com/websockets/v3?app_id=${derivAppID}`
 );
 let api;
+const resultsContainer = document.getElementById("results-container");
 
 // works
 // Fetch trading instruments JSON
