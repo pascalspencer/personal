@@ -5,17 +5,17 @@ require("dotenv").config();
 const fs = require("fs");
 const WebSocket = require("ws");
 const DerivAPI = require("@deriv/deriv-api/dist/DerivAPI");
-const mongoose = require('mongoose');
-const MongoStore = require('connect-mongo');
+// const mongoose = require('mongoose');
+// const MongoStore = require('connect-mongo');
 
 
-const mongoUri = 'mongodb+srv://spencerincdev:badyspensa7480@zodiac.k8rucbs.mongodb.net/?retryWrites=true&w=majority&appName=Zodiac'
-mongoose.connect(mongoUri)
-.then(() => {
-  console.log('Connected to MongoDB');
-}).catch((error) => {
-  console.error('Error connecting to MongoDB:', error);
-});
+// const mongoUri = 'mongodb+srv://spencerincdev:badyspensa7480@zodiac.k8rucbs.mongodb.net/?retryWrites=true&w=majority&appName=Zodiac'
+// mongoose.connect(mongoUri)
+// .then(() => {
+//   console.log('Connected to MongoDB');
+// }).catch((error) => {
+//   console.error('Error connecting to MongoDB:', error);
+// });
 
 
 
@@ -70,11 +70,11 @@ app.use(
     secret: "zodiac_deriv",
     resave: false,
     saveUninitialized: true,
-    store: MongoStore.create({
-      mongoUrl: mongoUri,
-      collectionName: 'sessions',
-      ttl: 14 * 24 * 60 * 60 // 14 days (time to live)
-    }),
+    // store: MongoStore.create({
+    //   mongoUrl: mongoUri,
+    //   collectionName: 'sessions',
+    //   ttl: 14 * 24 * 60 * 60 // 14 days (time to live)
+    // }),
     cookie: { secure: true }, // Set to true if using HTTPS
   })
 );
@@ -155,7 +155,7 @@ app.post("/trade", (req, res) => {
       );
 
       if (client) {
-        req.session.authenticated = true;
+        // req.session.authenticated = true;
         return res.sendFile(path.join(__dirname, "public", "trade.html"));
       } else {
         return res.status(401).send("Invalid username or password");
@@ -243,12 +243,12 @@ app.get("/redirect", async (req, res) => {
       }
     }
 
-    req.session.loginIds = loginIds;
-    req.session.currentLoginId = currentLoginId
-    console.log(`Current login id stored in session ${req.session.currentLoginId}`);
+    const allUserIds  = loginIds;
+    const currentUserId = currentLoginId
+    console.log(`Current login id stored in session ${currentUserId}`);
 
 
-    res.redirect(`/sign-in`);
+    res.redirect(`/sign-in?currentLoginId=${currentUserId}`);
   } catch (error) {
     console.error("Error authorizing accounts:", error);
     res.sendStatus(500);

@@ -5,6 +5,8 @@ const derivAppID = 61696;
 const connection = new WebSocket(
   `wss://ws.binaryws.com/websockets/v3?app_id=${derivAppID}`
 );
+
+// works
 // Fetch trading instruments JSON
 let tradingInstruments = {};
 fetch("/trade/instruments")
@@ -26,6 +28,8 @@ connection.onopen = function () {
   console.log("WebSocket connection established.");
 };
 
+
+// works
 function ping() {
   if (api) {
     setInterval(() => {
@@ -34,15 +38,25 @@ function ping() {
   }
 }
 
+
+// works
 function getTradeTypeForSentiment(sentiment, index) {
-  const sentimentParts = sentiment.split("/");
-  if (sentimentParts[index]) {
-    const selectedPart = sentimentParts[index].trim();
-    return tradingInstruments.trade_types[selectedPart];
-  } else {
-    console.error("Index out of bounds or sentiment part is undefined.");
-    return null;
-  }
+  let tradingInstruments = {};
+      fetch("/trade/instruments")
+      .then((response) => response.json())
+      .then((data) => {
+          tradingInstruments = data;
+      
+      const sentimentParts = sentiment.split("/");
+      if (sentimentParts[index]) {
+      const selectedPart = sentimentParts[index].trim();
+
+      return tradingInstruments.trade_types[selectedPart];
+      } else {
+      console.error("Index out of bounds or sentiment part is undefined.");
+      return null;
+      }
+  })
 }
 
 
@@ -62,18 +76,31 @@ function evaluateAndBuyContract() {
   const market = document.getElementById("market").value;
   const submarket = document.getElementById("submarket").value;
 
-  const symbol = tradingInstruments.symbols[submarket];
-  if (!symbol) {
-    console.error("Invalid symbol derived from submarket.");
-    return;
-  }
+  let tradingInstruments = {};
+  fetch("/trade/instruments")
+    .then((response) => response.json())
+    .then((data) => {
+      tradingInstruments = data;
+  
+      const symbol = tradingInstruments.symbols[submarket];
+      if (!symbol) {
+        console.error("Invalid symbol derived from submarket.");
+        return;
+      }
+  
+      const price = parseFloat(document.getElementById("price").value);
+      console.log(`Symbol: ${symbol}, Price: ${price}`);
 
-  const price = parseFloat(document.getElementById("price").value);
-
-  buyContract(symbol, tradeType, 1, price);
+      buyContract(symbol, tradeType, 1, price);
+    })
+    .catch((error) => {
+      console.error("Error fetching trading instruments:", error);
+    });
+  
 }
 
 
+// works
 // Function to get query parameters from the URL
 function getQueryParam(param) {
   const urlParams = new URLSearchParams(window.location.search);
@@ -137,6 +164,7 @@ function buyContract(symbol, tradeType, duration, price) {
   });
 }
 
+// works
 function calculatePercentages() {
   const percentages = [];
   const divElements = resultsContainer.getElementsByTagName("div");
