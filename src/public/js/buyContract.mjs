@@ -53,6 +53,7 @@ function getTradeTypeForSentiment(sentiment, index) {
       if (sentimentParts[index]) {
       const selectedPart = sentimentParts[index].trim();
 
+      console.log(tradingInstruments.trade_types[selectedPart])
       return tradingInstruments.trade_types[selectedPart];
       } else {
       console.error("Index out of bounds or sentiment part is undefined.");
@@ -65,6 +66,7 @@ function getTradeTypeForSentiment(sentiment, index) {
 function evaluateAndBuyContract() {
   const sentimentDropdown = document.getElementById("sentiment");
   const selectedSentiment = sentimentDropdown.value;
+  console.log(`selected sentiment: ${selectedSentiment}`);
   const percentages = calculatePercentages();
   const maxPercentage = Math.max(...percentages);
   const maxIndex = percentages.indexOf(maxPercentage);
