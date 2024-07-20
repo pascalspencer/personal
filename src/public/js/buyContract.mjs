@@ -5,6 +5,7 @@ const derivAppID = 61696;
 const connection = new WebSocket(
   `wss://ws.binaryws.com/websockets/v3?app_id=${derivAppID}`
 );
+let api;
 
 // works
 // Fetch trading instruments JSON
