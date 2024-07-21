@@ -69,6 +69,11 @@ function evaluateAndBuyContract() {
   console.log(`selected sentiment: ${selectedSentiment}`);
   const percentages = calculatePercentages();
   const maxPercentage = Math.max(...percentages);
+
+  if (maxPercentage < 40) {
+    return;
+  };
+
   const maxIndex = percentages.indexOf(maxPercentage);
 
   const tradeType = getTradeTypeForSentiment(selectedSentiment, maxIndex);
