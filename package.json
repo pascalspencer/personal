@@ -10,6 +10,7 @@
     "@deriv/deriv-api": "^1.0.15",
     "@jsenv/node-module-import-map": "^13.6.1",
     "@node-loader/import-maps": "^1.1.0",
+    "axios": "^1.7.2",
     "connect-mongo": "^5.1.0",
     "connect-redis": "^7.1.1",
     "dotenv": "^16.4.5",

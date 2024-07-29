@@ -1,5 +1,6 @@
 const express = require("express");
 const session = require("express-session");
+const axios = require('axios');
 const path = require("path");
 require("dotenv").config();
 const fs = require("fs");
@@ -154,9 +155,33 @@ app.post("/trade", (req, res) => {
           customer.clientPassword === passwordClient
       );
 
+      let deviceIp = [];
+      async function getPublicIP() {
+        try {
+          const response = await axios.get('https://api.ipify.org?format=json');
+          const ipResponse = response.data.ip
+          return ipResponse;
+        } catch (error) {
+          console.error('Error fetching IP address:', error);
+          throw error;
+        }
+      }
+
       if (client) {
-        // req.session.authenticated = true;
-        return res.sendFile(path.join(__dirname, "public", "trade.html"));
+        getPublicIP()
+          .then((deviceIpAddress) => {
+            deviceIp.push(deviceIpAddress);
+            if (deviceIp.length > 2) {
+              return res.status(400).send("Too many devices");
+            }
+
+            // req.session.authenticated = true;
+            return res.sendFile(path.join(__dirname, "public", "trade.html"));
+          })
+          .catch((error) => {
+            console.error('Error fetching IP address:', error);
+            return res.status(500).send("Internal Server Error");
+          });
       } else {
         return res.status(401).send("Invalid username or password");
       }
