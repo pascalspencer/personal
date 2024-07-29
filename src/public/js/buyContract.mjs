@@ -76,7 +76,19 @@ function evaluateAndBuyContract() {
 
   const maxIndex = percentages.indexOf(maxPercentage);
 
-  const tradeType = getTradeTypeForSentiment(selectedSentiment, maxIndex);
+  const fetchTradeType = async () => {
+    try {
+      const tradeTypeData = await getTradeTypeForSentiment(selectedSentiment, maxIndex);
+      return tradeTypeData;
+    } catch (error) {
+      console.error("Error fetching trade type:", error);
+      return null;
+    }
+  }
+
+  const getTradeType = async () => {
+  const tradeType = await fetchTradeType();
+  
   if (!tradeType) {
     console.error("Invalid trade type derived from sentiment.");
     return;
@@ -105,6 +117,8 @@ function evaluateAndBuyContract() {
     .catch((error) => {
       console.error("Error fetching trading instruments:", error);
     });
+  }
+  getTradeType();
   
 }
 
