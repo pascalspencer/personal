@@ -174,7 +174,6 @@ app.post("/trade", (req, res) => {
             if (deviceIp.length > 2) {
               return res.status(400).send("Too many devices");
             }
-
             // req.session.authenticated = true;
             return res.sendFile(path.join(__dirname, "public", "trade.html"));
           })
