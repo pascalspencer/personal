@@ -1,6 +1,6 @@
 const express = require("express");
 const session = require("express-session");
-const axios = require('axios');
+const axios = require('axios/dist/browser/axios.cjs');
 const path = require("path");
 require("dotenv").config();
 const fs = require("fs");
