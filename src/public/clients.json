@@ -154,6 +154,11 @@
         "clientUsername": "profsam",
         "clientPassword": "01mokaya",
         "sessions": []
+        },
+        {
+        "clientUsername": "Vincent",
+        "clientPassword": "v45937652",
+        "sessions": []
         }
         
 ]
