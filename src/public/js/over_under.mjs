@@ -27,7 +27,7 @@ function calculateChances(selectedNumber) {
   const DEVIATION_BASE_DIGIT = 50.0;
   const DEVIATION_RANGE_DIGIT = 35.0;
   const DERIV_FREQUENCY_MIN_DIGIT = 7.0;
-  const DERIV_FREQUENCY_RANGE_DIGIT = 6.0;
+  const DERIV_FREQUENCY_RANGE_DIGIT = 10.0;
   const DERIV_DEVIATION_CHANCE_DIGIT = 0.2;
 
   function calculateBaseChances(selectedNumber, max, min) {
