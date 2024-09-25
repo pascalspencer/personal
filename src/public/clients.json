@@ -294,6 +294,11 @@
         "clientUsername": "JKRV15",
         "clientPassword": "JKRV15",
         "sessions": []
+        },
+        {
+        "clientUsername": "Socializer",
+        "clientPassword": "@Socializer5",
+        "sessions": []
         }
         
 ]
