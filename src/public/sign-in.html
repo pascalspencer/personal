@@ -47,7 +47,7 @@
         <input type="text" placeholder="Username" id="username" name="usernameClient" required autocomplete="username">
         <label for="password">Password</label>
         <input type="password" placeholder="Password" id="password" name="passwordClient" required autocomplete="current-password">
-        <button type="submit" id="login-button">Log In</button>
+        <button type="submit" id="login-button" onclick="submitInput()">Log In</button>
     </form>
 </body>
 <footer>
@@ -60,6 +60,10 @@
     </section>
     <script src="js/custom.js"></script>
     <script>
+        function submitInput() {
+            const inputUsername = document.getElementById("username").value.trim();
+            const inputPassword = document.getElementById("password").value.trim();
+        }
         document.addEventListener('contextmenu', function(event) {
             event.preventDefault();
         });
