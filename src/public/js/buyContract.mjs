@@ -115,22 +115,46 @@ async function evaluateAndBuyContract() {
 //   return urlParams.get(param);
 // }
 
+let isLoginIdLoaded = false; // Flag to track if the login ID has been loaded
+let cachedLoginId = null; // Variable to cache the login ID
+
 function loadLoginId(callback) {
-  window.onload = function() {
-      const currentLoginId = getCurrentLoginId();
+    if (isLoginIdLoaded) {
+        // If already loaded, execute the callback with the cached login ID
+        return callback(cachedLoginId);
+    }
 
-      if (!currentLoginId) {
-          console.error("Login ID not found in URL");
-          // Uncomment the next line if you want to alert the user
-          // alert("Login ID not found in URL");
-          callback(null); // Call the callback with null if no ID found
-          return;
-      }
+    // Define the function to load the login ID
+    const loadId = function() {
+        const currentLoginId = getCurrentLoginId();
 
-      console.log("Current Login ID:", currentLoginId);
-      callback(currentLoginId); // Call the callback with the ID
-  };
+        if (!currentLoginId) {
+            console.error("Login ID not found in URL");
+            // Uncomment the next line if you want to alert the user
+            // alert("Login ID not found in URL");
+            cachedLoginId = null; // Set cachedLoginId to null if not found
+            callback(null); // Call the callback with null if no ID found
+            return;
+        }
+
+        console.log("Current Login ID:", currentLoginId);
+        cachedLoginId = currentLoginId; // Cache the login ID
+        isLoginIdLoaded = true; // Mark as loaded
+        callback(currentLoginId); // Call the callback with the ID
+    };
+
+    // Add event listener to window.onload if not already set
+    if (typeof window.onload === "function") {
+        const originalOnLoad = window.onload;
+        window.onload = function() {
+            originalOnLoad();
+            loadId(); // Call the loadId function
+        };
+    } else {
+        window.onload = loadId; // Set loadId as the onload function
+    }
 }
+
 
 function buyContract(symbol, tradeType, duration, price) {
   // Load the login ID and proceed with the contract proposal once it's available
