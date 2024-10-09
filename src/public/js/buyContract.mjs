@@ -136,7 +136,7 @@ function buyContract(symbol, tradeType, duration, price) {
   // Load the login ID and proceed with the contract proposal once it's available
   loadLoginId(function(loginId) {
       if (!loginId) {
-          // Handle the case where loginId is not available
+        console.error("Login ID not found in callback function");
           return; // Exit if no loginId
       }
 
