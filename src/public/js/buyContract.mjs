@@ -42,28 +42,28 @@ function ping() {
 
 
 // works
-function getTradeTypeForSentiment(sentiment, index) {
-  let tradingInstruments = {};
-      fetch("/trade/instruments")
-      .then((response) => response.json())
-      .then((data) => {
-          tradingInstruments = data;
-      
-      const sentimentParts = sentiment.split("/");
-      if (sentimentParts[index]) {
+async function getTradeTypeForSentiment(sentiment, index) {
+  try {
+    const response = await fetch("/trade/instruments");
+    const tradingInstruments = await response.json();
+
+    const sentimentParts = sentiment.split("/");
+    if (sentimentParts[index]) {
       const selectedPart = sentimentParts[index].trim();
 
-      console.log(tradingInstruments.trade_types[selectedPart])
+      console.log(tradingInstruments.trade_types[selectedPart]);
       return tradingInstruments.trade_types[selectedPart];
-      } else {
+    } else {
       console.error("Index out of bounds or sentiment part is undefined.");
       return null;
-      }
-  })
+    }
+  } catch (error) {
+    console.error("Error fetching trade instruments:", error);
+    return null;
+  }
 }
 
-
-function evaluateAndBuyContract() {
+async function evaluateAndBuyContract() {
   const sentimentDropdown = document.getElementById("sentiment");
   const selectedSentiment = sentimentDropdown.value;
   console.log(`selected sentiment: ${selectedSentiment}`);
@@ -72,55 +72,38 @@ function evaluateAndBuyContract() {
 
   if (maxPercentage < 40) {
     return;
-  };
+  }
 
   const maxIndex = percentages.indexOf(maxPercentage);
 
-  const fetchTradeType = async () => {
-    try {
-      const tradeTypeData = getTradeTypeForSentiment(selectedSentiment, maxIndex);
-      return tradeTypeData;
-    } catch (error) {
-      console.error("Error fetching trade type:", error);
-      return null;
+  try {
+    const tradeType = await getTradeTypeForSentiment(selectedSentiment, maxIndex);
+    console.log(tradeType);
+
+    if (!tradeType) {
+      console.error("Invalid trade type derived from sentiment.");
+      return;
     }
+
+    const market = document.getElementById("market").value;
+    const submarket = document.getElementById("submarket").value;
+
+    const response = await fetch("/trade/instruments");
+    const tradingInstruments = await response.json();
+  
+    const symbol = tradingInstruments.symbols[submarket];
+    if (!symbol) {
+      console.error("Invalid symbol derived from submarket.");
+      return;
+    }
+
+    const price = parseFloat(document.getElementById("price").value);
+    console.log(`Symbol: ${symbol}, Price: ${price}`);
+
+    buyContract(symbol, tradeType, 1, price);
+  } catch (error) {
+    console.error("Error fetching trade instruments or trade type:", error);
   }
-
-  const getTradeType = async () => {
-  const tradeType = await fetchTradeType();
-  console.log(tradeType);
-  
-  if (!tradeType) {
-    console.error("Invalid trade type derived from sentiment.");
-    return;
-  }
-
-  const market = document.getElementById("market").value;
-  const submarket = document.getElementById("submarket").value;
-
-  let tradingInstruments = {};
-  fetch("/trade/instruments")
-    .then((response) => response.json())
-    .then((data) => {
-      tradingInstruments = data;
-  
-      const symbol = tradingInstruments.symbols[submarket];
-      if (!symbol) {
-        console.error("Invalid symbol derived from submarket.");
-        return;
-      }
-  
-      const price = parseFloat(document.getElementById("price").value);
-      console.log(`Symbol: ${symbol}, Price: ${price}`);
-
-      buyContract(symbol, tradeType, 1, price);
-    })
-    .catch((error) => {
-      console.error("Error fetching trading instruments:", error);
-    });
-  }
-  getTradeType();
-  
 }
 
 
