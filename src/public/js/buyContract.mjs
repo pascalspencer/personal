@@ -78,7 +78,7 @@ function evaluateAndBuyContract() {
 
   const fetchTradeType = async () => {
     try {
-      const tradeTypeData = await getTradeTypeForSentiment(selectedSentiment, maxIndex);
+      const tradeTypeData = getTradeTypeForSentiment(selectedSentiment, maxIndex);
       return tradeTypeData;
     } catch (error) {
       console.error("Error fetching trade type:", error);
