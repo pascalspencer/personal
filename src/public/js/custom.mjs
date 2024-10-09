@@ -20,8 +20,13 @@ function getQueryParam(param) {
   };
 
 function getCurrentLoginId(){
-    const currentLoginId = getQueryParam("currentLoginId")
-    return currentLoginId;
+    window.onload = function() {
+        const currentLoginId = getQueryParam("currentLoginId");
+        console.log(currentLoginId)
+        return currentLoginId; // Ensure this logs the correct ID
+      };
+      
+    
 };
 
 
