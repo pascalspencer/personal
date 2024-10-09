@@ -121,7 +121,7 @@ function buyContract(symbol, tradeType, duration, price) {
 
   if (!currentLoginId) {
     console.error("Login ID not found in URL");
-    alert("Login ID not found in URL");
+    // alert("Login ID not found in URL");
     return;
   }
 
