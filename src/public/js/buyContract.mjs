@@ -128,6 +128,7 @@ function buyContract(symbol, tradeType, duration, price) {
     }
 
     console.log("Current Login ID:", currentLoginId);
+    return currentLoginId
   };
   // Define the request object for the contract proposal
   const buyContractRequest = {
@@ -139,7 +140,7 @@ function buyContract(symbol, tradeType, duration, price) {
     duration: duration,
     duration_unit: "t",
     symbol: symbol,
-    loginid: currentLoginId,
+    loginid: getCurrentLoginId(),
   };
 
   // Send proposal request to the API
