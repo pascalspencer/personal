@@ -63,13 +63,16 @@ function getTradeTypeForSentiment(sentiment, index) {
 }
 
 
-const sentimentDropdown = document.getElementById("sentiment");
+function evaluateAndBuyContract() {
+  const sentimentDropdown = document.getElementById("sentiment");
   const selectedSentiment = sentimentDropdown.value;
   console.log(`selected sentiment: ${selectedSentiment}`);
   const percentages = calculatePercentages();
   const maxPercentage = Math.max(...percentages);
 
-  
+  if (maxPercentage < 40) {
+    return;
+  };
 
   const maxIndex = percentages.indexOf(maxPercentage);
 
@@ -92,6 +95,7 @@ const sentimentDropdown = document.getElementById("sentiment");
     return;
   }
 
+  const market = document.getElementById("market").value;
   const submarket = document.getElementById("submarket").value;
 
   let tradingInstruments = {};
@@ -115,11 +119,6 @@ const sentimentDropdown = document.getElementById("sentiment");
       console.error("Error fetching trading instruments:", error);
     });
   }
-
-function evaluateAndBuyContract() {
-  if (maxPercentage < 40) {
-    return;
-  };
   getTradeType();
   
 }
