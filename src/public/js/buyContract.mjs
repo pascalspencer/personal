@@ -69,9 +69,7 @@ const sentimentDropdown = document.getElementById("sentiment");
   const percentages = calculatePercentages();
   const maxPercentage = Math.max(...percentages);
 
-  if (maxPercentage < 40) {
-    return;
-  };
+  
 
   const maxIndex = percentages.indexOf(maxPercentage);
 
@@ -119,6 +117,9 @@ const sentimentDropdown = document.getElementById("sentiment");
   }
 
 function evaluateAndBuyContract() {
+  if (maxPercentage < 40) {
+    return;
+  };
   getTradeType();
   
 }
