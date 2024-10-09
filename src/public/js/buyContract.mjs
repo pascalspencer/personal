@@ -63,8 +63,7 @@ function getTradeTypeForSentiment(sentiment, index) {
 }
 
 
-function evaluateAndBuyContract() {
-  const sentimentDropdown = document.getElementById("sentiment");
+const sentimentDropdown = document.getElementById("sentiment");
   const selectedSentiment = sentimentDropdown.value;
   console.log(`selected sentiment: ${selectedSentiment}`);
   const percentages = calculatePercentages();
@@ -95,7 +94,6 @@ function evaluateAndBuyContract() {
     return;
   }
 
-  const market = document.getElementById("market").value;
   const submarket = document.getElementById("submarket").value;
 
   let tradingInstruments = {};
@@ -119,6 +117,8 @@ function evaluateAndBuyContract() {
       console.error("Error fetching trading instruments:", error);
     });
   }
+
+function evaluateAndBuyContract() {
   getTradeType();
   
 }
