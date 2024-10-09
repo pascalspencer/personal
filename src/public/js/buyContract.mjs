@@ -115,65 +115,74 @@ async function evaluateAndBuyContract() {
 //   return urlParams.get(param);
 // }
 
-function buyContract(symbol, tradeType, duration, price) {
-  function loadLoginId(){
-    window.onload = function() {
+function loadLoginId(callback) {
+  window.onload = function() {
       const currentLoginId = getCurrentLoginId();
 
       if (!currentLoginId) {
           console.error("Login ID not found in URL");
           // Uncomment the next line if you want to alert the user
           // alert("Login ID not found in URL");
+          callback(null); // Call the callback with null if no ID found
           return;
       }
 
       console.log("Current Login ID:", currentLoginId);
-      return currentLoginId;
-    };
-
+      callback(currentLoginId); // Call the callback with the ID
   };
-  // Define the request object for the contract proposal
-  const buyContractRequest = {
-    proposal: 1,
-    amount: price,
-    basis: "stake",
-    contract_type: tradeType,
-    currency: "USD",
-    duration: duration,
-    duration_unit: "t",
-    symbol: symbol,
-    loginid: loadLoginId(),
-  };
+}
 
-  // Send proposal request to the API
-  api.proposal(buyContractRequest).then((proposalResponse) => {
-    if (proposalResponse.error) {
-      console.error("Error in proposal response:", proposalResponse.error);
-      alert("Error in proposal response. Please try again.");
-      return;
-    }
-
-    // Define the request object to buy the contract using the proposal ID
-    const buyRequest = {
-      buy: proposalResponse.proposal.id,
-      price: price,
-    };
-
-    // Send buy request to the API
-    api.buy(buyRequest).then((buyResponse) => {
-      if (buyResponse.error) {
-        console.error("Error buying contract:", buyResponse.error);
-        alert("Error buying contract. Please try again.");
-      } else {
-        // Log the successful response and notify the user
-        console.log("Contract bought:", buyResponse);
-        alert("Contract bought successfully!");
+function buyContract(symbol, tradeType, duration, price) {
+  // Load the login ID and proceed with the contract proposal once it's available
+  loadLoginId(function(loginId) {
+      if (!loginId) {
+          // Handle the case where loginId is not available
+          return; // Exit if no loginId
       }
-    });
-  })
-  .catch((error) => {
-    console.error("Error in proposal request:", error);
-    alert("Error in proposal request. Please try again.");
+
+      // Define the request object for the contract proposal
+      const buyContractRequest = {
+          proposal: 1,
+          amount: price,
+          basis: "stake",
+          contract_type: tradeType,
+          currency: "USD",
+          duration: duration,
+          duration_unit: "t",
+          symbol: symbol,
+          loginid: loginId, // Use the loginId obtained from the callback
+      };
+
+      // Send proposal request to the API
+      api.proposal(buyContractRequest).then((proposalResponse) => {
+          if (proposalResponse.error) {
+              console.error("Error in proposal response:", proposalResponse.error);
+              alert("Error in proposal response. Please try again.");
+              return;
+          }
+
+          // Define the request object to buy the contract using the proposal ID
+          const buyRequest = {
+              buy: proposalResponse.proposal.id,
+              price: price,
+          };
+
+          // Send buy request to the API
+          api.buy(buyRequest).then((buyResponse) => {
+              if (buyResponse.error) {
+                  console.error("Error buying contract:", buyResponse.error);
+                  alert("Error buying contract. Please try again.");
+              } else {
+                  // Log the successful response and notify the user
+                  console.log("Contract bought:", buyResponse);
+                  alert("Contract bought successfully!");
+              }
+          });
+      })
+      .catch((error) => {
+          console.error("Error in proposal request:", error);
+          alert("Error in proposal request. Please try again.");
+      });
   });
 }
 
