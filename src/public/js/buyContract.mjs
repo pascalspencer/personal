@@ -88,6 +88,7 @@ function evaluateAndBuyContract() {
 
   const getTradeType = async () => {
   const tradeType = await fetchTradeType();
+  console.log(tradeType);
   
   if (!tradeType) {
     console.error("Invalid trade type derived from sentiment.");
