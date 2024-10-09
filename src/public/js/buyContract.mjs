@@ -116,19 +116,21 @@ async function evaluateAndBuyContract() {
 // }
 
 function buyContract(symbol, tradeType, duration, price) {
+  function loadLoginId(){
+    window.onload = function() {
+      const currentLoginId = getCurrentLoginId();
 
-  window.onload = function() {
-    const currentLoginId = getCurrentLoginId();
+      if (!currentLoginId) {
+          console.error("Login ID not found in URL");
+          // Uncomment the next line if you want to alert the user
+          // alert("Login ID not found in URL");
+          return;
+      }
 
-    if (!currentLoginId) {
-        console.error("Login ID not found in URL");
-        // Uncomment the next line if you want to alert the user
-        // alert("Login ID not found in URL");
-        return;
-    }
+      console.log("Current Login ID:", currentLoginId);
+      return currentLoginId;
+    };
 
-    console.log("Current Login ID:", currentLoginId);
-    return currentLoginId
   };
   // Define the request object for the contract proposal
   const buyContractRequest = {
@@ -140,7 +142,7 @@ function buyContract(symbol, tradeType, duration, price) {
     duration: duration,
     duration_unit: "t",
     symbol: symbol,
-    loginid: getCurrentLoginId(),
+    loginid: loadLoginId(),
   };
 
   // Send proposal request to the API
