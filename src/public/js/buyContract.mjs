@@ -117,16 +117,18 @@ async function evaluateAndBuyContract() {
 
 function buyContract(symbol, tradeType, duration, price) {
 
-  const currentLoginId = getCurrentLoginId();
+  window.onload = function() {
+    const currentLoginId = getCurrentLoginId();
 
-  if (!currentLoginId) {
-    console.error("Login ID not found in URL");
-    // alert("Login ID not found in URL");
-    return;
-  }
+    if (!currentLoginId) {
+        console.error("Login ID not found in URL");
+        // Uncomment the next line if you want to alert the user
+        // alert("Login ID not found in URL");
+        return;
+    }
 
-  console.log("Current Login ID:", currentLoginId);
-
+    console.log("Current Login ID:", currentLoginId);
+  };
   // Define the request object for the contract proposal
   const buyContractRequest = {
     proposal: 1,

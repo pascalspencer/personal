@@ -17,17 +17,14 @@ function myMap() {
 function getQueryParam(param) {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get(param);
-  };
+}
 
-function getCurrentLoginId(){
-    window.onload = function() {
-        const currentLoginId = getQueryParam("currentLoginId");
-        console.log(currentLoginId)
-        return currentLoginId; // Ensure this logs the correct ID
-      };
-      
-    
-};
+function getCurrentLoginId() {
+    const currentLoginId = getQueryParam("currentLoginId");
+    console.log(currentLoginId);
+    return currentLoginId; // Return the ID for use elsewhere
+}
+
 
 
 // function renderTemplate() {
