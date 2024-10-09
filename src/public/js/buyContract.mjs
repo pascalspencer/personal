@@ -1,4 +1,5 @@
 import DerivAPIBasic from "https://cdn.skypack.dev/@deriv/deriv-api/dist/DerivAPIBasic";
+import { getCurrentLoginId } from "./custom.mjs";
 
 
 const derivAppID = 61696;
@@ -108,15 +109,15 @@ async function evaluateAndBuyContract() {
 
 
 // works
-// Function to get query parameters from the URL
-function getQueryParam(param) {
-  const urlParams = new URLSearchParams(window.location.search);
-  return urlParams.get(param);
-}
+// // Function to get query parameters from the URL
+// function getQueryParam(param) {
+//   const urlParams = new URLSearchParams(window.location.search);
+//   return urlParams.get(param);
+// }
 
 function buyContract(symbol, tradeType, duration, price) {
-  // Extract the currentLoginId from the URL
-  const currentLoginId = getQueryParam("currentLoginId");
+
+  const currentLoginId = getCurrentLoginId();
 
   if (!currentLoginId) {
     console.error("Login ID not found in URL");

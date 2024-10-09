@@ -14,6 +14,16 @@ function myMap() {
     var map = new google.maps.Map(document.getElementById('googleMap'), mapOptions);
 }
 
+function getQueryParam(param) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param);
+  };
+
+function getCurrentLoginId(){
+    const currentLoginId = getQueryParam("currentLoginId")
+    return currentLoginId;
+};
+
 
 // function renderTemplate() {
 //     fetch('/sign-in')
@@ -66,3 +76,5 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
 });
+
+export { getCurrentLoginId };
