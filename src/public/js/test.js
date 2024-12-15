@@ -1,3 +1,5 @@
+import { getCurrentLoginId } from "./custom.mjs";
+
 let isLoginIdLoaded = false; // Flag to track if the login ID has been loaded
 let cachedLoginId = null; // Variable to cache the login ID
 
@@ -13,6 +15,8 @@ function loadLoginId(callback) {
 
         if (!currentLoginId) {
             console.error("Login ID not found in URL");
+
+
             // Uncomment the next line if you want to alert the user
             // alert("Login ID not found in URL");
             cachedLoginId = null; // Set cachedLoginId to null if not found
