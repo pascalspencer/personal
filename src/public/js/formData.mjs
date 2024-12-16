@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     setTimeout(() => {
       loadingMessage.textContent = "Finalizing predictions...";
-    }, 4500);
+    }, 6500);
 
     setTimeout(() => {
       spinnerContainer.style.display = "none";
@@ -32,7 +32,7 @@ document.addEventListener("DOMContentLoaded", function () {
       document.body.classList.remove("blur-background");
       displaySelectedOptionsAfterFetch();
       evaluateAndBuyContract();
-    }, 8500);
+    }, 10500);
   }
 
 
