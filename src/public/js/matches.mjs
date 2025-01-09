@@ -11,12 +11,11 @@ const DERIV_FREQUENCY_MIN = 8.0;
 const DERIV_FREQUENCY_RANGE = 5.0;
 
 function determineBaseChances(selectedNumber) {
-  const totalNumbers = numbers.length; // total numbers from 0 to 9
+  const totalNumbers = numbers.length; 
   const chance = 100 / totalNumbers;
 
   let higherChance, lowerChance;
 
-  // Calculate chances based on selectedNumber
   higherChance = lowerChance = chance;
 
   return { higherChance, lowerChance };
@@ -28,7 +27,7 @@ function applyRandomDeviation(higherChance, lowerChance, selectedNumber) {
     selectedNumber > Math.min(...numbers) &&
     selectedNumber < Math.max(...numbers)
   ) {
-    const increaseAmount = Math.random() * 10; // Increase by up to 10%
+    const increaseAmount = Math.random() * 10; 
     higherChance = Math.min(higherChance + increaseAmount, MAX_PERCENTAGE);
     lowerChance = Math.max(lowerChance - increaseAmount, 0);
   }
@@ -56,29 +55,28 @@ function determinePercentage(selectedNumber) {
     lowerChance
   ));
 
-  // Ensure bounds are respected
+
   higherChance = Math.min(higherChance, MAX_PERCENTAGE);
   lowerChance = Math.max(lowerChance, 0);
 
-  // Generate a random frequency between DERIV_FREQUENCY_MIN and (DERIV_FREQUENCY_MIN + DERIV_FREQUENCY_RANGE)
+
   const randomFrequency =
     Math.random() * DERIV_FREQUENCY_RANGE + DERIV_FREQUENCY_MIN;
 
-  // Multiply the chosen percentage by the random frequency
-  const differs = higherChance * randomFrequency;
+
+    const differs = higherChance * randomFrequency;
   let matches = lowerChance * randomFrequency;
 
-  // Adjust match chance to be higher when deviation occurs
+
   if (
     Math.random() < DERIV_DEVIATION_CHANCE &&
     selectedNumber > Math.min(...numbers) &&
     selectedNumber < Math.max(...numbers)
   ) {
-    matches *= 2; // Increase match chance significantly during deviation
+    matches *= 2; 
   } else {
-    // Adjust match chance to be low most of the time
     if (Math.random() >= MATCH_CHANCE_FREQUENCY) {
-      matches *= 0.1; // Reduce match chance significantly
+      matches *= 0.1; 
     }
   }
 
@@ -91,19 +89,16 @@ function determinePercentage(selectedNumber) {
   };
 }
 
-// Export a function to determine the chances
+
 function determineChances(selectedNumber) {
     const { matches, differs } = determinePercentage(selectedNumber);
 
-    // Determine total chance
     const totalChance = matches + differs;
 
-    // Determine matchesChance and differsChance percentages
     const matchesChance = Math.floor((matches / totalChance) * 97);
     const differsChance = Math.floor((differs / totalChance) * 97);
 
 
-    // Ensure matchesChance is always greater than differsChance if they are the same
     if (matchesChance === differsChance) {
       matchesChance += 1;
       if (matchesChance > 97) {

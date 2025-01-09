@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const spinnerContainer = document.getElementById("spinner-container");
   const loadingMessage = document.getElementById("loading-message");
   const resultsContainer = document.getElementById("results-container");
-  const derivAppID = 61696; // Replace with your actual app ID
+  const derivAppID = 61696; 
   const connection = new WebSocket(
     `wss://ws.binaryws.com/websockets/v3?app_id=${derivAppID}`
   );
@@ -49,15 +49,16 @@ document.addEventListener("DOMContentLoaded", function () {
         return response.json();
       })
       .then((data) => {
-        // Ensure data[market] exists and is an array
+
+
         submarkets = data[market] || [];
 
-        // Populate submarket dropdown
+
         submarkets.forEach((submarket) => {
           addOption(submarketDropdown, submarket);
         });
 
-        // Enable and make submarket dropdown required
+
         submarketDropdown.disabled = false;
         submarketDropdown.required = true;
       })
@@ -93,12 +94,12 @@ document.addEventListener("DOMContentLoaded", function () {
   connection.onopen = function () {
     api = new DerivAPIBasic({ connection });
 
-    // Call ping once the connection is open
+
     ping();
 
     console.log("WebSocket connection established.");
 
-    // Fetch sentiments data once the WebSocket connection is open
+
     fetch("/trade/data")
       .then((response) => {
         if (!response.ok) {
@@ -122,7 +123,6 @@ document.addEventListener("DOMContentLoaded", function () {
         return response.json();
       })
       .then((data) => {
-        // Ensure data exists and is an array
       submarkets = data;
       populateSubmarkets();
       })
@@ -215,7 +215,6 @@ document.addEventListener("DOMContentLoaded", function () {
       return response.json();
     })
     .then((data) => {
-      // Assuming data structure like { Multipliers: [...], up_and_down: [...], high_and_low: [...], digits: [...] }
       sentimentsData = {
         Multipliers: data.Multipliers || [],
         up_and_down: data.up_and_down || [],

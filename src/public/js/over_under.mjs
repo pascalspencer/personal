@@ -10,7 +10,6 @@ function calculateChances(selectedNumber) {
     return { overChance, underChance };
   }
 
-  // Deviation frequencies for specific numbers
   const deviationFrequenciesDigits = {
     1: 1,
     2: 2,
@@ -22,7 +21,6 @@ function calculateChances(selectedNumber) {
     8: 1,
   };
 
-  // Constants
   const MAX_PERCENTAGE_DIGIT = 93;
   const DEVIATION_BASE_DIGIT = 50.0;
   const DEVIATION_RANGE_DIGIT = 35.0;
