@@ -271,9 +271,26 @@ app.get("/redirect", async (req, res) => {
     const currentUserId = currentLoginId
     console.log(`Current login id stored in session ${currentUserId}`);
 
+    if (currentUserId) {
+      // Successful authorization, redirect immediately
+      return res.redirect(`/sign-in?currentLoginId=${currentLoginId}`);
+    } else {
+        // Authorization failed, refresh first and then redirect
+        return res.send(`
+            <script>
+                setTimeout(() => {
+                    location.reload();
+                }, 1000); // Refresh after 1 second
+                
+                setTimeout(() => {
+                    window.location.href = "/sign-in?currentLoginId=${currentUserId}";
+                }, 3000); // Redirect after 3 seconds
+            </script>
+        `);
+    }
 
-    res.redirect(`/sign-in?currentLoginId=${currentUserId}`);
-  } catch (error) {
+
+ } catch (error) {
     console.error("Error authorizing accounts:", error);
     res.sendStatus(500);
   }
