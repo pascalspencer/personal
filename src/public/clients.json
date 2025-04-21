@@ -569,8 +569,12 @@
         "clientUsername": "pedro007",
         "clientPassword": "Happy@2025",
         "sessions": []
+        },
+        {
+        "clientUsername": "AndersonMungai",
+        "clientPassword": "Andy001",
+        "sessions": []
         }
-        
          
 ]
 }
