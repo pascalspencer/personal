@@ -614,6 +614,11 @@
         "clientUsername": "Peter",
         "clientPassword": "Pinchez",
         "sessions": []
+        },
+        {
+        "clientUsername": "Cardinal",
+        "clientPassword": "@DAVIS2273qwe",
+        "sessions": []
         }
          
 ]
