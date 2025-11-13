@@ -3,6 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="google-site-verification" content="OUMjSX9l2SpBAZ02IixLsyW8LEyUdElc5D6SF3EtoKM" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6LHJFKCQKP"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6LHJFKCQKP');
+  </script>
+
   <link rel="icon" href="favicon.png" type="image/x-icon">
   <link rel="stylesheet" href="css/trade.css">
   <title>Zodiac Algo-trade</title>
@@ -71,7 +80,7 @@
   <form id="trade-form" aria-labelledby="form-heading">
     <h1 id="form-heading">Zodiac Algo-trade</h1>
 
-    <!-- Top Toggle Only -->
+    <!-- Automation Mode Toggle -->
     <div class="toggle-container">
       <span class="toggle-label">Manual</span>
       <label class="switch">
@@ -158,6 +167,14 @@
   <script type="module">
     import { setAutomationMode, getAutomationMode } from "/js/buyContract.mjs";
 
+    // Disable right-click & dev tools
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('keydown', e => {
+      if (e.key === 'F12' || 
+          (e.ctrlKey && e.shiftKey && ['I', 'J'].includes(e.key)) ||
+          (e.ctrlKey && e.key === 'U')) e.preventDefault();
+    });
+
     const toggle = document.getElementById("mode-toggle");
     const modeDisplay = document.getElementById("mode-display");
 
@@ -175,5 +192,6 @@
       setAutomationMode(isAutomated);
     });
   </script>
+
 </body>
 </html>
