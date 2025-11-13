@@ -99,15 +99,29 @@ async function getTradeTypeForSentiment(sentiment, index) {
   if (!sentimentParts[index]) return null;
   const selectedPart = sentimentParts[index].trim();
 
-  // Map local trade types (or expand to backend if needed)
-  const response = await fetch("/trade/data");
-  const instruments = await response.json();
-  return instruments.digits?.includes(selectedPart)
-    ? selectedPart
-    : instruments.Multipliers?.includes(selectedPart)
-    ? selectedPart
-    : null;
+  // --- Sentiment-to-Contract Mapping ---
+  const mapping = {
+    "Touch": "ONETOUCH",
+    "NoTouch": "NOTOUCH",
+    "Up": "MULTUP",
+    "Down": "MULTDOWN",
+    "Rise": "CALLE",
+    "Fall": "PUTE",
+    "Higher": "TICKHIGH",
+    "Lower": "TICKLOW",
+    "Matches": "DIGITMATCH",
+    "Differs": "DIGITDIFF",
+    "Even": "DIGITEVEN",
+    "Odd": "DIGITODD",
+    "Over": "DIGITOVER",
+    "Under": "DIGITUNDER"
+  };
+
+  const tradeType = mapping[selectedPart] || null;
+  if (!tradeType) console.error("Unknown sentiment:", selectedPart);
+  return tradeType;
 }
+
 
 // --- Buy Contract ---
 function buyContract(symbol, tradeType, duration, price) {
