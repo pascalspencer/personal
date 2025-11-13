@@ -165,25 +165,32 @@
   <script type="module" src="/js/formData.mjs" defer></script>
   <script type="module" src="/js/buyContract.mjs" defer></script>
 
-  <script>
-    // Disable right-click and dev tools
-    document.addEventListener('contextmenu', e => e.preventDefault());
-    document.addEventListener('keydown', e => {
-      if (e.key === 'F12' || 
-          (e.ctrlKey && e.shiftKey && ['I', 'J'].includes(e.key)) ||
-          (e.ctrlKey && e.key === 'U')) e.preventDefault();
-    });
+  <script type="module">
+  import { setAutomationMode, stopAutomation } from "/js/buyContract.mjs";
 
-    // Toggle mode functionality
-    const toggle = document.getElementById('mode-toggle');
-    const modeDisplay = document.getElementById('mode-display');
+  // Disable right-click & dev tools
+  document.addEventListener('contextmenu', e => e.preventDefault());
+  document.addEventListener('keydown', e => {
+    if (e.key === 'F12' || 
+        (e.ctrlKey && e.shiftKey && ['I', 'J'].includes(e.key)) ||
+        (e.ctrlKey && e.key === 'U')) e.preventDefault();
+  });
 
-    toggle.addEventListener('change', () => {
-      const mode = toggle.checked ? 'Automated' : 'Manual';
-      modeDisplay.innerHTML = `Current Mode: <strong>${mode}</strong>`;
-      document.body.classList.toggle('auto-mode', toggle.checked);
-      // 🔹 Add your automation logic trigger here
-    });
-  </script>
+  // Toggle mode functionality
+  const toggle = document.getElementById('mode-toggle');
+  const modeDisplay = document.getElementById('mode-display');
+
+  toggle.addEventListener('change', () => {
+    const mode = toggle.checked ? 'Automated' : 'Manual';
+    modeDisplay.innerHTML = `Current Mode: <strong>${mode}</strong>`;
+
+    if (toggle.checked) {
+      setAutomationMode(true);   // ✅ Enable automation
+    } else {
+      stopAutomation();          // 🚫 Disable automation
+    }
+  });
+</script>
+
 </body>
 </html>

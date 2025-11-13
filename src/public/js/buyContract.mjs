@@ -21,6 +21,44 @@ fetch("/trade/instruments")
     console.error("Error fetching trading instruments:", error)
   );
 
+// --- automation control flag ---
+let isAutomationEnabled = false;
+
+// Function to toggle automation from outside this module
+function setAutomationMode(enabled) {
+  isAutomationEnabled = enabled;
+  console.log("Automation mode:", enabled ? "ON" : "OFF");
+
+  // Optionally start automation loop when turned on
+  if (enabled) {
+    startAutomation();
+  }
+}
+
+// Run automated evaluation and buying repeatedly
+let automationInterval = null;
+
+function startAutomation() {
+  if (automationInterval) clearInterval(automationInterval);
+
+  automationInterval = setInterval(() => {
+    if (isAutomationEnabled) {
+      evaluateAndBuyContract();
+    }
+  }, 5000); // Runs every 5 seconds — adjust interval as needed
+}
+
+function stopAutomation() {
+  isAutomationEnabled = false;
+  if (automationInterval) {
+    clearInterval(automationInterval);
+    automationInterval = null;
+  }
+}
+
+export { evaluateAndBuyContract, setAutomationMode, stopAutomation };
+
+
 
 connection.onopen = function () {
   api = new DerivAPIBasic({ connection });
