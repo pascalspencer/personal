@@ -3,15 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="google-site-verification" content="OUMjSX9l2SpBAZ02IixLsyW8LEyUdElc5D6SF3EtoKM" />
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6LHJFKCQKP"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-6LHJFKCQKP');
-  </script>
-
   <link rel="icon" href="favicon.png" type="image/x-icon">
   <link rel="stylesheet" href="css/trade.css">
   <title>Zodiac Algo-trade</title>
@@ -80,7 +71,7 @@
   <form id="trade-form" aria-labelledby="form-heading">
     <h1 id="form-heading">Zodiac Algo-trade</h1>
 
-    <!-- Automation Mode Toggle -->
+    <!-- Top Toggle Only -->
     <div class="toggle-container">
       <span class="toggle-label">Manual</span>
       <label class="switch">
@@ -175,6 +166,7 @@
           (e.ctrlKey && e.key === 'U')) e.preventDefault();
     });
 
+    document.addEventListener("DOMContentLoaded", () => {
     const toggle = document.getElementById("mode-toggle");
     const modeDisplay = document.getElementById("mode-display");
 
@@ -191,7 +183,7 @@
       modeDisplay.innerHTML = `Current Mode: <strong>${isAutomated ? "Automated" : "Manual"}</strong>`;
       setAutomationMode(isAutomated);
     });
+  });
   </script>
-
 </body>
 </html>
