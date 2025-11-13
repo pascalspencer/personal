@@ -10,11 +10,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const loadingMessage = document.getElementById("loading-message");
   const resultsContainer = document.getElementById("results-container");
 
-  // Top toggle
-  const modeToggle = document.getElementById("mode-toggle");
-  const modeDisplay = document.getElementById("mode-display");
-
   if (modeToggle) {
+    // Toggle listener
     modeToggle.addEventListener("change", () => {
       const enabled = modeToggle.checked;
       setAutomationMode(enabled);
@@ -24,7 +21,6 @@ document.addEventListener("DOMContentLoaded", function () {
   } else {
     console.warn("#mode-toggle not found in DOM!");
   }
-
   const derivAppID = 61696; 
   const connection = new WebSocket(
     `wss://ws.binaryws.com/websockets/v3?app_id=${derivAppID}`
@@ -38,10 +34,6 @@ document.addEventListener("DOMContentLoaded", function () {
     spinnerContainer.style.display = "block";
     document.body.classList.add("blur-background");
     loadingMessage.textContent = "Running simulations...";
-
-    setTimeout(() => {
-      loadingMessage.textContent = "Finalizing predictions...";
-    }, 6500);
 
     setTimeout(() => {
       spinnerContainer.style.display = "none";
@@ -58,6 +50,7 @@ document.addEventListener("DOMContentLoaded", function () {
         console.log("Manual mode active — skipping auto-trade.");
       }
     }, 10500);
+
   }
 
 
