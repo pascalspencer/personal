@@ -125,8 +125,9 @@ async function getTradeTypeForSentiment(sentiment, index) {
 
 // --- Buy Contract ---
 function buyContract(symbol, tradeType, duration, price) {
-  loadLoginId((loginId) => {
-    if (!loginId) return console.error("Login ID not found.");
+  const loginId = getCachedLoginId();
+  if (!loginId) return console.error("Login ID not found.");
+
 
     const buyRequest = {
       proposal: 1,
@@ -152,23 +153,29 @@ function buyContract(symbol, tradeType, duration, price) {
           });
       })
       .catch((err) => console.error("Proposal request failed:", err));
-  });
 }
 
 // --- Login ID Loader ---
-let isLoginIdLoaded = false;
+// let isLoginIdLoaded = false;
+
 let cachedLoginId = null;
 
-function loadLoginId(callback) {
-  if (isLoginIdLoaded) return callback(cachedLoginId);
-
-  const currentLoginId = getCurrentLoginId();
-  if (!currentLoginId) return callback(null);
-
-  cachedLoginId = currentLoginId;
-  isLoginIdLoaded = true;
-  callback(currentLoginId);
+function getCachedLoginId() {
+  if (!cachedLoginId) cachedLoginId = getCurrentLoginId();
+  return cachedLoginId;
 }
+
+
+// function loadLoginId(callback) {
+//   if (isLoginIdLoaded) return callback(cachedLoginId);
+
+//   const currentLoginId = getCurrentLoginId();
+//   if (!currentLoginId) return callback(null);
+
+//   cachedLoginId = currentLoginId;
+//   isLoginIdLoaded = true;
+//   callback(currentLoginId);
+// }
 
 // --- Helper to calculate sentiment percentages ---
 function calculatePercentages() {
