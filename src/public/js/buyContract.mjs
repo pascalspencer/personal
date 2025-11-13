@@ -61,7 +61,7 @@ async function fetchLiveInstruments() {
 }
 
 // --- Safe Evaluate & Buy ---
-export async function evaluateAndBuyContractSafe() {
+async function evaluateAndBuyContractSafe() {
   const market = document.getElementById("market")?.value;
   const submarket = document.getElementById("submarket")?.value;
   const sentimentDropdown = document.getElementById("sentiment");
@@ -167,4 +167,5 @@ function calculatePercentages() {
   return percentages;
 }
 
-
+// --- Export for automation ---
+export { evaluateAndBuyContractSafe };
