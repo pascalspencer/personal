@@ -167,5 +167,4 @@ function calculatePercentages() {
   return percentages;
 }
 
-// --- Export for automation ---
-export { evaluateAndBuyContractSafe };
+
