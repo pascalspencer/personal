@@ -10,8 +10,11 @@ document.addEventListener("DOMContentLoaded", function () {
   const loadingMessage = document.getElementById("loading-message");
   const resultsContainer = document.getElementById("results-container");
 
-  if (modeToggle) {
-    // Toggle listener
+  // Top toggle only
+  const modeToggle = document.getElementById("mode-toggle");
+  const modeDisplay = document.getElementById("mode-display");
+
+  if (modeToggle && modeDisplay) {
     modeToggle.addEventListener("change", () => {
       const enabled = modeToggle.checked;
       setAutomationMode(enabled);
@@ -19,8 +22,9 @@ document.addEventListener("DOMContentLoaded", function () {
       console.log(`Trading mode switched to: ${enabled ? "Automated" : "Manual"}`);
     });
   } else {
-    console.warn("#mode-toggle not found in DOM!");
+    console.warn("#mode-toggle or #mode-display not found in DOM!");
   }
+  
   const derivAppID = 61696; 
   const connection = new WebSocket(
     `wss://ws.binaryws.com/websockets/v3?app_id=${derivAppID}`
