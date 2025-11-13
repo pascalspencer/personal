@@ -10,17 +10,87 @@
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-
     gtag('config', 'G-6LHJFKCQKP');
   </script>
 
   <link rel="icon" href="favicon.png" type="image/x-icon">
   <link rel="stylesheet" href="css/trade.css">
   <title>Zodiac Algo-trade</title>
+
+  <style>
+    /* Toggle Switch Styling */
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
+      gap: 10px;
+    }
+    .toggle-label {
+      font-weight: bold;
+      font-size: 1rem;
+    }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 30px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: 0.4s;
+      border-radius: 30px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 22px;
+      width: 22px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: 0.4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: #4CAF50;
+    }
+    input:checked + .slider:before {
+      transform: translateX(30px);
+    }
+    #mode-display {
+      font-size: 1.1rem;
+      color: #333;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+  </style>
 </head>
 <body>
   <form id="trade-form" aria-labelledby="form-heading">
     <h1 id="form-heading">Zodiac Algo-trade</h1>
+
+    <!-- Toggle Switch -->
+    <div class="toggle-container">
+      <span class="toggle-label">Manual</span>
+      <label class="switch">
+        <input type="checkbox" id="mode-toggle">
+        <span class="slider"></span>
+      </label>
+      <span class="toggle-label">Automated</span>
+    </div>
+    <div id="mode-display">Current Mode: <strong>Manual</strong></div>
     
     <!-- Market Dropdown -->
     <label for="market">Market:</label>
@@ -37,7 +107,6 @@
     <label for="submarket">Submarket:</label>
     <select id="submarket" name="submarket" disabled>
       <option value="">Select Submarket</option>
-      <!-- Options will be dynamically populated based on the selected market -->
     </select>
 
     <!-- Contract Type Dropdown -->
@@ -48,17 +117,15 @@
       <option value="up_and_down">Up and Down</option>
       <option value="high_and_low">High and Low</option>
       <option value="digits">Digits</option>
-      <!-- Add more contract types as needed -->
     </select>
 
     <!-- Sentiment Dropdown -->
     <label for="sentiment">Sentiment:</label>
     <select id="sentiment" name="sentiment" required>
       <option value="">Select Sentiment</option>
-      <!-- Populate sentiments based on selected contract type -->
     </select>
 
-    <!-- Digits Input (conditionally displayed) -->
+    <!-- Digits Input -->
     <div id="digit-value" style="display: none;">
       <label for="input-value">Digits:</label>
       <select name="input-value" id="input-value">
@@ -75,6 +142,7 @@
         <option value="9">9</option>
       </select>
     </div>
+
     <label for="price">Minimum: min 0.35</label>
     <input id="price" name="price" type="number" step="0.01" min="0.35" required>
 
@@ -86,37 +154,36 @@
   <div class="loadingio-spinner-gear-5fyuz6nbepy" id="spinner-container" role="status" aria-live="polite">
     <div class="ldio-s69gk832n0l">
       <div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
+        <div></div><div></div><div></div><div></div><div></div><div></div>
       </div>
     </div>
   </div>
+
   <div id="loading-message" aria-live="polite"></div>
   <div id="results-container"></div>
-  
 
   <script type="module" src="/js/formData.mjs" defer></script>
   <script type="module" src="/js/buyContract.mjs" defer></script>
-  </script>
+
   <script>
-    document.addEventListener('contextmenu', function(event) {
-        event.preventDefault();
+    // Disable right-click and dev tools
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('keydown', e => {
+      if (e.key === 'F12' || 
+          (e.ctrlKey && e.shiftKey && ['I', 'J'].includes(e.key)) ||
+          (e.ctrlKey && e.key === 'U')) e.preventDefault();
     });
 
-    document.addEventListener('keydown', function(event) {
-        if (event.key === 'F12' || 
-            (event.ctrlKey && event.shiftKey && (event.key === 'I' || event.key === 'J')) ||
-            (event.ctrlKey && event.key === 'U')) {
-            event.preventDefault();
-        }
+    // Toggle mode functionality
+    const toggle = document.getElementById('mode-toggle');
+    const modeDisplay = document.getElementById('mode-display');
+
+    toggle.addEventListener('change', () => {
+      const mode = toggle.checked ? 'Automated' : 'Manual';
+      modeDisplay.innerHTML = `Current Mode: <strong>${mode}</strong>`;
+      document.body.classList.toggle('auto-mode', toggle.checked);
+      // 🔹 Add your automation logic trigger here
     });
-
-
   </script>
 </body>
 </html>
-
