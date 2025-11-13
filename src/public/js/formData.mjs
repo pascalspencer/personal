@@ -9,18 +9,21 @@ document.addEventListener("DOMContentLoaded", function () {
   const spinnerContainer = document.getElementById("spinner-container");
   const loadingMessage = document.getElementById("loading-message");
   const resultsContainer = document.getElementById("results-container");
-  const automationToggle = document.getElementById("automation-toggle");
-  const modeLabel = document.getElementById("mode-label");
 
-  // Handle toggle switch
-  automationToggle.addEventListener("change", () => {
-    const enabled = automationToggle.checked;
-    setAutomationMode(enabled);
-    modeLabel.textContent = enabled ? "Automated Mode" : "Manual Mode";
+  // Top toggle
+  const modeToggle = document.getElementById("mode-toggle");
+  const modeDisplay = document.getElementById("mode-display");
 
-    // Optional instant feedback
-    console.log(`Trading mode switched to: ${enabled ? "Automated" : "Manual"}`);
-  });
+  if (modeToggle) {
+    modeToggle.addEventListener("change", () => {
+      const enabled = modeToggle.checked;
+      setAutomationMode(enabled);
+      modeDisplay.innerHTML = `Current Mode: <strong>${enabled ? "Automated" : "Manual"}</strong>`;
+      console.log(`Trading mode switched to: ${enabled ? "Automated" : "Manual"}`);
+    });
+  } else {
+    console.warn("#mode-toggle not found in DOM!");
+  }
 
   const derivAppID = 61696; 
   const connection = new WebSocket(
