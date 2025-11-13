@@ -1,7 +1,8 @@
 import DerivAPIBasic from 'https://cdn.skypack.dev/@deriv/deriv-api/dist/DerivAPIBasic';
 import { calculateChances } from './over_under.mjs';
 import { determineChances } from './matches.mjs';
-import { evaluateAndBuyContract } from './buyContract.mjs';
+import { evaluateAndBuyContract, getAutomationMode } from './buyContract.mjs';
+
 
 document.addEventListener("DOMContentLoaded", function () {
   const dataForm = document.getElementById("trade-form");
@@ -30,8 +31,16 @@ document.addEventListener("DOMContentLoaded", function () {
       spinnerContainer.style.display = "none";
       loadingMessage.textContent = "";
       document.body.classList.remove("blur-background");
+
       displaySelectedOptionsAfterFetch();
-      evaluateAndBuyContract();
+
+      // ✅ Only auto-trade if automated mode is enabled
+      if (getAutomationMode()) {
+        console.log("Automated mode active — executing trade...");
+        evaluateAndBuyContract();
+      } else {
+        console.log("Manual mode active — skipping auto-trade.");
+      }
     }, 10500);
   }
 

@@ -176,19 +176,17 @@
         (e.ctrlKey && e.key === 'U')) e.preventDefault();
   });
 
-  // Toggle mode functionality
-  const toggle = document.getElementById('mode-toggle');
-  const modeDisplay = document.getElementById('mode-display');
+  
 
-  toggle.addEventListener('change', () => {
-    const mode = toggle.checked ? 'Automated' : 'Manual';
+  const toggle = document.getElementById("mode-toggle");
+  const modeDisplay = document.getElementById("mode-display");
+
+  toggle.addEventListener("change", () => {
+    const isAutomated = toggle.checked;
+    const mode = isAutomated ? "Automated" : "Manual";
+
     modeDisplay.innerHTML = `Current Mode: <strong>${mode}</strong>`;
-
-    if (toggle.checked) {
-      setAutomationMode(true);   // ✅ Enable automation
-    } else {
-      stopAutomation();          // 🚫 Disable automation
-    }
+    setAutomationMode(isAutomated);
   });
 </script>
 
