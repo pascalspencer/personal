@@ -1,7 +1,7 @@
 import DerivAPIBasic from 'https://cdn.skypack.dev/@deriv/deriv-api/dist/DerivAPIBasic';
 import { calculateChances } from './over_under.mjs';
 import { determineChances } from './matches.mjs';
-import { evaluateAndBuyContract, getAutomationMode } from './buyContract.mjs';
+import { evaluateAndBuyContract, getAutomationMode, setAutomationMode } from './buyContract.mjs';
 
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -9,6 +9,19 @@ document.addEventListener("DOMContentLoaded", function () {
   const spinnerContainer = document.getElementById("spinner-container");
   const loadingMessage = document.getElementById("loading-message");
   const resultsContainer = document.getElementById("results-container");
+  const automationToggle = document.getElementById("automation-toggle");
+  const modeLabel = document.getElementById("mode-label");
+
+  // Handle toggle switch
+  automationToggle.addEventListener("change", () => {
+    const enabled = automationToggle.checked;
+    setAutomationMode(enabled);
+    modeLabel.textContent = enabled ? "Automated Mode" : "Manual Mode";
+
+    // Optional instant feedback
+    console.log(`Trading mode switched to: ${enabled ? "Automated" : "Manual"}`);
+  });
+
   const derivAppID = 61696; 
   const connection = new WebSocket(
     `wss://ws.binaryws.com/websockets/v3?app_id=${derivAppID}`
