@@ -1,7 +1,7 @@
 import DerivAPIBasic from 'https://cdn.skypack.dev/@deriv/deriv-api/dist/DerivAPIBasic';
 import { calculateChances } from './over_under.mjs';
 import { determineChances } from './matches.mjs';
-import { evaluateAndBuyContract, getAutomationMode, setAutomationMode } from './buyContract.mjs';
+import { evaluateAndBuyContractSafe, getAutomationMode, setAutomationMode } from './buyContract.mjs';
 
 document.addEventListener("DOMContentLoaded", function () {
   const dataForm = document.getElementById("trade-form");
@@ -152,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (getAutomationMode()) {
         console.log("Automated mode active — executing trade...");
-        evaluateAndBuyContract();
+        evaluateAndBuyContractSafe();
       } else {
         console.log("Manual mode active — skipping auto-trade.");
       }
