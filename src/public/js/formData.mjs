@@ -58,24 +58,27 @@ document.addEventListener("DOMContentLoaded", function () {
     if (api) setInterval(() => api.ping(), 30000);
   }
 
-  // --- Populate Submarkets based on live Deriv data ---
   function populateSubmarkets() {
     const marketSelect = document.getElementById("market");
     const submarketSelect = document.getElementById("submarket");
 
-    const selectedMarket = marketSelect.value;
-    submarketSelect.innerHTML = `<option value="">Select Submarket</option>`;
+    // Use the selected market or default to first option
+    const selectedMarket = marketSelect.value || Object.keys(marketsData)[0];
     if (!selectedMarket || !marketsData[selectedMarket]) {
+      submarketSelect.innerHTML = `<option value="">Select Submarket</option>`;
       submarketSelect.disabled = true;
       return;
     }
 
+    submarketSelect.innerHTML = `<option value="">Select Submarket</option>`;
+
     marketsData[selectedMarket].forEach(item => {
       const option = document.createElement("option");
-      option.value = item.symbol;          // for buyContract
-      option.textContent = item.display_name;  // for dropdown
+      option.value = item.symbol;         // actual symbol for buyContract
+      option.textContent = item.display_name; // human-readable for dropdown
       submarketSelect.appendChild(option);
     });
+
     submarketSelect.disabled = false;
   }
 
