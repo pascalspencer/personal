@@ -62,33 +62,27 @@ document.addEventListener("DOMContentLoaded", function () {
     const marketSelect = document.getElementById("market");
     const submarketSelect = document.getElementById("submarket");
 
-    // Use the selected market or default to first option
     const selectedMarket = marketSelect.value || Object.keys(marketsData)[0];
-    if (!selectedMarket || !marketsData[selectedMarket]) {
-      submarketSelect.innerHTML = `<option value="">Select Submarket</option>`;
-      submarketSelect.disabled = true;
-      return;
-    }
 
     submarketSelect.innerHTML = `<option value="">Select Submarket</option>`;
 
-    console.log("marketsData[selectedMarket]:", marketsData[selectedMarket]);
+    if (!selectedMarket || !Array.isArray(marketsData[selectedMarket])) {
+      submarketSelect.disabled = true;
+      console.warn("No valid array for selected market:", selectedMarket, marketsData[selectedMarket]);
+      return;
+    }
 
-
-    marketsData[selectedMarket].forEach(item => {
-      console.log("Adding submarket option:", item); // should log {symbol, display_name}
-
+    marketsData[selectedMarket].forEach(({ symbol, display_name }) => {
       const option = document.createElement("option");
-      option.value = item.symbol;
-      option.textContent = item.display_name;
-      console.log("Option textContent:", option.textContent); // should be "AUD Basket", etc.
-
+      option.value = symbol;            // actual symbol for trading
+      option.textContent = display_name; // human-readable
       submarketSelect.appendChild(option);
     });
 
-
     submarketSelect.disabled = false;
   }
+
+
   // Event listener
   document.getElementById("market").addEventListener("change", populateSubmarkets);
 
