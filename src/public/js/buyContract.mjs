@@ -162,6 +162,7 @@ let cachedLoginId = null;
 
 function getCachedLoginId() {
   if (!cachedLoginId) cachedLoginId = getCurrentLoginId();
+  console.log("Cached Login ID:", cachedLoginId);
   return cachedLoginId;
 }
 
