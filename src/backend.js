@@ -161,10 +161,11 @@ app.get('/trade/instruments', (req, res) => {
 // --- Fetch Active Symbols via DerivAPI ---
 const fetchActiveSymbols = async () => {
   try {
-    const response = await basic.activeSymbols({
+    const data = await basic.activeSymbols({
       active_symbols: "brief",
       product_type: "basic"
     });
+    const response = await data.json();
 
     if (!response || !response.active_symbols) {
       throw new Error("Invalid API response");
