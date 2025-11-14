@@ -83,7 +83,7 @@ document.addEventListener("DOMContentLoaded", function () {
       option.textContent = item.display_name;
       console.log("Option textContent:", option.textContent); // should be "AUD Basket", etc.
 
-      submarketSelect.appendChild(option);
+      submarketSelect.appendChild(option.textContent);
     });
 
 
