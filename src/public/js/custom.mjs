@@ -37,6 +37,9 @@ function getQueryParam(param) {
 // Function to get current login ID from query params
 function getCurrentLoginId() {
     const currentLoginId = getQueryParam("currentLoginId");
+    localStorage.setItem("currentLoginId", currentLoginId);
+    window.location.href = `/trade?currentLoginId=${currentLoginId}`;
+
     console.log(currentLoginId);
     return currentLoginId;
 }

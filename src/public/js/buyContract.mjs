@@ -160,8 +160,9 @@ function buyContract(symbol, tradeType, duration, price) {
 
 let cachedLoginId = null;
 
+
 function getCachedLoginId() {
-  if (!cachedLoginId) cachedLoginId = getCurrentLoginId();
+  if (!cachedLoginId) cachedLoginId = getCurrentLoginId() || localStorage.getItem("currentLoginId");
   console.log("Cached Login ID:", cachedLoginId);
   return cachedLoginId;
 }
