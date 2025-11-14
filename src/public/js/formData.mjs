@@ -66,6 +66,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     submarketSelect.innerHTML = `<option value="">Select Submarket</option>`;
 
+    console.log("Populating submarkets for market:", selectedMarket, marketsData[selectedMarket]);
+
     if (!selectedMarket || !Array.isArray(marketsData[selectedMarket])) {
       submarketSelect.disabled = true;
       console.warn("No valid array for selected market:", selectedMarket, marketsData[selectedMarket]);
