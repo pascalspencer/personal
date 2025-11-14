@@ -166,48 +166,44 @@ const INSTRUMENTS_CACHE_TTL = 60 * 1000; // cache 60s
 app.get("/api/data", async (req, res) => {
   try {
     const now = Date.now();
-    if (instrumentsCache && (now - instrumentsCacheAt) < INSTRUMENTS_CACHE_TTL) {
+    if (instrumentsCache && now - instrumentsCacheAt < CACHE_TTL) {
       return res.json(instrumentsCache);
     }
 
-    // Fetch active symbols from Deriv API
-    const response = await axios.get("https://api.deriv.com/api/v2/active-symbols", {
-      params: { product_type: "basic" },
-      timeout: 10000
-    });
+    const response = await axios.get(
+      "https://api.deriv.com/api/v2/active-symbols",
+      { params: { product_type: "basic" }, timeout: 10000 }
+    );
 
     const data = response.data;
-    if (!data || !data.active_symbols) {
+
+    if (!data || !data.active_symbols || !Array.isArray(data.active_symbols)) {
       console.error("Invalid API response:", data);
-      return res.status(500).json({ error: "Invalid API response" });
+      return res.status(500).json({ error: "Invalid API response from Deriv" });
     }
 
-    // Group by market
-    const activeSymbols = data.active_symbols;
     const formatted = {};
-    activeSymbols.forEach(item => {
+    data.active_symbols.forEach((item) => {
       const market = item.market;
-      const symbolCode = item.symbol; // Use programmatic code
+      const symbolCode = item.symbol;
       if (!formatted[market]) formatted[market] = [];
       formatted[market].push(symbolCode);
     });
 
-    // Dedupe and sort
-    for (const m in formatted) {
-      formatted[m] = Array.from(new Set(formatted[m])).sort();
+    // dedupe & sort
+    for (const market in formatted) {
+      formatted[market] = Array.from(new Set(formatted[market])).sort();
     }
 
-    // Cache & return
     instrumentsCache = formatted;
     instrumentsCacheAt = Date.now();
-    res.json(formatted);
 
-  } catch (error) {
-    console.error("Error fetching symbols from Deriv:", error?.message || error);
+    res.json(formatted);
+  } catch (err) {
+    console.error("Error fetching symbols from Deriv:", err.message || err);
     res.status(500).json({ error: "Failed to fetch instruments" });
   }
 });
-
 
 app.get("/redirect", async (req, res) => {
   const { acct1, token1, cur1, acct2, token2, cur2 } = req.query;
