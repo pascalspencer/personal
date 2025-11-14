@@ -171,28 +171,33 @@ const fetchActiveSymbols = async () => {
     }
 
     // Reset marketsData
-    for (const market in marketsData) marketsData[market] = [];
+    const formatted = {
+      forex: [],
+      indices: [],
+      commodities: [],
+      cryptocurrency: [],
+      synthetic_index: []
+    };
 
-    // Populate marketsData by market
     response.active_symbols.forEach(item => {
       const market = item.market;
-      if (marketsData[market]) marketsData[market].push(item.symbol);
+      if (formatted[market]) {
+        formatted[market].push({
+          symbol: item.symbol,          // to send in buyContract
+          display_name: item.display_name  // to show in dropdown
+        });
+      }
     });
 
-    // Remove duplicates and sort
-    for (const market in marketsData) {
-      marketsData[market] = Array.from(new Set(marketsData[market])).sort();
-    }
-
-    console.log("Active symbols loaded.");
-    return marketsData;
+    return formatted;
 
   } catch (err) {
     console.error("Error fetching active symbols:", err.message);
     return {};
   }
 };
-// --- API endpoint for frontend ---
+
+// --- API endpoint ---
 app.get("/api/data", async (req, res) => {
   const symbols = await fetchActiveSymbols();
   if (!symbols || Object.keys(symbols).length === 0) {

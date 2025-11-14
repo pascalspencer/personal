@@ -60,16 +60,25 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // --- Populate Submarkets based on live Deriv data ---
   function populateSubmarkets() {
-    const market = document.getElementById("market").value;
-    const submarketDropdown = document.getElementById("submarket");
-    submarketDropdown.innerHTML = "";
+    const marketSelect = document.getElementById("market");
+    const submarketSelect = document.getElementById("submarket");
 
-    const submarkets = marketsData[market] || [];
-    submarkets.forEach((sub) => addOption(submarketDropdown, sub));
+    const selectedMarket = marketSelect.value;
+    submarketSelect.innerHTML = `<option value="">Select Submarket</option>`;
+    if (!selectedMarket || !marketsData[selectedMarket]) {
+      submarketSelect.disabled = true;
+      return;
+    }
 
-    submarketDropdown.disabled = !submarkets.length;
-    submarketDropdown.required = !!submarkets.length;
+    marketsData[selectedMarket].forEach(item => {
+      const option = document.createElement("option");
+      option.value = item.symbol;          // for buyContract
+      option.textContent = item.display_name;  // for dropdown
+      submarketSelect.appendChild(option);
+    });
+    submarketSelect.disabled = false;
   }
+
 
   // --- Populate Sentiments dynamically ---
   function populateSentiments() {
