@@ -156,26 +156,21 @@ function buyContract(symbol, tradeType, duration, price) {
 }
 
 // --- Login ID Loader ---
-// let isLoginIdLoaded = false;
-
 let cachedLoginId = null;
 
 function getCachedLoginId() {
-  if (!cachedLoginId) cachedLoginId = getCurrentLoginId();
+  if (cachedLoginId) return cachedLoginId;
+
+  const loginId = getCurrentLoginId();
+  if (!loginId) {
+    console.error("Login ID missing. Cannot trade.");
+    return null;
+  }
+
+  cachedLoginId = loginId;
   return cachedLoginId;
 }
 
-
-// function loadLoginId(callback) {
-//   if (isLoginIdLoaded) return callback(cachedLoginId);
-
-//   const currentLoginId = getCurrentLoginId();
-//   if (!currentLoginId) return callback(null);
-
-//   cachedLoginId = currentLoginId;
-//   isLoginIdLoaded = true;
-//   callback(currentLoginId);
-// }
 
 // --- Helper to calculate sentiment percentages ---
 function calculatePercentages() {

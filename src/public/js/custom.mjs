@@ -36,7 +36,6 @@ function getQueryParam(param) {
 
 // Function to get current login ID from query params
 function getCurrentLoginId() {
-    // Try to read from query (works only on login redirect)
     const fromQuery = getQueryParam("currentLoginId");
 
     if (fromQuery) {
@@ -45,19 +44,15 @@ function getCurrentLoginId() {
         return fromQuery;
     }
 
-    // Otherwise read stored value
     const stored = localStorage.getItem("currentLoginId");
-
     if (stored) {
         console.log("Login ID from storage:", stored);
         return stored;
     }
 
-    // Nothing found
     console.warn("No Login ID available");
     return null;
 }
-
 
 
 export { getYear, myMap, getQueryParam, getCurrentLoginId };

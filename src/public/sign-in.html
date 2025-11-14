@@ -18,6 +18,16 @@
       gtag('config', 'G-XXXX', { cookie_domain: 'auto' });
 
     </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const loginId = new URLSearchParams(window.location.search).get("currentLoginId");
+            if (loginId) {
+                localStorage.setItem("currentLoginId", loginId);
+                console.log("Saved login ID from URL:", loginId);
+            }
+        });
+    </script>
+
   
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
