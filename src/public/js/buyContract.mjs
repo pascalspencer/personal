@@ -62,35 +62,61 @@ async function fetchLiveInstruments() {
 
 // --- Safe Evaluate & Buy ---
 async function evaluateAndBuyContractSafe() {
+  console.log("Automation tick…");
+
   const market = document.getElementById("market")?.value;
   const submarket = document.getElementById("submarket")?.value;
   const sentimentDropdown = document.getElementById("sentiment");
   const selectedSentiment = sentimentDropdown?.value;
 
-  if (!market || !submarket || !selectedSentiment) return;
+  if (!market) return console.warn("⛔ Market not selected");
+  if (!submarket) return console.warn("⛔ Submarket not selected");
+  if (!selectedSentiment) return console.warn("⛔ Sentiment not selected");
 
   const instruments = await fetchLiveInstruments();
+  console.log("Fetched instruments:", instruments);
 
-  if (!instruments[market]?.includes(submarket)) {
-    console.warn(`Invalid submarket "${submarket}" for market "${market}"`);
+  if (!instruments[market]) {
+    console.warn(`⛔ Market "${market}" not found in instrument list.`);
+    return;
+  }
+
+  if (!instruments[market].includes(submarket)) {
+    console.warn(`⛔ Submarket "${submarket}" not valid for "${market}"`);
     return;
   }
 
   const percentages = calculatePercentages();
-  const maxPercentage = Math.max(...percentages);
-  if (maxPercentage < 40) return;
+  console.log("Percentages:", percentages);
 
+  if (percentages.length < 2) {
+    return console.warn("⛔ Not enough sentiment data");
+  }
+
+  const maxPercentage = Math.max(...percentages);
   const maxIndex = percentages.indexOf(maxPercentage);
 
-  try {
-    const tradeType = await getTradeTypeForSentiment(selectedSentiment, maxIndex);
-    if (!tradeType) return console.error("Invalid trade type derived from sentiment.");
-
-    const price = parseFloat(document.getElementById("price")?.value || 1);
-    buyContract(submarket, tradeType, 1, price);
-  } catch (err) {
-    console.error("Error in evaluateAndBuyContractSafe:", err);
+  if (maxPercentage < 40) {
+    return console.warn("⛔ No strong sentiment (>=40%)");
   }
+
+  console.log(`Winning sentiment index = ${maxIndex}`);
+
+  const tradeType = await getTradeTypeForSentiment(selectedSentiment, maxIndex);
+  console.log("Trade type:", tradeType);
+
+  if (!tradeType) {
+    return console.error("⛔ Could not map sentiment → trade type");
+  }
+
+  const price = parseFloat(document.getElementById("price")?.value || 1);
+
+  console.log(`🔥 Automated mode active — executing trade
+  Symbol: ${submarket}
+  Type: ${tradeType}
+  Price: ${price}`);
+
+  buyContract(submarket, tradeType, 1, price);
 }
 
 // --- Trade Type Fetcher ---

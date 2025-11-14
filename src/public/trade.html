@@ -154,6 +154,45 @@
 
   <script type="module" src="/js/formData.mjs" defer></script>
   <script type="module" src="/js/buyContract.mjs" defer></script>
+  <script type="module">
+    // Auto-populate Market → Submarket Dropdowns
+    document.addEventListener("DOMContentLoaded", async () => {
+      const marketSelect = document.getElementById("market");
+      const submarketSelect = document.getElementById("submarket");
+
+      let instruments = {};
+
+      // Fetch from backend
+      try {
+        const res = await fetch("/api/data");
+        instruments = await res.json();
+        console.log("Loaded instruments:", instruments);
+      } catch (error) {
+        console.error("Error loading instruments:", error);
+        return;
+      }
+
+      // When market changes → populate submarket dropdown
+      marketSelect.addEventListener("change", () => {
+        const market = marketSelect.value;
+
+        submarketSelect.innerHTML = `<option value="">Select Submarket</option>`;
+        submarketSelect.disabled = true;
+
+        if (!market || !instruments[market]) return;
+
+        instruments[market].forEach(symbol => {
+          const opt = document.createElement("option");
+          opt.value = symbol;
+          opt.textContent = symbol;
+          submarketSelect.appendChild(opt);
+        });
+
+        submarketSelect.disabled = false;
+      });
+    });
+  </script>
+
 
   <script type="module">
     import { setAutomationMode, getAutomationMode } from "/js/buyContract.mjs";

@@ -204,15 +204,37 @@ app.get('/trade/instruments', (req, res) => {
 });
 
 
-app.get("/api/data", (req, res) => {
-  getActiveSymbols()
-    .then(() => {
-      res.json(marketsData);
-    })
-    .catch((error) => {
-      console.error("Error getting active symbols:", error);
-      res.status(500).json({ error: "Internal Server Error" });
+app.get("/api/data", async (req, res) => {
+  try {
+    const response = await fetch("https://api.deriv.com/api/v2/active-symbols?product_type=basic");
+    const data = await response.json();
+
+    if (!data || !data.active_symbols) {
+      return res.status(500).json({ error: "Invalid API response" });
+    }
+
+    const activeSymbols = data.active_symbols;
+
+    // --- Format into arrays grouped by market ---
+    const formatted = {};
+
+    activeSymbols.forEach(symbol => {
+      const market = symbol.market;
+      const symbolCode = symbol.symbol;
+
+      if (!formatted[market]) {
+        formatted[market] = [];
+      }
+
+      formatted[market].push(symbolCode);
     });
+
+    res.json(formatted);
+
+  } catch (error) {
+    console.error("Error fetching symbols:", error);
+    res.status(500).json({ error: "Failed to fetch instruments" });
+  }
 });
 
 
