@@ -72,6 +72,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     submarketSelect.innerHTML = `<option value="">Select Submarket</option>`;
 
+    console.log("marketsData[selectedMarket]:", marketsData[selectedMarket]);
+
+
     marketsData[selectedMarket].forEach(item => {
       const option = document.createElement("option");
       option.value = item.symbol;         // actual symbol for buyContract
