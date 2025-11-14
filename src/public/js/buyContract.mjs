@@ -76,16 +76,6 @@ async function evaluateAndBuyContractSafe() {
   const instruments = await fetchLiveInstruments();
   console.log("Fetched instruments:", instruments);
 
-  // if (!instruments[market]) {
-  //   console.warn(`⛔ Market "${market}" not found in instrument list.`);
-  //   return;
-  // }
-
-  // if (!instruments[market].includes(submarket)) {
-  //   console.warn(`⛔ Submarket "${submarket}" not valid for "${market}"`);
-  //   return;
-  // }
-
   const percentages = calculatePercentages();
   console.log("Percentages:", percentages);
 
@@ -162,7 +152,7 @@ function buyContract(symbol, tradeType, duration, price) {
       contract_type: tradeType,
       currency: "USD",
       duration: duration,
-      duration_unit: "t",
+      duration_unit: "s",
       symbol,
       loginid: loginId,
     };
