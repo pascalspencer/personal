@@ -76,11 +76,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     marketsData[selectedMarket].forEach(item => {
+      console.log("Adding submarket option:", item); // should log {symbol, display_name}
+
       const option = document.createElement("option");
-      option.value = item.symbol;         // actual symbol for buyContract
-      option.textContent = item.display_name; // human-readable for dropdown
+      option.value = item.symbol;
+      option.textContent = item.display_name;
+      console.log("Option textContent:", option.textContent); // should be "AUD Basket", etc.
+
       submarketSelect.appendChild(option);
     });
+
 
     submarketSelect.disabled = false;
   }
