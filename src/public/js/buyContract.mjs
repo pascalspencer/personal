@@ -76,15 +76,15 @@ async function evaluateAndBuyContractSafe() {
   const instruments = await fetchLiveInstruments();
   console.log("Fetched instruments:", instruments);
 
-  if (!instruments[market]) {
-    console.warn(`⛔ Market "${market}" not found in instrument list.`);
-    return;
-  }
+  // if (!instruments[market]) {
+  //   console.warn(`⛔ Market "${market}" not found in instrument list.`);
+  //   return;
+  // }
 
-  if (!instruments[market].includes(submarket)) {
-    console.warn(`⛔ Submarket "${submarket}" not valid for "${market}"`);
-    return;
-  }
+  // if (!instruments[market].includes(submarket)) {
+  //   console.warn(`⛔ Submarket "${submarket}" not valid for "${market}"`);
+  //   return;
+  // }
 
   const percentages = calculatePercentages();
   console.log("Percentages:", percentages);
