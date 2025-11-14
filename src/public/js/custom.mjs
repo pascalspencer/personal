@@ -36,9 +36,26 @@ function getQueryParam(param) {
 
 // Function to get current login ID from query params
 function getCurrentLoginId() {
+    // 1. Read query param
     const currentLoginId = getQueryParam("currentLoginId");
-    console.log(currentLoginId);
-    return currentLoginId;
+
+    // 2. If available in query, store it
+    if (currentLoginId) {
+        localStorage.setItem("currentLoginId", currentLoginId);
+        console.log("Login ID from query:", currentLoginId);
+        return currentLoginId; 
+    }
+
+    // 3. Otherwise fallback to stored ID
+    const savedId = localStorage.getItem("currentLoginId");
+    if (savedId) {
+        console.log("Login ID from storage:", savedId);
+        return savedId;
+    }
+
+    console.warn("No Login ID found in query or storage");
+    return null;
 }
+
 
 export { getYear, myMap, getQueryParam, getCurrentLoginId };
