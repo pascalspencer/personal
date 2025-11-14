@@ -81,6 +81,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     submarketSelect.disabled = false;
   }
+  // Event listener
+  document.getElementById("market").addEventListener("change", populateSubmarkets);
 
 
   // --- Populate Sentiments dynamically ---
