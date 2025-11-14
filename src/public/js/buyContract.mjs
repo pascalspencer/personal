@@ -25,23 +25,10 @@ let automationInterval = null;
 export function setAutomationMode(enabled) {
   isAutomationEnabled = enabled;
   console.log("Automation mode:", enabled ? "ON" : "OFF");
-  if (enabled) startAutomation();
-  else stopAutomation();
 }
 
 export function getAutomationMode() {
   return isAutomationEnabled;
-}
-
-function startAutomation() {
-  stopAutomation();
-  automationInterval = setInterval(() => {
-    if (isAutomationEnabled) evaluateAndBuyContractSafe();
-  }, 5000);
-}
-
-function stopAutomation() {
-  if (automationInterval) clearInterval(automationInterval);
 }
 
 // --- Fetch live trading instruments from backend ---
