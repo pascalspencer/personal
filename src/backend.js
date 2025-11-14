@@ -6,18 +6,6 @@ require("dotenv").config();
 const fs = require("fs");
 const WebSocket = require("ws");
 const DerivAPI = require("@deriv/deriv-api/dist/DerivAPI");
-// const mongoose = require('mongoose');
-// const MongoStore = require('connect-mongo');
-
-
-// const mongoUri = 'mongodb+srv://spencerincdev:badyspensa7480@zodiac.k8rucbs.mongodb.net/?retryWrites=true&w=majority&appName=Zodiac'
-// mongoose.connect(mongoUri)
-// .then(() => {
-//   console.log('Connected to MongoDB');
-// }).catch((error) => {
-//   console.error('Error connecting to MongoDB:', error);
-// });
-
 
 
 
@@ -101,40 +89,6 @@ app.get("/sign-in", (req, res) => {
   }
 });
 
-const activeSymbolsResponse = async (res) => {
-  const data = JSON.parse(res.data);
-
-  if (data.error) {
-    console.error("Error:", data.error.message);
-    connection.removeEventListener("message", activeSymbolsResponse);
-    await basic.disconnect();
-    return;
-  }
-
-  if (data.msg_type === "active_symbols") {
-    const contractsData = data.active_symbols;
-    for (const contract of contractsData) {
-      const market = contract.market;
-      // Ensure marketsData[market] is a Set
-      if (!(marketsData[market] instanceof Set)) {
-        marketsData[market] = new Set();
-      }
-      marketsData[market].add(contract.display_name);
-    }
-
-    // Convert sets back to arrays if needed
-    for (const market in marketsData) {
-      marketsData[market] = Array.from(marketsData[market]);
-    }
-
-    connection.removeEventListener("message", activeSymbolsResponse);
-  }
-};
-
-const getActiveSymbols = async () => {
-  connection.addEventListener("message", activeSymbolsResponse);
-  await basic.activeSymbols(active_symbols_request);
-};
 
 app.post("/trade", (req, res) => {
   const filePath = path.resolve(__dirname, "public", "clients.json");
@@ -204,35 +158,52 @@ app.get('/trade/instruments', (req, res) => {
 });
 
 
+// Simple in-memory cache for instruments
+let instrumentsCache = null;
+let instrumentsCacheAt = 0;
+const INSTRUMENTS_CACHE_TTL = 60 * 1000; // cache 60s
+
 app.get("/api/data", async (req, res) => {
   try {
-    const response = await fetch("https://api.deriv.com/api/v2/active-symbols?product_type=basic");
-    const data = await response.json();
+    const now = Date.now();
+    if (instrumentsCache && (now - instrumentsCacheAt) < INSTRUMENTS_CACHE_TTL) {
+      return res.json(instrumentsCache);
+    }
 
+    // Fetch active symbols from Deriv API
+    const response = await axios.get("https://api.deriv.com/api/v2/active-symbols", {
+      params: { product_type: "basic" },
+      timeout: 10000
+    });
+
+    const data = response.data;
     if (!data || !data.active_symbols) {
+      console.error("Invalid API response:", data);
       return res.status(500).json({ error: "Invalid API response" });
     }
 
+    // Group by market
     const activeSymbols = data.active_symbols;
-
-    // --- Format into arrays grouped by market ---
     const formatted = {};
-
-    activeSymbols.forEach(symbol => {
-      const market = symbol.market;
-      const symbolCode = symbol.symbol;
-
-      if (!formatted[market]) {
-        formatted[market] = [];
-      }
-
+    activeSymbols.forEach(item => {
+      const market = item.market;
+      const symbolCode = item.symbol; // Use programmatic code
+      if (!formatted[market]) formatted[market] = [];
       formatted[market].push(symbolCode);
     });
 
+    // Dedupe and sort
+    for (const m in formatted) {
+      formatted[m] = Array.from(new Set(formatted[m])).sort();
+    }
+
+    // Cache & return
+    instrumentsCache = formatted;
+    instrumentsCacheAt = Date.now();
     res.json(formatted);
 
   } catch (error) {
-    console.error("Error fetching symbols:", error);
+    console.error("Error fetching symbols from Deriv:", error?.message || error);
     res.status(500).json({ error: "Failed to fetch instruments" });
   }
 });
