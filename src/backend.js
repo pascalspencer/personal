@@ -36,11 +36,11 @@ const active_symbols_request = {
 
 // Initialize marketsData with Sets
 const marketsData = {
-  forex: new Set(),
-  indices: new Set(),
-  commodities: new Set(),
-  cryptocurrency: new Set(),
-  synthetic_index: new Set(),
+  forex: [],
+  indices: [],
+  commodities: [],
+  cryptocurrency: [],
+  synthetic_index: [],
 };
 
 const tradeData = {
@@ -158,52 +158,49 @@ app.get('/trade/instruments', (req, res) => {
 });
 
 
-// Simple in-memory cache for instruments
-let instrumentsCache = null;
-let instrumentsCacheAt = 0;
-const INSTRUMENTS_CACHE_TTL = 60 * 1000; // cache 60s
-
-app.get("/api/data", async (req, res) => {
+// --- Fetch Active Symbols via DerivAPI ---
+const fetchActiveSymbols = async () => {
   try {
-    const now = Date.now();
-    if (instrumentsCache && now - instrumentsCacheAt < CACHE_TTL) {
-      return res.json(instrumentsCache);
-    }
-
-    const response = await axios.get(
-      "https://api.deriv.com/api/v2/active-symbols",
-      { params: { product_type: "basic" }, timeout: 10000 }
-    );
-
-    const data = response.data;
-
-    if (!data || !data.active_symbols || !Array.isArray(data.active_symbols)) {
-      console.error("Invalid API response:", data);
-      return res.status(500).json({ error: "Invalid API response from Deriv" });
-    }
-
-    const formatted = {};
-    data.active_symbols.forEach((item) => {
-      const market = item.market;
-      const symbolCode = item.symbol;
-      if (!formatted[market]) formatted[market] = [];
-      formatted[market].push(symbolCode);
+    const response = await basic.activeSymbols({
+      active_symbols: "brief",
+      product_type: "basic"
     });
 
-    // dedupe & sort
-    for (const market in formatted) {
-      formatted[market] = Array.from(new Set(formatted[market])).sort();
+    if (!response || !response.active_symbols) {
+      throw new Error("Invalid API response");
     }
 
-    instrumentsCache = formatted;
-    instrumentsCacheAt = Date.now();
+    // Reset marketsData
+    for (const market in marketsData) marketsData[market] = [];
 
-    res.json(formatted);
+    // Populate marketsData by market
+    response.active_symbols.forEach(item => {
+      const market = item.market;
+      if (marketsData[market]) marketsData[market].push(item.symbol);
+    });
+
+    // Remove duplicates and sort
+    for (const market in marketsData) {
+      marketsData[market] = Array.from(new Set(marketsData[market])).sort();
+    }
+
+    console.log("Active symbols loaded.");
+    return marketsData;
+
   } catch (err) {
-    console.error("Error fetching symbols from Deriv:", err.message || err);
-    res.status(500).json({ error: "Failed to fetch instruments" });
+    console.error("Error fetching active symbols:", err.message);
+    return {};
   }
+};
+// --- API endpoint for frontend ---
+app.get("/api/data", async (req, res) => {
+  const symbols = await fetchActiveSymbols();
+  if (!symbols || Object.keys(symbols).length === 0) {
+    return res.status(500).json({ error: "Failed to fetch instruments" });
+  }
+  res.json(symbols);
 });
+
 
 app.get("/redirect", async (req, res) => {
   const { acct1, token1, cur1, acct2, token2, cur2 } = req.query;
