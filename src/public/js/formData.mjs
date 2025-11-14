@@ -68,6 +68,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     console.log("Populating submarkets for market:", selectedMarket, marketsData[selectedMarket]);
 
+    if (!selectedMarket || !Array.isArray(marketsData[selectedMarket])) {
+      submarketSelect.disabled = true;
+      console.warn("No valid array for selected market:", selectedMarket, marketsData[selectedMarket]);
+      return;
+    }
 
     marketsData[selectedMarket].forEach(({ symbol, display_name }) => {
       const option = document.createElement("option");
