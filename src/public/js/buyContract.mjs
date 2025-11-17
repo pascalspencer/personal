@@ -79,7 +79,7 @@ async function evaluateAndBuyContractSafe() {
 
   console.log(`Winning sentiment index = ${maxIndex}`);
 
-  const tradeType = await getTradeTypeForSentiment(selectedSentiment, maxIndex);
+  const tradeType = await getTradeTypeForSentiment(selectedSentiment, maxIndex, submarket);
   console.log("Trade type:", tradeType);
 
   if (!tradeType) {
@@ -116,7 +116,7 @@ async function getTradeTypeForSentiment(sentiment, index, symbol) {
     product_type: "basic",
   };
 
-  const resp = await api.contractsFor(req).catch(err => {
+  const resp = await api.contracts_for(req).catch(err => {
     console.error("contracts_for failed:", err);
     return null;
   });
@@ -198,7 +198,7 @@ async function buyContract(symbol, tradeType, duration, price) {
     product_type: "basic",
   };
 
-  const resp = await api.contractsFor(req).catch(err => {
+  const resp = await api.contracts_for(req).catch(err => {
     console.error("contracts_for request failed:", err);
     return null;
   });
