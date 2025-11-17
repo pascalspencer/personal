@@ -87,8 +87,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
 
-  // Event listener
-  document.getElementById("market").addEventListener("change", populateSubmarkets);
+  // // Event listener
+  // document.getElementById("market").addEventListener("change", populateSubmarkets);
 
 
   // --- Populate Sentiments dynamically ---
@@ -151,7 +151,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // --- Event listeners ---
   document.getElementById("market").addEventListener("change", populateSubmarkets);
   document.getElementById("contract_type").addEventListener("change", populateSentiments);
-  window.addEventListener("load", populateSubmarkets);
+  // window.addEventListener("load", populateSubmarkets);
 
   dataForm.addEventListener("submit", (event) => {
     event.preventDefault();
