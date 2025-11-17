@@ -133,47 +133,115 @@ async function getTradeTypeForSentiment(sentiment, index) {
 
 // Unified buyContract that follows contracts_for precisely
 async function buyContract(symbol, tradeType, duration, price) {
-  if (!api) return console.error("API not ready");
+  if (!api || api.is_closed) {
+    console.error("❌ API not connected.");
+    return;
+  }
 
-  console.log(`Preparing trade for ${symbol} (${tradeType})...`);
+  console.log(`🚀 Preparing trade for ${symbol} (${tradeType})...`);
 
-  const resp = await api.contractsFor({
-    contracts_for: symbol,
-    currency: "USD"
-  }).catch(err => {
-    console.error("contracts_for request failed:", err);
-    return null;
-  });
+  //------------------------------------------
+  // 1. FETCH AVAILABLE CONTRACTS
+  //------------------------------------------
+  let resp;
+
+  try {
+    resp = await api.contractsFor({
+      contracts_for: symbol,
+      currency: "USD"
+    });
+  } catch (err) {
+    console.error("❌ contracts_for request failed:", err);
+    return;
+  }
 
   if (!resp || resp.error) {
-    console.error("contracts_for error:", resp?.error);
+    console.error("❌ contracts_for error:", resp?.error);
     return;
   }
 
-  console.log("contracts_for received:", resp);   // <--- ADD THIS
+  const available = resp.contracts_for?.available || [];
+
+  if (!available.length) {
+    console.error(`❌ No contract types returned for ${symbol}`);
+    return;
+  }
+
+  console.log("📦 Available contracts:", available.map(c => c.contract_type));
 
 
-  const available = resp.contracts_for.available || [];
-  const contract = available.find(c => c.contract_type === tradeType);
+  //------------------------------------------
+  // 2. MATCH TRADE TYPE EXACTLY
+  //------------------------------------------
+  let contract = available.find(c => c.contract_type === tradeType);
 
   if (!contract) {
-    console.error(`⛔ ${tradeType} not available for ${symbol}`);
-    console.log("Available:", available.map(c => c.contract_type));
+    // fallback search by display
+    contract = available.find(c =>
+      (c.contract_display || "").toLowerCase().includes(tradeType.toLowerCase())
+    );
+  }
+
+  if (!contract) {
+    console.error(`❌ Contract type ${tradeType} NOT available for ${symbol}`);
     return;
   }
+
+  console.log("✅ Matched contract:", contract.contract_type, contract.contract_display);
+
+
+  //------------------------------------------
+  // 3. DETECT DURATION UNIT
+  //------------------------------------------
+  let unit = "t"; // default for ticks
 
   const minDur = contract.min_contract_duration;
   const maxDur = contract.max_contract_duration;
 
-  // Duration unit from server
-  const unit = minDur?.unit || "t";
+  if (minDur && minDur.unit) unit = minDur.unit;
+
+  // Rise/Fall & digits use "t", others may use "s"
+  console.log(`⏳ Duration unit = ${unit}`);
 
   if (duration < minDur.value || duration > maxDur.value) {
-    console.warn(`Duration ${duration}${unit} invalid. Allowed: ${minDur.value}-${maxDur.value}`);
+    console.warn(
+      `⚠ Duration ${duration}${unit} outside allowed range ${minDur.value}-${maxDur.value}${unit}`
+    );
+  }
+
+
+  //------------------------------------------
+  // 4. HANDLE BARRIERS
+  //------------------------------------------
+  let barrierNeeded = contract.barriers || 0;
+  let barrierValue = null;
+
+  if (barrierNeeded === 1) {
+    // DIGITS
+    if (tradeType.startsWith("DIGIT")) {
+      barrierValue = String(Math.floor(Math.random() * 10)); // correct
+    }
+
+    // Default fallback: current tick quote
+    if (!barrierValue) {
+      try {
+        const tick = await api.ticks({ ticks: symbol });
+        barrierValue = String(tick.tick.quote);
+      } catch (err) {
+        console.error("⚠ Could not fetch tick for barrier:", err);
+        return;
+      }
+    }
+  }
+
+  if (barrierNeeded === 2) {
+    console.error("❌ Double-barrier contracts are NOT supported.");
     return;
   }
 
-  // 2 — Build proposal
+  //------------------------------------------
+  // 5. BUILD PROPOSAL
+  //------------------------------------------
   const proposal = {
     proposal: 1,
     amount: price,
@@ -185,26 +253,53 @@ async function buyContract(symbol, tradeType, duration, price) {
     duration_unit: unit
   };
 
-  // digit contracts need barrier 0–9
-  if (tradeType.startsWith("DIGIT")) {
-    proposal.barrier = String(Math.floor(Math.random() * 10));
+  if (barrierValue !== null) {
+    proposal.barrier = barrierValue;
   }
 
   console.log("📤 Sending proposal:", proposal);
 
-  // 3 — Send proposal and then buy
-  const pResp = await api.proposal(proposal);
-  if (pResp.error) return console.error("Proposal error:", pResp.error);
 
-  const propId = pResp.proposal?.id;
-  if (!propId) return console.error("No proposal ID returned");
+  //------------------------------------------
+  // 6. REQUEST PROPOSAL
+  //------------------------------------------
+  let proposalResp;
+  try {
+    proposalResp = await api.proposal(proposal);
+  } catch (err) {
+    console.error("❌ Proposal request failed:", err);
+    return;
+  }
 
-  const buyResp = await api.buy({ buy: propId, price });
-  if (buyResp.error) return console.error("Buy error:", buyResp.error);
+  if (!proposalResp || proposalResp.error) {
+    console.error("❌ Proposal error:", proposalResp.error);
+    return;
+  }
 
-  console.log("Contract bought:", buyResp);
+  const propId = proposalResp.proposal.id;
+  console.log("🆔 Proposal ID:", propId);
+
+
+  //------------------------------------------
+  // 7. BUY CONTRACT
+  //------------------------------------------
+  let buyResp;
+  try {
+    buyResp = await api.buy({ buy: propId, price });
+  } catch (err) {
+    console.error("❌ Buy call failed:", err);
+    return;
+  }
+
+  if (buyResp.error) {
+    console.error("❌ Buy error:", buyResp.error);
+    return;
+  }
+
+  console.log("🎉 Contract bought successfully:", buyResp);
   return buyResp;
 }
+
 
 
 // --- Login ID Loader ---
