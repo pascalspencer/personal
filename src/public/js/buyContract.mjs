@@ -14,9 +14,12 @@ connection.onopen = function () {
 };
 
 // --- Ping keep-alive ---
-function ping() {
-  if (api) setInterval(() => api.ping(), 30000);
-}
+let pingInterval = null;
+  function ping() {
+    if (!api || pingInterval) return;
+    pingInterval = setInterval(() => api.ping(), 30000);
+  }
+
 
 // --- Automation Mode Control ---
 let isAutomationEnabled = false;
@@ -107,8 +110,8 @@ async function getTradeTypeForSentiment(sentiment, index) {
   const map = {
     "touch": "ONETOUCH",
     "no touch": "NOTOUCH",
-    "rise": "CALLE",
-    "fall": "PUTE",
+    "rise": "CALL",
+    "fall": "PUT",
     "higher": "TICKHIGH",
     "lower": "TICKLOW",
     "matches": "DIGITMATCH",
@@ -150,10 +153,6 @@ async function buyContract(symbol, tradeType, duration, price) {
     duration,
     duration_unit: "t"
   };
-
-  api.send(JSON.stringify(proposal));
-  console.log("📤 Sending proposal:", proposal);
-
 
   //------------------------------------------
   // 6. REQUEST PROPOSAL
