@@ -97,36 +97,93 @@ async function evaluateAndBuyContractSafe() {
 }
 
 // --- Trade Type Fetcher ---
-async function getTradeTypeForSentiment(sentiment, index) {
-  const sentimentParts = sentiment.split("/");
-  if (!sentimentParts[index]) return null;
-  const selectedPart = sentimentParts[index].trim();
+// Dynamic mapping: fetch available contract types for the symbol and choose the best match
+async function getTradeTypeForSentiment(sentiment, index, symbol) {
+  if (!api) {
+    console.error("API not ready.");
+    return null;
+  }
 
-  // --- Sentiment-to-Contract Mapping ---
-  const mapping = {
-    "Touch": "ONETOUCH",
-    "NoTouch": "NOTOUCH",
-    "Up": "MULTUP",
-    "Down": "MULTDOWN",
-    "Rise": "CALLE",
-    "Fall": "PUTE",
-    "Higher": "TICKHIGH",
-    "Lower": "TICKLOW",
-    "Matches": "DIGITMATCH",
-    "Differs": "DIGITDIFF",
-    "Even": "DIGITEVEN",
-    "Odd": "DIGITODD",
-    "Over": "DIGITOVER",
-    "Under": "DIGITUNDER"
+  const parts = (sentiment || "").split("/");
+  if (!parts[index]) return null;
+  const selected = parts[index].trim();
+  if (!selected) return null;
+
+  // Request contracts_for for this symbol (use product_type/basic per docs)
+  const req = {
+    contracts_for: symbol,
+    currency: "USD",
+    landing_company: "svg",
+    product_type: "basic",
   };
 
-  const tradeType = mapping[selectedPart] || null;
-  if (!tradeType) console.error("Unknown sentiment:", selectedPart);
-  return tradeType;
+  const resp = await api.contractsFor(req).catch(err => {
+    console.error("contracts_for failed:", err);
+    return null;
+  });
+  if (!resp || resp.error) {
+    console.error("contracts_for error:", resp?.error);
+    return null;
+  }
+
+  const available = resp.contracts_for.available || [];
+  if (!available.length) {
+    console.warn("No available contracts returned for", symbol);
+    return null;
+  }
+
+  // Build a searchable list of {type, display}
+  const dynamic = available.map(c => ({
+    type: c.contract_type,                  // e.g. "DIGITUNDER"
+    display: (c.contract_display || "").toLowerCase(), // human name
+    raw: c
+  }));
+
+  const lower = selected.toLowerCase();
+
+  // 1) Direct match on display or contract_type
+  let found = dynamic.find(d =>
+    d.display.includes(lower) || d.type.toLowerCase() === lower || d.type.toLowerCase().includes(lower)
+  );
+  if (found) return found.type;
+
+  // 2) Keyword-based fallback mapping (broad)
+  const keywordMap = [
+    [["touch"], ["ONETOUCH", "TOUCH", "ONE_TOUCH", "ONETOUCH"]],
+    [["no touch","notouch","no-touch"], ["NOTOUCH","NO_TOUCH"]],
+    [["rise","call","call e","call"], ["CALLE","CALL","RISE","CALL"]],
+    [["fall","put"], ["PUTE","PUT","FALL"]],
+    [["higher","up","higher than","upwards"], ["TICKHIGH","HIGHTICK","HIGH"]], // ticks variants
+    [["lower","down"], ["TICKLOW","LOWTICK","LOW"]],
+    [["match","matches"], ["DIGITMATCH","DIGITMATCH"]],
+    [["diff","differs"], ["DIGITDIFF","DIGITDIFF"]],
+    [["even"], ["DIGITEVEN"]],
+    [["odd"], ["DIGITODD"]],
+    [["over"], ["DIGITOVER"]],
+    [["under"], ["DIGITUNDER"]],
+    [["mult","multiplier","up","down (mult)"], ["MULTUP","MULTDOWN"]]
+  ];
+
+  for (const [keywords, types] of keywordMap) {
+    if (keywords.some(k => lower.includes(k))) {
+      // try to find any available contract whose type is in `types`
+      const matched = dynamic.find(d => types.some(t => d.type.toUpperCase().includes(t.toUpperCase())));
+      if (matched) return matched.type;
+    }
+  }
+
+  // 3) Greedy fuzzy: look for any contract_display token in selected
+  for (const d of dynamic) {
+    const tokens = d.display.split(" ").filter(Boolean);
+    if (tokens.some(t => lower.includes(t))) return d.type;
+  }
+
+  console.warn("No dynamic match found for sentiment part:", selected, "available:", dynamic.map(d => d.type));
+  return null;
 }
 
 
-// --- Buy Contract ---
+// Unified buyContract that follows contracts_for precisely
 async function buyContract(symbol, tradeType, duration, price) {
   if (!api) {
     console.error("API not ready. WebSocket not connected.");
@@ -134,13 +191,14 @@ async function buyContract(symbol, tradeType, duration, price) {
   }
   console.log(`Preparing trade for ${symbol} (${tradeType})...`);
 
-  // 1. Fetch contracts_for specs
+  // fetch contracts_for
   const req = {
     contracts_for: symbol,
     currency: "USD",
     landing_company: "svg",
-    product_type: "basic"
+    product_type: "basic",
   };
+
   const resp = await api.contractsFor(req).catch(err => {
     console.error("contracts_for request failed:", err);
     return null;
@@ -150,82 +208,139 @@ async function buyContract(symbol, tradeType, duration, price) {
     return;
   }
 
-  const available = resp.contracts_for.available;
-  const contract = available.find(c => c.contract_type === tradeType);
+  const available = resp.contracts_for.available || [];
+  // Prefer exact type match, otherwise try matching by display
+  let contract = available.find(c => c.contract_type === tradeType);
   if (!contract) {
-    console.error(`⛔ Contract type ${tradeType} not available for symbol ${symbol}`);
+    contract = available.find(c => (c.contract_display || "").toLowerCase().includes(tradeType.toLowerCase()));
+  }
+  if (!contract) {
+    console.error(`⛔ Contract type ${tradeType} not available for ${symbol}`);
     console.log("Available types:", available.map(c => c.contract_type));
     return;
   }
 
-  // 2. Determine duration_unit
-  const minDur = contract.min_contract_duration;
-  const maxDur = contract.max_contract_duration;
-  const unit = minDur.unit;  // e.g., "s", "t", "m", "h"
-  console.log(`Contract ${tradeType} allows durations unit="${unit}", min=${minDur.value}, max=${maxDur.value}`);
+  // Examine durations from the returned spec
+  // contracts_for commonly returns min_contract_duration / max_contract_duration objects
+  const minDur = contract.min_contract_duration || {};
+  const maxDur = contract.max_contract_duration || {};
+  const minUnit = minDur.unit || null; // "s", "t", "m", etc.
+  const maxUnit = maxDur.unit || minUnit;
 
-  // If tick-based (unit = "t"), ensure duration fits
-  if (unit === "t") {
+  // Helper to check duration validity (convert units only when same unit; doc responses typically align)
+  // If ticks are supported, minUnit === "t"
+  let chosenUnit = minUnit || "s"; // fallback
+  if (minUnit === "t") chosenUnit = "t";
+  else chosenUnit = minUnit || "s";
+
+  // Validate passed duration against min/max (units assumed same)
+  if (typeof duration === "number" && minDur.value != null && maxDur.value != null) {
     if (duration < minDur.value || duration > maxDur.value) {
-      console.warn(`Duration value ${duration} out of bounds for ticks (${minDur.value}-${maxDur.value})`);
-      return;
-    }
-  } else {
-    // time-based
-    if (duration < minDur.value || duration > maxDur.value) {
-      console.warn(`Duration value ${duration} out of bounds (${minDur.value}-${maxDur.value})`);
+      console.warn(`Duration ${duration}${chosenUnit} out of bounds for ${tradeType}: allowed ${minDur.value}-${maxDur.value} ${chosenUnit}`);
       return;
     }
   }
 
-  // 3. Barrier logic
-  let proposal = {
+  // Build proposal
+  const proposal = {
     proposal: 1,
     amount: price,
     basis: "stake",
     contract_type: tradeType,
     currency: "USD",
-    symbol
+    symbol,
   };
 
-  if (unit) {
-    proposal.duration = duration;
-    proposal.duration_unit = unit;
+  // Add duration/duration_unit when contract expects one (multipliers may not)
+  const isMultiplier = (contract.contract_category && contract.contract_category.toLowerCase().includes("multiplier")) ||
+                       tradeType.toUpperCase().includes("MULT");
+  if (!isMultiplier) {
+    if (chosenUnit) {
+      proposal.duration = duration;
+      proposal.duration_unit = chosenUnit;
+    }
   }
 
-  if (contract.barriers > 0) {
-    // barrier is required
-    // If barrier value is provided by contract.barrier use it, else derive
-    const barrierVal = contract.barrier || contract.high_barrier || contract.low_barrier;
-    if (!barrierVal) {
-      console.error("Barrier required but none provided by contract specs");
+  // Determine barrier requirements and set barrier if needed
+  // contract.barriers may be 0,1,2; for DIGIT* contracts we must set barrier 0-9
+  const barriers = contract.barriers || 0;
+
+  if (barriers === 1) {
+    // If server provided a barrier use it; else derive one:
+    // - For DIGIT* use a random digit 0-9
+    // - Otherwise use last tick price (rounded) as a sensible barrier
+    if (contract.barrier) {
+      proposal.barrier = String(contract.barrier);
+    } else if (String(tradeType).toUpperCase().startsWith("DIGIT")) {
+      proposal.barrier = String(Math.floor(Math.random() * 10)); // 0-9
+    } else {
+      // fetch latest tick to compute barrier near current price
+      const tickResp = await api.ticks({ ticks: symbol }).catch(err => {
+        console.warn("ticks fetch failed:", err);
+        return null;
+      });
+      if (tickResp && tickResp.echo_req && tickResp.tick && tickResp.tick.quote != null) {
+        // choose barrier close to current price (string). For many contracts barrier expects numeric string.
+        proposal.barrier = String(tickResp.tick.quote);
+      } else if (contract.high_barrier || contract.low_barrier) {
+        proposal.barrier = String(contract.high_barrier || contract.low_barrier);
+      } else {
+        console.error("Barrier required but no source found (server didn't provide barrier and tick fetch failed). Aborting.");
+        return;
+      }
+    }
+  } else if (barriers === 2) {
+    // double barrier: derive from contract.high_barrier/low_barrier if available
+    if (contract.high_barrier && contract.low_barrier) {
+      // Deriv expects barrier as "high:low" in some endpoints — but for safety we abort and log.
+      console.error("Double-barrier contract detected; automatic handling not implemented. high_barrier/low_barrier:", contract.high_barrier, contract.low_barrier);
+      return;
+    } else {
+      console.error("Double-barrier contract requires both barriers; server did not provide. Aborting.");
       return;
     }
-    proposal.barrier = barrierVal.toString();
+  }
+
+  // Attach barrier if determined
+  if (proposal.barrier !== undefined) {
     console.log("Using barrier:", proposal.barrier);
   }
 
   console.log("📤 Sending proposal:", proposal);
-  api.proposal(proposal)
-    .then(pResp => {
-      if (pResp.error) {
-        console.error("Proposal error:", pResp.error);
-        return;
-      }
-      const propId = pResp.proposal.id;
-      return api.buy({ buy: propId, price })
-        .then(buyResp => {
-          if (buyResp.error) {
-            console.error("Buy error:", buyResp.error);
-            return;
-          }
-          console.log("Contract bought:", buyResp);
-        });
-    })
-    .catch(err => {
-      console.error("Proposal request failed:", err);
+
+  // Propose and then buy
+  try {
+    const pResp = await api.proposal(proposal);
+    if (pResp.error) {
+      console.error("Proposal error:", pResp.error);
+      return;
+    }
+
+    // proposal successful — take the id
+    const propId = pResp.proposal && pResp.proposal.id;
+    if (!propId) {
+      console.error("Proposal response did not include id:", pResp);
+      return;
+    }
+
+    // execute buy with returned proposal id and price
+    const buyResp = await api.buy({ buy: propId, price }).catch(err => {
+      console.error("Buy call failed:", err);
+      return null;
     });
+    if (!buyResp) return;
+    if (buyResp.error) {
+      console.error("Buy error:", buyResp.error);
+      return;
+    }
+
+    console.log("Contract bought successfully:", buyResp);
+    return buyResp;
+  } catch (err) {
+    console.error("Proposal/buy sequence failed:", err);
+  }
 }
+
 
 
 
