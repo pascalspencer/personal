@@ -219,7 +219,7 @@ async function buyContract(symbol, tradeType, duration, price) {
     return;
   }
 
-  // Examine durations from the returned spec
+  // Examine durations from the returned specs
   // contracts_for commonly returns min_contract_duration / max_contract_duration objects
   const minDur = contract.min_contract_duration || {};
   const maxDur = contract.max_contract_duration || {};
