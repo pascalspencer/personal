@@ -96,7 +96,6 @@ async function evaluateAndBuyContractSafe() {
   buyContract(submarket, tradeType, 1, price);
 }
 
-// --- Trade Type Fetcher ---
 // Dynamic mapping: fetch available contract types for the symbol and choose the best match
 async function getTradeTypeForSentiment(sentiment, index, symbol) {
   if (!api) {
