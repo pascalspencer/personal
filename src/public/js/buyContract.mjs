@@ -151,7 +151,7 @@ async function buyContract(symbol, tradeType, duration, price) {
     duration_unit: "t"
   };
 
-  api.send(JSON.stringify(req));
+  api.send(JSON.stringify(proposal));
   console.log("📤 Sending proposal:", proposal);
 
 
