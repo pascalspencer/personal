@@ -127,35 +127,127 @@ async function getTradeTypeForSentiment(sentiment, index) {
 
 
 // --- Buy Contract ---
-function buyContract(symbol, tradeType, duration, price) {
-  const loginId = getCachedLoginId();
-  if (!loginId) return console.error("Login ID not found.");
+async function buyContract(symbol, tradeType, duration, price) {
+  if (!api) return console.error("API not ready. WebSocket not connected.");
 
+  console.log(`Preparing trade for ${symbol} (${tradeType})...`);
 
-    const buyRequest = {
-      proposal: 1,
+  // 1️⃣ Fetch dynamic contract specs
+  const contractsResp = await api.contractsFor({
+    contracts_for: symbol,
+    currency: "USD"
+  }).catch(err => {
+    console.error("contracts_for request failed:", err);
+    return null;
+  });
+
+  if (!contractsResp || contractsResp.error) {
+    return console.error("contracts_for error:", contractsResp?.error);
+  }
+
+  const available = contractsResp.contracts_for.available;
+  const contract = available.find(c => c.contract_type === tradeType);
+
+  if (!contract) {
+    return console.error(`⛔ Contract type ${tradeType} is NOT available for ${symbol}`);
+  }
+
+  // 2️⃣ Detect duration type: tick / time / multipliers
+  let durationUnit = null;
+  let needsBarrier = false;
+  let barrierValue = undefined;
+
+  // Multipliers do not use proposals or duration
+  const isMultiplier = tradeType === "MULTUP" || tradeType === "MULTDOWN";
+
+  if (isMultiplier) {
+    console.log("⚡ Multipliers detected → sending buy request directly.");
+
+    return api.buy({
+      buy: tradeType,
       amount: price,
       basis: "stake",
-      contract_type: tradeType,
-      currency: "USD",
-      duration: duration,
-      duration_unit: "t",
       symbol,
-    };
+      multiplier: contract?.multiplier || 100
+    }).then(resp => {
+      if (resp.error) return console.error("Multiplier buy error:", resp.error);
+      console.log("Multiplier contract bought:", resp);
+    });
+  }
 
-    api.proposal(buyRequest)
-      .then((proposalResp) => {
-        if (proposalResp.error) return console.error("Proposal error:", proposalResp.error);
+  // Check duration units allowed
+  const durations = contract.available_duration || [];
 
-        api.buy({ buy: proposalResp.proposal.id, price })
-          .then((buyResp) => {
-            if (buyResp.error) return console.error("Buy error:", buyResp.error);
-            console.log("Contract bought:", buyResp);
-            alert("Contract bought successfully!");
-          });
-      })
-      .catch((err) => console.error("Proposal request failed:", err));
+  const tickDuration = durations.find(d => d.unit === "t");
+  const timeDuration = durations.find(d => d.unit !== "t");
+
+  if (tickDuration) {
+    durationUnit = "t";   // tick supported
+  } else if (timeDuration) {
+    durationUnit = timeDuration.unit; // s, m, h
+  } else {
+    return console.error("⛔ Contract has no valid duration units.");
+  }
+
+  // 3️⃣ Barrier detection
+  if (contract.barriers === 1) {
+    // Single barrier
+    needsBarrier = true;
+    barrierValue = contract.barrier || contract.high_barrier || contract.low_barrier;
+  }
+
+  if (contract.barriers === 2) {
+    console.warn("Double-barrier contracts not supported automatically.");
+    return;
+  }
+
+  // For digit trades → barrier = 0–9
+  const isDigitContract = tradeType.startsWith("DIGIT");
+  if (isDigitContract) {
+    needsBarrier = true;
+    barrierValue = Math.floor(Math.random() * 10).toString(); // 0–9 digit
+  }
+
+  // 4️⃣ Build proposal request
+  const proposal = {
+    proposal: 1,
+    amount: price,
+    basis: "stake",
+    contract_type: tradeType,
+    currency: "USD",
+    symbol,
+  };
+
+  if (!isMultiplier) {
+    proposal.duration = duration;
+    proposal.duration_unit = durationUnit;
+  }
+
+  if (needsBarrier && barrierValue !== undefined) {
+    proposal.barrier = barrierValue.toString();
+  }
+
+  console.log("📤 Sending proposal:", proposal);
+
+  // 5️⃣ Send proposal → then buy
+  api.proposal(proposal)
+    .then(proposalResp => {
+      if (proposalResp.error) {
+        console.error("Proposal error:", proposalResp.error);
+        return;
+      }
+
+      const id = proposalResp.proposal.id;
+
+      return api.buy({ buy: id, price })
+        .then(buyResp => {
+          if (buyResp.error) return console.error("Buy error:", buyResp.error);
+          console.log("Contract bought:", buyResp);
+        });
+    })
+    .catch(err => console.error("Proposal failed:", err));
 }
+
 
 // --- Login ID Loader ---
 let cachedLoginId = null;
