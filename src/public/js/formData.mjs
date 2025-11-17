@@ -87,8 +87,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
 
-  // // Event listener
-  // document.getElementById("market").addEventListener("change", populateSubmarkets);
+  // Event listener
+  document.getElementById("market").addEventListener("change", populateSubmarkets);
 
 
   // --- Populate Sentiments dynamically ---
