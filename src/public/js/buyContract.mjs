@@ -79,7 +79,7 @@ async function evaluateAndBuyContractSafe() {
 
   console.log(`Winning sentiment index = ${maxIndex}`);
 
-  const tradeType = await getTradeTypeForSentiment(selectedSentiment, maxIndex, submarket);
+  const tradeType = await getTradeTypeForSentiment(selectedSentiment, maxIndex);
   console.log("Trade type:", tradeType);
 
   if (!tradeType) {
@@ -97,66 +97,33 @@ async function evaluateAndBuyContractSafe() {
 }
 
 // --- Trade Type Fetcher ---
-async function getTradeTypeForSentiment(sentiment, index, symbol) {
+async function getTradeTypeForSentiment(sentiment, index) {
   const sentimentParts = sentiment.split("/");
   if (!sentimentParts[index]) return null;
-
   const selectedPart = sentimentParts[index].trim();
 
-  // Fetch dynamic contract types for this symbol
-  const contractsResp = await api.contractsFor({
-    contracts_for: symbol,
-    currency: "USD"
-  });
+  // --- Sentiment-to-Contract Mapping ---
+  const mapping = {
+    "Touch": "ONETOUCH",
+    "NoTouch": "NOTOUCH",
+    "Up": "MULTUP",
+    "Down": "MULTDOWN",
+    "Rise": "CALLE",
+    "Fall": "PUTE",
+    "Higher": "TICKHIGH",
+    "Lower": "TICKLOW",
+    "Matches": "DIGITMATCH",
+    "Differs": "DIGITDIFF",
+    "Even": "DIGITEVEN",
+    "Odd": "DIGITODD",
+    "Over": "DIGITOVER",
+    "Under": "DIGITUNDER"
+  };
 
-  if (contractsResp.error) {
-    console.error("contracts_for error:", contractsResp.error);
-    return null;
-  }
-
-  const availableContracts = contractsResp.contracts_for.available;
-
-  // Create a searchable list { display_name, contract_type }
-  const dynamicList = availableContracts.map(c => ({
-    display: c.contract_display,
-    type: c.contract_type
-  }));
-
-  console.log("Dynamic contracts:", dynamicList);
-
-  // Try direct match by display name
-  const directMatch = dynamicList.find(c =>
-    c.display.toLowerCase().includes(selectedPart.toLowerCase())
-  );
-  if (directMatch) return directMatch.type;
-
-  // Fallback smart matching:
-  const keywordMap = [
-    ["Rise", ["rise", "call", "higher", "up"]],
-    ["Fall", ["fall", "put", "lower", "down"]],
-    ["Touch", ["touch"]],
-    ["NoTouch", ["no touch", "notouch"]],
-    ["Even", ["even"]],
-    ["Odd", ["odd"]],
-    ["Over", ["over"]],
-    ["Under", ["under"]],
-    ["Matches", ["match"]],
-    ["Differs", ["diff"]]
-  ];
-
-  for (const [label, keywords] of keywordMap) {
-    if (keywords.some(k => selectedPart.toLowerCase().includes(k))) {
-      const match = dynamicList.find(c =>
-        c.display.toLowerCase().includes(label.toLowerCase())
-      );
-      if (match) return match.type;
-    }
-  }
-
-  console.warn("⚠ No dynamic match found for:", selectedPart);
-  return null;
+  const tradeType = mapping[selectedPart] || null;
+  if (!tradeType) console.error("Unknown sentiment:", selectedPart);
+  return tradeType;
 }
-  
 
 
 // --- Buy Contract ---
