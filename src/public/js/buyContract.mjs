@@ -128,125 +128,105 @@ async function getTradeTypeForSentiment(sentiment, index) {
 
 // --- Buy Contract ---
 async function buyContract(symbol, tradeType, duration, price) {
-  if (!api) return console.error("API not ready. WebSocket not connected.");
-
+  if (!api) {
+    console.error("API not ready. WebSocket not connected.");
+    return;
+  }
   console.log(`Preparing trade for ${symbol} (${tradeType})...`);
 
-  // 1️⃣ Fetch dynamic contract specs
-  const contractsResp = await api.contractsFor({
+  // 1. Fetch contracts_for specs
+  const req = {
     contracts_for: symbol,
-    currency: "USD"
-  }).catch(err => {
+    currency: "USD",
+    landing_company: "svg",
+    product_type: "basic"
+  };
+  const resp = await api.contractsFor(req).catch(err => {
     console.error("contracts_for request failed:", err);
     return null;
   });
-
-  if (!contractsResp || contractsResp.error) {
-    return console.error("contracts_for error:", contractsResp?.error);
-  }
-
-  const available = contractsResp.contracts_for.available;
-  const contract = available.find(c => c.contract_type === tradeType);
-
-  if (!contract) {
-    return console.error(`⛔ Contract type ${tradeType} is NOT available for ${symbol}`);
-  }
-
-  // 2️⃣ Detect duration type: tick / time / multipliers
-  let durationUnit = null;
-  let needsBarrier = false;
-  let barrierValue = undefined;
-
-  // Multipliers do not use proposals or duration
-  const isMultiplier = tradeType === "MULTUP" || tradeType === "MULTDOWN";
-
-  if (isMultiplier) {
-    console.log("⚡ Multipliers detected → sending buy request directly.");
-
-    return api.buy({
-      buy: tradeType,
-      amount: price,
-      basis: "stake",
-      symbol,
-      multiplier: contract?.multiplier || 100
-    }).then(resp => {
-      if (resp.error) return console.error("Multiplier buy error:", resp.error);
-      console.log("Multiplier contract bought:", resp);
-    });
-  }
-
-  // Check duration units allowed
-  const durations = contract.available_duration || [];
-
-  const tickDuration = durations.find(d => d.unit === "t");
-  const timeDuration = durations.find(d => d.unit !== "t");
-
-  if (tickDuration) {
-    durationUnit = "t";   // tick supported
-  } else if (timeDuration) {
-    durationUnit = timeDuration.unit; // s, m, h
-  } else {
-    return console.error("⛔ Contract has no valid duration units.");
-  }
-
-  // 3️⃣ Barrier detection
-  if (contract.barriers === 1) {
-    // Single barrier
-    needsBarrier = true;
-    barrierValue = contract.barrier || contract.high_barrier || contract.low_barrier;
-  }
-
-  if (contract.barriers === 2) {
-    console.warn("Double-barrier contracts not supported automatically.");
+  if (!resp || resp.error) {
+    console.error("contracts_for error:", resp?.error);
     return;
   }
 
-  // For digit trades → barrier = 0–9
-  const isDigitContract = tradeType.startsWith("DIGIT");
-  if (isDigitContract) {
-    needsBarrier = true;
-    barrierValue = Math.floor(Math.random() * 10).toString(); // 0–9 digit
+  const available = resp.contracts_for.available;
+  const contract = available.find(c => c.contract_type === tradeType);
+  if (!contract) {
+    console.error(`⛔ Contract type ${tradeType} not available for symbol ${symbol}`);
+    console.log("Available types:", available.map(c => c.contract_type));
+    return;
   }
 
-  // 4️⃣ Build proposal request
-  const proposal = {
+  // 2. Determine duration_unit
+  const minDur = contract.min_contract_duration;
+  const maxDur = contract.max_contract_duration;
+  const unit = minDur.unit;  // e.g., "s", "t", "m", "h"
+  console.log(`Contract ${tradeType} allows durations unit="${unit}", min=${minDur.value}, max=${maxDur.value}`);
+
+  // If tick-based (unit = "t"), ensure duration fits
+  if (unit === "t") {
+    if (duration < minDur.value || duration > maxDur.value) {
+      console.warn(`Duration value ${duration} out of bounds for ticks (${minDur.value}-${maxDur.value})`);
+      return;
+    }
+  } else {
+    // time-based
+    if (duration < minDur.value || duration > maxDur.value) {
+      console.warn(`Duration value ${duration} out of bounds (${minDur.value}-${maxDur.value})`);
+      return;
+    }
+  }
+
+  // 3. Barrier logic
+  let proposal = {
     proposal: 1,
     amount: price,
     basis: "stake",
     contract_type: tradeType,
     currency: "USD",
-    symbol,
+    symbol
   };
 
-  if (!isMultiplier) {
+  if (unit) {
     proposal.duration = duration;
-    proposal.duration_unit = durationUnit;
+    proposal.duration_unit = unit;
   }
 
-  if (needsBarrier && barrierValue !== undefined) {
-    proposal.barrier = barrierValue.toString();
+  if (contract.barriers > 0) {
+    // barrier is required
+    // If barrier value is provided by contract.barrier use it, else derive
+    const barrierVal = contract.barrier || contract.high_barrier || contract.low_barrier;
+    if (!barrierVal) {
+      console.error("Barrier required but none provided by contract specs");
+      return;
+    }
+    proposal.barrier = barrierVal.toString();
+    console.log("Using barrier:", proposal.barrier);
   }
 
   console.log("📤 Sending proposal:", proposal);
-
-  // 5️⃣ Send proposal → then buy
   api.proposal(proposal)
-    .then(proposalResp => {
-      if (proposalResp.error) {
-        console.error("Proposal error:", proposalResp.error);
+    .then(pResp => {
+      if (pResp.error) {
+        console.error("Proposal error:", pResp.error);
         return;
       }
-
-      const id = proposalResp.proposal.id;
-
-      return api.buy({ buy: id, price })
+      const propId = pResp.proposal.id;
+      return api.buy({ buy: propId, price })
         .then(buyResp => {
-          if (buyResp.error) return console.error("Buy error:", buyResp.error);
+          if (buyResp.error) {
+            console.error("Buy error:", buyResp.error);
+            return;
+          }
           console.log("Contract bought:", buyResp);
         });
     })
-    .catch(err => console.error("Proposal failed:", err));
+    .catch(err => {
+      console.error("Proposal request failed:", err);
+    });
 }
+
 
 
 // --- Login ID Loader ---
