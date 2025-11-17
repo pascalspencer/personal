@@ -135,16 +135,13 @@ async function getTradeTypeForSentiment(sentiment, index) {
 async function buyContract(symbol, tradeType, duration, price) {
   if (!api) return console.error("API not ready");
 
-  console.log(`Preparing trade for ${symbol} (${tradeType})…`);
+  console.log(`Preparing trade for ${symbol} (${tradeType})...`);
 
-  // 1 — Pull live contract specs
   const resp = await api.contractsFor({
     contracts_for: symbol,
-    currency: "USD",
-    landing_company: "svg",
-    product_type: "basic"
+    currency: "USD"
   }).catch(err => {
-    console.error("contracts_for failed:", err);
+    console.error("contracts_for request failed:", err);
     return null;
   });
 
@@ -152,6 +149,9 @@ async function buyContract(symbol, tradeType, duration, price) {
     console.error("contracts_for error:", resp?.error);
     return;
   }
+
+  console.log("contracts_for received:", resp);   // <--- ADD THIS
+
 
   const available = resp.contracts_for.available || [];
   const contract = available.find(c => c.contract_type === tradeType);
