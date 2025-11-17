@@ -173,23 +173,23 @@
       }
 
       // When market changes → populate submarket dropdown
-      marketSelect.addEventListener("change", () => {
-        const market = marketSelect.value;
+      // marketSelect.addEventListener("change", () => {
+      //   const market = marketSelect.value;
 
-        submarketSelect.innerHTML = `<option value="">Select Submarket</option>`;
-        submarketSelect.disabled = true;
+      //   submarketSelect.innerHTML = `<option value="">Select Submarket</option>`;
+      //   submarketSelect.disabled = true;
 
-        if (!market || !instruments[market]) return;
+      //   if (!market || !instruments[market]) return;
 
-        instruments[market].forEach(symbol => {
-          const opt = document.createElement("option");
-          opt.value = symbol;
-          opt.textContent = symbol;
-          submarketSelect.appendChild(opt);
-        });
+      //   instruments[market].forEach(symbol => {
+      //     const opt = document.createElement("option");
+      //     opt.value = symbol;
+      //     opt.textContent = symbol;
+      //     submarketSelect.appendChild(opt);
+      //   });
 
-        submarketSelect.disabled = false;
-      });
+      //   submarketSelect.disabled = false;
+      // });
     });
   </script>
 
