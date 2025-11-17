@@ -139,108 +139,6 @@ async function buyContract(symbol, tradeType, duration, price) {
   }
 
   console.log(`🚀 Preparing trade for ${symbol} (${tradeType})...`);
-
-  //------------------------------------------
-  // 1. FETCH AVAILABLE CONTRACTS
-  //------------------------------------------
-  let resp;
-
-  try {
-    resp = await api.contractsFor({
-      contracts_for: symbol,
-      currency: "USD"
-    });
-  } catch (err) {
-    console.error("❌ contracts_for request failed:", err);
-    return;
-  }
-
-  if (!resp || resp.error) {
-    console.error("❌ contracts_for error:", resp?.error);
-    return;
-  }
-
-  const available = resp.contracts_for?.available || [];
-
-  if (!available.length) {
-    console.error(`❌ No contract types returned for ${symbol}`);
-    return;
-  }
-
-  console.log("📦 Available contracts:", available.map(c => c.contract_type));
-
-
-  //------------------------------------------
-  // 2. MATCH TRADE TYPE EXACTLY
-  //------------------------------------------
-  let contract = available.find(c => c.contract_type === tradeType);
-
-  if (!contract) {
-    // fallback search by display
-    contract = available.find(c =>
-      (c.contract_display || "").toLowerCase().includes(tradeType.toLowerCase())
-    );
-  }
-
-  if (!contract) {
-    console.error(`❌ Contract type ${tradeType} NOT available for ${symbol}`);
-    return;
-  }
-
-  console.log("✅ Matched contract:", contract.contract_type, contract.contract_display);
-
-
-  //------------------------------------------
-  // 3. DETECT DURATION UNIT
-  //------------------------------------------
-  let unit = "t"; // default for ticks
-
-  const minDur = contract.min_contract_duration;
-  const maxDur = contract.max_contract_duration;
-
-  if (minDur && minDur.unit) unit = minDur.unit;
-
-  // Rise/Fall & digits use "t", others may use "s"
-  console.log(`⏳ Duration unit = ${unit}`);
-
-  if (duration < minDur.value || duration > maxDur.value) {
-    console.warn(
-      `⚠ Duration ${duration}${unit} outside allowed range ${minDur.value}-${maxDur.value}${unit}`
-    );
-  }
-
-
-  //------------------------------------------
-  // 4. HANDLE BARRIERS
-  //------------------------------------------
-  let barrierNeeded = contract.barriers || 0;
-  let barrierValue = null;
-
-  if (barrierNeeded === 1) {
-    // DIGITS
-    if (tradeType.startsWith("DIGIT")) {
-      barrierValue = String(Math.floor(Math.random() * 10)); // correct
-    }
-
-    // Default fallback: current tick quote
-    if (!barrierValue) {
-      try {
-        const tick = await api.ticks({ ticks: symbol });
-        barrierValue = String(tick.tick.quote);
-      } catch (err) {
-        console.error("⚠ Could not fetch tick for barrier:", err);
-        return;
-      }
-    }
-  }
-
-  if (barrierNeeded === 2) {
-    console.error("❌ Double-barrier contracts are NOT supported.");
-    return;
-  }
-
-  //------------------------------------------
-  // 5. BUILD PROPOSAL
   //------------------------------------------
   const proposal = {
     proposal: 1,
@@ -250,13 +148,10 @@ async function buyContract(symbol, tradeType, duration, price) {
     currency: "USD",
     symbol,
     duration,
-    duration_unit: unit
+    duration_unit: "t"
   };
 
-  if (barrierValue !== null) {
-    proposal.barrier = barrierValue;
-  }
-
+  api.send(JSON.stringify(req));
   console.log("📤 Sending proposal:", proposal);
 
 
