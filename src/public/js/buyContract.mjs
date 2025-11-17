@@ -208,7 +208,7 @@ async function buyContract(symbol, tradeType, duration, price) {
   }
 
   const available = resp.contracts_for.available || [];
-  // Prefer exact type match, otherwise try matching by display
+  // Prefer exact type match, otherwise try matching by display 
   let contract = available.find(c => c.contract_type === tradeType);
   if (!contract) {
     contract = available.find(c => (c.contract_display || "").toLowerCase().includes(tradeType.toLowerCase()));
