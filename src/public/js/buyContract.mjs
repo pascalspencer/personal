@@ -4,11 +4,13 @@ import { getCurrentLoginId } from "./custom.mjs";
 const derivAppID = 61696;
 const connection = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${derivAppID}`);
 let api;
+let basic;
 const resultsContainer = document.getElementById("results-container");
 
 // --- WebSocket connection ---
 connection.onopen = function () {
   api = new DerivAPIBasic({ connection });
+  basic = api.basic;
   ping();
   console.log("WebSocket connection established.");
 };
@@ -17,7 +19,7 @@ connection.onopen = function () {
 let pingInterval = null;
   function ping() {
     if (!api || pingInterval) return;
-    pingInterval = setInterval(() => api.ping(), 30000);
+    pingInterval = setInterval(() => api.ping(), 3000);
   }
 
 
@@ -198,7 +200,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
   //------------------------------------------
   let proposalResp;
   try {
-    proposalResp = await api.basic.proposal(proposal);
+    proposalResp = await basic.proposal(proposal);
     console.log("Proposal response:", proposalResp);
   } catch (err) {
     console.error("❌ Proposal request failed:", err);
@@ -219,7 +221,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
   //------------------------------------------
   let buyResp;
   try {
-    buyResp = await api.basic.buy({ buy: propId, price });
+    buyResp = await basic.buy({ buy: propId, price });
   } catch (err) {
     console.error("❌ Buy call failed:", err);
     return;
