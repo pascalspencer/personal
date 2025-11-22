@@ -58,10 +58,12 @@ async function evaluateAndBuyContractSafe() {
   const submarket = document.getElementById("submarket")?.value;
   const sentimentDropdown = document.getElementById("sentiment");
   const selectedSentiment = sentimentDropdown?.value;
+  const tradeDigit = document.getElementById("input-value")?.value;
 
   if (!market) return console.warn("⛔ Market not selected");
   if (!submarket) return console.warn("⛔ Submarket not selected");
   if (!selectedSentiment) return console.warn("⛔ Sentiment not selected");
+  
 
   const instruments = await fetchLiveInstruments();
   console.log("Fetched instruments:", instruments);
@@ -135,7 +137,7 @@ async function getTradeTypeForSentiment(sentiment, index) {
 
 
 // Unified buyContract that follows contracts_for precisely
-async function buyContract(symbol, tradeType, duration, price) {
+async function buyContract(symbol, tradeType, duration, price, prediction = null) {
   if (!api || api.is_closed) {
     console.error("❌ API not connected.");
     return;
@@ -153,6 +155,42 @@ async function buyContract(symbol, tradeType, duration, price) {
     duration,
     duration_unit: "t"
   };
+
+  // ---- VANILLA CONTRACTS (Rise/Fall, Touch/No Touch) ----
+  if (["CALL", "PUT", "ONETOUCH", "NOTOUCH"].includes(tradeType)) {
+    proposal.contract_type = tradeType;
+  }
+
+  // ---- DIGIT CONTRACTS ----
+  else if (tradeType.startsWith("DIGIT")) {
+    proposal.contract_type = tradeType;
+
+    // These contracts REQUIRE prediction
+    if (["DIGITMATCH", "DIGITDIFF", "DIGITOVER", "DIGITUNDER"].includes(tradeType)) {
+      if (prediction === null || isNaN(prediction)) {
+        console.warn("⚠️ Digit contract requires prediction (0-9). Defaulting to 0.");
+        proposal.prediction = tradeDigit || 0;
+      } else {
+        proposal.prediction = Number(prediction);
+      }
+    }
+
+    // EVEN / ODD → no prediction required
+  }
+
+  // ---- MULTIPLIER CONTRACTS ----
+  else if (["MULTUP", "MULTDOWN"].includes(tradeType)) {
+    proposal.contract_type = tradeType;
+    
+    // Deriv requires multiplier field
+    proposal.multiplier = 10; // default – can be updated to user selection
+  }
+
+  // ---- UNKNOWN CONTRACT FALLBACK ----
+  else {
+    console.warn(`⚠️ Unknown contract type: ${tradeType}`);
+    proposal.contract_type = tradeType;
+  }
 
   //------------------------------------------
   // 6. REQUEST PROPOSAL
