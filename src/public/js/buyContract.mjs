@@ -96,7 +96,8 @@ async function evaluateAndBuyContractSafe() {
   console.log(`🔥 Automated mode active — executing trade
   Symbol: ${submarket}
   Type: ${tradeType}
-  Price: ${price}`);
+  Price: ${price}
+  Digit: ${tradeDigit}`);
 
   buyContract(submarket, tradeType, 1, price, tradeDigit);
 }
