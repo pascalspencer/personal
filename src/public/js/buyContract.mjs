@@ -152,8 +152,8 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     basis: "stake",
     contract_type: tradeType,
     currency: "USD",
-    symbol,
-    duration,
+    symbol: symbol,
+    duration: duration,
     duration_unit: "t"
   };
 
