@@ -199,6 +199,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
   let proposalResp;
   try {
     proposalResp = await api.proposal(proposal);
+    console.log("Proposal response:", proposalResp);
   } catch (err) {
     console.error("❌ Proposal request failed:", err);
     return;
