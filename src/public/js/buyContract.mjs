@@ -198,7 +198,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
   //------------------------------------------
   let proposalResp;
   try {
-    proposalResp = await api.proposal(proposal);
+    proposalResp = await api.basic.proposal(proposal);
     console.log("Proposal response:", proposalResp);
   } catch (err) {
     console.error("❌ Proposal request failed:", err);
@@ -219,7 +219,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
   //------------------------------------------
   let buyResp;
   try {
-    buyResp = await api.buy({ buy: propId, price });
+    buyResp = await api.basic.buy({ buy: propId, price });
   } catch (err) {
     console.error("❌ Buy call failed:", err);
     return;
