@@ -98,7 +98,7 @@ async function evaluateAndBuyContractSafe() {
   Type: ${tradeType}
   Price: ${price}`);
 
-  buyContract(submarket, tradeType, 1, price);
+  buyContract(submarket, tradeType, 1, price, tradeDigit);
 }
 
 async function getTradeTypeForSentiment(sentiment, index) {
