@@ -135,6 +135,28 @@ async function getTradeTypeForSentiment(sentiment, index) {
   return null;
 }
 
+// --- Wait for first live tick ---
+async function waitForFirstTick(symbol) {
+  return new Promise((resolve, reject) => {
+    if (!api || api.is_closed) return reject("API not connected");
+
+    const tickStream = api.subscribe({ ticks: symbol });
+
+    tickStream.onMessage = msg => {
+      if (msg.tick && msg.tick.quote) {
+        console.log("📈 First tick received:", msg.tick.quote);
+        tickStream.unsubscribe();    // stop stream
+        resolve(msg.tick.quote);     // return live price
+      }
+    };
+
+    tickStream.onError = err => {
+      console.error("❌ Tick subscription error:", err);
+      reject(err);
+    };
+  });
+}
+
 
 
 // Unified buyContract that follows contracts_for precisely
@@ -145,6 +167,18 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
   }
 
   console.log(`🚀 Preparing trade for ${symbol} (${tradeType})...`);
+  console.log("⏳ Waiting for live tick before proposal…");
+
+  let livePrice;
+  try {
+    livePrice = await waitForFirstTick(symbol);
+  } catch (err) {
+    console.error("❌ Could not get live tick:", err);
+    return;
+  }
+
+  console.log("🔥 Using live tick:", livePrice);
+
   //------------------------------------------
   const proposal = {
     proposal: 1,
