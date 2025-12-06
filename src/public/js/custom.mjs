@@ -36,29 +36,26 @@ function getQueryParam(param) {
 
 // Function to get current login ID from query params
 function getCurrentLoginId() {
-    // const fromQuery = getQueryParam("currentLoginId");
     const tokenQuery = getQueryParam("userToken");
 
-    // if (fromQuery) {
-    //     localStorage.setItem("currentLoginId", fromQuery);
-    //     console.log("Saved Login ID:", fromQuery);
-    //     return fromQuery;
-    // }
-
+    // 1. If token is present in query, save it and return it
     if (tokenQuery) {
         localStorage.setItem("userToken", tokenQuery);
         console.log("Saved User Token from query:", tokenQuery);
         return tokenQuery;
     }
 
-    // const stored = localStorage.getItem("currentLoginId");
-    // if (stored) {
-    //     console.log("Login ID from storage:", stored);
-    //     return stored;
-    // }
+    // 2. Otherwise load from localStorage
+    const storedToken = localStorage.getItem("userToken");
+    if (storedToken) {
+        console.log("Loaded User Token from storage:", storedToken);
+        return storedToken;
+    }
+
     console.warn("No Token available");
     return null;
 }
+
 
 
 export { getYear, myMap, getQueryParam, getCurrentLoginId };
