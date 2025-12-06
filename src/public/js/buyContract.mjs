@@ -151,13 +151,19 @@ async function authorizeUsingQueryTokens() {
     return false;
   }
 
-  const tokenStored = localStorage.getItem("userToken");
-    if (tokenStored) {
-        console.log("User Token from storage:", tokenStored);
-        return tokenStored;
+  let tradeToken = null;
+  const storedUserToken = getCurrentLoginId();
+    if (storedUserToken) {
+      const tokenStored = localStorage.getItem("userToken");
+      if (tokenStored) {
+          console.log("User Token from storage:", tokenStored);
+          tradeToken = tokenStored;
+          return tokenStored;
+      }
+        
     }
 
-  const { userToken } = getTokensFromUrl() || tokenStored;
+  const { userToken } = getTokensFromUrl() || tradeToken;
 
   if (!userToken) {
     console.warn("No userToken found in URL query.");

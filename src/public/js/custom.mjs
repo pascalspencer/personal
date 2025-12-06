@@ -41,21 +41,19 @@ function getCurrentLoginId() {
 
     if (fromQuery) {
         localStorage.setItem("currentLoginId", fromQuery);
-        localStorage.setItem("userToken", tokenQuery);
         console.log("Saved Login ID:", fromQuery);
-        console.log("Saved User Token:", tokenQuery);
         return fromQuery, tokenQuery;
+    }
+
+    if (tokenQuery) {
+        localStorage.setItem("userToken", tokenQuery);
+        console.log("Saved User Token from query:", tokenQuery);
     }
 
     const stored = localStorage.getItem("currentLoginId");
     if (stored) {
         console.log("Login ID from storage:", stored);
         return stored;
-    }
-    const tokenStored = localStorage.getItem("userToken");
-    if (tokenStored) {
-        console.log("User Token from storage:", tokenStored);
-        return tokenStored;
     }
 
     console.warn("No Login ID available");
