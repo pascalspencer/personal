@@ -153,15 +153,9 @@ async function authorizeUsingQueryTokens() {
 
   let tradeToken = null;
   const storedUserToken = getCurrentLoginId();
-    if (storedUserToken) {
-      const tokenStored = localStorage.getItem("userToken");
-      if (tokenStored) {
-          console.log("User Token from storage:", tokenStored);
-          tradeToken = tokenStored;
-          return tokenStored;
-      }
-        
-    }
+  if (storedUserToken) {
+    tradeToken = { userToken: storedUserToken };
+  }
 
   const { userToken } = getTokensFromUrl() || tradeToken;
 
