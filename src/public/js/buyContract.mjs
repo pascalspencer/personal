@@ -6,11 +6,22 @@ let api;
 const resultsContainer = document.getElementById("results-container");
 
 // --- WebSocket connection ---
-connection.onopen = function () {
+connection.onopen = async function () {
   api = new DerivAPIBasic({ connection });
   ping();
   console.log("WebSocket connection established.");
+
+  // AUTHORIZE IMMEDIATELY
+  const token = getCurrentToken();
+  if (token) {
+    console.log("Authorizing immediately with token:", token);
+    const resp = await api.authorize(token);
+    console.log("Authorize response:", resp);
+  } else {
+    console.warn("No token found at WebSocket open.");
+  }
 };
+
 
 // --- Ping keep-alive ---
 let pingInterval = null;
@@ -170,39 +181,39 @@ function getTokensFromUrl() {
   };
 }
 
-async function authorizeUsingQueryTokens() {
-  if (!api || api.is_closed) {
-    console.error("API not ready for authorization");
-    return false;
-  }
+// async function authorizeUsingQueryTokens() {
+//   if (!api || api.is_closed) {
+//     console.error("API not ready for authorization");
+//     return false;
+//   }
 
-  // Read tokens correctly
-  const urlToken = getTokensFromUrl().userToken;
-  const storedToken = getCurrentToken();
+//   // Read tokens correctly
+//   const urlToken = getTokensFromUrl().userToken;
+//   const storedToken = getCurrentToken();
 
-  const userToken = urlToken || storedToken;
+//   const userToken = urlToken || storedToken;
 
-  if (!userToken) {
-    console.warn("No token found (URL or stored).");
-    return false;
-  }
+//   if (!userToken) {
+//     console.warn("No token found (URL or stored).");
+//     return false;
+//   }
 
-  try {
-    const resp = await api.authorize(userToken);
+//   try {
+//     const resp = await api.authorize(userToken);
 
-    if (resp?.authorize) {
-      console.log("Success: Authorized using:", userToken);
-      return true;
-    }
+//     if (resp?.authorize) {
+//       console.log("Success: Authorized using:", userToken);
+//       return true;
+//     }
 
-    console.warn("Authorize response missing authorize payload:", resp);
-    return false;
+//     console.warn("Authorize response missing authorize payload:", resp);
+//     return false;
 
-  } catch (err) {
-    console.error("Authorization failed:", userToken, err);
-    return false;
-  }
-}
+//   } catch (err) {
+//     console.error("Authorization failed:", userToken, err);
+//     return false;
+//   }
+// }
 
 
 // --- Wait for first live tick ---
@@ -237,12 +248,12 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     return;
   }
 
-  // 1) Authorize first (acct1/token1/cur1 or acct2/token2/cur2)
-  const authorized = await authorizeUsingQueryTokens();
-  if (!authorized) {
-    console.warn("Authorization missing or failed. Aborting to avoid proposal errors.");
-    return;
-  }
+  // // 1) Authorize first (acct1/token1/cur1 or acct2/token2/cur2)
+  // const authorized = await authorizeUsingQueryTokens();
+  // if (!authorized) {
+  //   console.warn("Authorization missing or failed. Aborting to avoid proposal errors.");
+  //   return;
+  // }
 
   console.log(`🚀 Preparing trade for ${symbol} (${tradeType})...`);
   console.log("⏳ Subscribing to live ticks (authorized) before requesting proposal…");
