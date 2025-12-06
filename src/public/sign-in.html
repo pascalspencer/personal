@@ -20,14 +20,17 @@
     </script>
     <script>
         document.addEventListener("DOMContentLoaded", () => {
-            const loginId = new URLSearchParams(window.location.search).get("currentLoginId");
-            if (loginId) {
-                localStorage.setItem("currentLoginId", loginId);
-                console.log("Saved login ID from URL:", loginId);
+            const params = new URLSearchParams(window.location.search);
+            const token = params.get("userToken");
+
+            if (token) {
+                localStorage.setItem("userToken", token);
+                console.log("Saved userToken from URL:", token);
+            } else {
+                console.warn("No userToken found in URL.");
             }
         });
     </script>
-
   
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
