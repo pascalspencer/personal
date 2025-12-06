@@ -175,9 +175,6 @@ async function authorizeUsingQueryTokens() {
   }
 }
 
-  return false;
-
-
 // --- Wait for first live tick ---
 async function waitForFirstTick(symbol) {
   return new Promise((resolve, reject) => {
