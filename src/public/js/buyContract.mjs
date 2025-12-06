@@ -171,15 +171,15 @@ async function getTradeTypeForSentiment(sentiment, index) {
   return null;
 }
 
-// --- Helpers: read acct/token params from current page URL and authorize before proposals ---
-function getTokensFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  const token = params.get("userToken");
+// // --- Helpers: read acct/token params from current page URL and authorize before proposals ---
+// function getTokensFromUrl() {
+//   const params = new URLSearchParams(window.location.search);
+//   const token = params.get("userToken");
 
-  return {
-    userToken: token || null
-  };
-}
+//   return {
+//     userToken: token || null
+//   };
+// }
 
 // async function authorizeUsingQueryTokens() {
 //   if (!api || api.is_closed) {
@@ -360,23 +360,6 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
   return buyResp;
 }
 
-
-
-// --- Login ID Loader ---
-let cachedLoginId = null;
-
-function getCachedLoginId() {
-  if (cachedLoginId) return cachedLoginId;
-
-  const loginId = getCurrentToken();
-  if (!loginId) {
-    console.error("Login ID missing. Cannot trade.");
-    return null;
-  }
-
-  cachedLoginId = loginId;
-  return cachedLoginId;
-}
 
 // --- Helper to calculate sentiment percentages ---
 function calculatePercentages() {
