@@ -151,7 +151,13 @@ async function authorizeUsingQueryTokens() {
     return false;
   }
 
-  const { userToken } = getTokensFromUrl();
+  const tokenStored = localStorage.getItem("userToken");
+    if (tokenStored) {
+        console.log("User Token from storage:", tokenStored);
+        return tokenStored;
+    }
+
+  const { userToken } = getTokensFromUrl() || tokenStored;
 
   if (!userToken) {
     console.warn("No userToken found in URL query.");
