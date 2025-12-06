@@ -1,7 +1,7 @@
 import DerivAPIBasic from "https://cdn.skypack.dev/@deriv/deriv-api/dist/DerivAPIBasic";
 
 const derivAppID = 61696;
-const connection = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${derivAppID}`);
+const connection = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${derivAppID}`);
 let api;
 const resultsContainer = document.getElementById("results-container");
 
