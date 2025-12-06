@@ -210,88 +210,67 @@ app.get("/api/data", async (req, res) => {
 app.get("/redirect", async (req, res) => {
   const { acct1, token1, cur1, acct2, token2, cur2 } = req.query;
 
-  const user_accounts = [
+  const accounts = [
     { account: acct1, token: token1, currency: cur1 },
-    { account: acct2, token: token2, currency: cur2 },
+    { account: acct2, token: token2, currency: cur2 }
   ];
 
   if (!basic) {
     console.error("DerivAPI basic is not initialized.");
-    return res.sendStatus(500);
+    return res.status(500).send("API not initialized");
   }
 
-  
   try {
-
-    const loginIds = [];
-    let currentLoginId = null
+    let currentLoginId = null;
     let userToken = null;
-    
+    const loginIds = [];
 
-    for (const account of user_accounts) {
-      if (account.token) {
-        console.log(`Authorizing account with token: ${account.token}`);
-        userToken = account.token;
-        try {
-          const jsonResponse = await basic.authorize(account.token);
-          console.log(JSON.stringify(jsonResponse.authorize.account_list, null, 2));
+    // 🔥 Authorize only accounts that have tokens
+    for (const acc of accounts) {
+      if (!acc.token) continue;
 
-          if (jsonResponse && jsonResponse.authorize) {
-            const authorizeJson = jsonResponse.authorize;
-            
-            if (authorizeJson.account_list) {
-              authorizeJson.account_list.forEach(acc => {
-                loginIds.push(acc.loginid);
-                console.log(`Added login ID: ${acc.loginid}`);
-              });
-              console.log('Current login IDs:', loginIds);
-            }
+      try {
+        const response = await basic.authorize(acc.token);
 
-            if (authorizeJson.loginid) {
-              currentLoginId = authorizeJson.loginid;
-              console.log(`Current login ID set to: ${currentLoginId}`);
-            }
-          }
-        } catch (error) {
-          console.error('Error authorizing account:', error);
+        if (response?.authorize) {
+          userToken = acc.token; // last successful token
+
+          // build login ID list
+          response.authorize.account_list.forEach(a => {
+            loginIds.push(a.loginid);
+          });
+
+          // current login id
+          currentLoginId = response.authorize.loginid;
         }
-      } else {
-        console.log('No token found for this account.');
+      } catch (err) {
+        console.error("Authorization failed:", err.message);
       }
     }
 
-    const allUserIds  = loginIds;
-    const currentUserId = currentLoginId
-    console.log(`Current login id stored in session ${currentUserId}`);
+    console.log("All user login IDs:", loginIds);
+    console.log("Current login ID:", currentLoginId);
 
-    if (currentUserId) {
-      // Successful authorization, redirect immediately
-      return res.redirect(`/sign-in?currentLoginId=${currentLoginId}&userToken=${userToken}`);
-    } else {
-        // Authorization failed, refresh first and then redirect
-        return res.send(`
-            <script>
-                setTimeout(() => {
-                    location.reload();
-                }, 1000); // Refresh after 1 second
-                
-                setTimeout(() => {
-                    window.location.href = "/sign-in?currentLoginId=${currentUserId}";
-                }, 3000); // Redirect after 3 seconds
-            </script>
-        `);
+    // ⛔ No valid login found → do not reload page
+    if (!currentLoginId) {
+      return res.send(`
+        <h2 style="font-family: sans-serif; color: #444;">Authorization Failed</h2>
+        <p>No valid Deriv login ID found.</p>
+        <p>Please try again.</p>
+      `);
     }
 
+    // 🎯 SUCCESS → Clean redirect to sign-in page
+    const redirectUrl = `/sign-in?currentLoginId=${currentLoginId}&userToken=${userToken}`;
+    console.log("Redirecting to:", redirectUrl);
 
- } catch (error) {
-    console.error("Error authorizing accounts:", error);
-    res.sendStatus(500);
+    return res.redirect(redirectUrl);
+
+  } catch (error) {
+    console.error("Redirect process error:", error);
+    return res.status(500).send("Internal Server Error");
   }
 });
-
-// console.log(`login id array stored outside session ${currentLoginId}`);
-
-
 
 
 app.get("/trade/data", (req, res) => {

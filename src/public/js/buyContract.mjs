@@ -138,34 +138,40 @@ async function getTradeTypeForSentiment(sentiment, index) {
 // --- Helpers: read acct/token params from current page URL and authorize before proposals ---
 function getTokensFromUrl() {
   const params = new URLSearchParams(window.location.search);
+  const token = params.get("userToken");
+
   return {
-    userToken: params.get("userToken") || null,
+    userToken: token && token.trim().length > 0 ? token.trim() : null
   };
 }
 
 async function authorizeUsingQueryTokens() {
   if (!api || api.is_closed) {
-    console.error("API not connected for authorization");
+    console.error("API not ready for authorization");
     return false;
   }
 
   const { userToken } = getTokensFromUrl();
 
-
-  if (userToken.length === 0) {
-    console.warn("No token found in URL query string.");
+  if (!userToken) {
+    console.warn("No userToken found in URL query.");
     return false;
   }
 
   try {
     const resp = await api.authorize(userToken);
-    if (resp && resp.authorize) {
-      console.log("Authorized with token from URL query.");
+
+    if (resp?.authorize) {
+      console.log("Success: Authorized using token from URL query", resp.authorize);
       return true;
     }
-    console.warn("Authorize response did not contain authorize payload for token:", t, resp);
+
+    console.warn("Authorize response missing authorize payload:", resp);
+    return false;
+
   } catch (err) {
-    console.warn("Authorization attempt failed for token:", t, err);
+    console.error("Authorization failed for token:", userToken, err);
+    return false;
   }
 }
 
