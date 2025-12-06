@@ -151,16 +151,14 @@ async function authorizeUsingQueryTokens() {
     return false;
   }
 
-  let tradeToken = null;
-  const storedUserToken = getCurrentLoginId();
-  if (storedUserToken) {
-    tradeToken = { userToken: storedUserToken };
-  }
+  // Read tokens correctly
+  const urlToken = getTokensFromUrl().userToken;
+  const storedToken = getCurrentLoginId();
 
-  const { userToken } = getTokensFromUrl() || tradeToken;
+  const userToken = urlToken || storedToken;
 
   if (!userToken) {
-    console.warn("No userToken found in URL query.");
+    console.warn("No token found (URL or stored).");
     return false;
   }
 
@@ -168,7 +166,7 @@ async function authorizeUsingQueryTokens() {
     const resp = await api.authorize(userToken);
 
     if (resp?.authorize) {
-      console.log("Success: Authorized using token from URL query", resp.authorize);
+      console.log("Success: Authorized using:", userToken);
       return true;
     }
 
@@ -176,10 +174,11 @@ async function authorizeUsingQueryTokens() {
     return false;
 
   } catch (err) {
-    console.error("Authorization failed for token:", userToken, err);
+    console.error("Authorization failed:", userToken, err);
     return false;
   }
 }
+
 
 // --- Wait for first live tick ---
 async function waitForFirstTick(symbol) {
