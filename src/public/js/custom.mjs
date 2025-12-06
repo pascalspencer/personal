@@ -36,16 +36,23 @@ function getQueryParam(param) {
 
 // Function to get current login ID from query params
 function getCurrentLoginId() {
-    const tokenQuery = getQueryParam("userToken");
+    // Ensure URL is ready
+    if (document.readyState === "loading") {
+        console.warn("DOM not ready yet, delaying token read...");
+        return null;
+    }
 
-    // 1. If token is present in query, save it and return it
+    const urlParams = new URLSearchParams(window.location.search);
+    const tokenQuery = urlParams.get("userToken");
+
+    // token exists in URL
     if (tokenQuery) {
         localStorage.setItem("userToken", tokenQuery);
         console.log("Saved User Token from query:", tokenQuery);
         return tokenQuery;
     }
 
-    // 2. Otherwise load from localStorage
+    // fallback to storage
     const storedToken = localStorage.getItem("userToken");
     if (storedToken) {
         console.log("Loaded User Token from storage:", storedToken);
