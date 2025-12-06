@@ -141,7 +141,7 @@ function getTokensFromUrl() {
   const token = params.get("userToken");
 
   return {
-    userToken: token && token.trim().length > 0 ? token.trim() : null
+    userToken: token || null
   };
 }
 
