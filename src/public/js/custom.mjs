@@ -55,6 +55,11 @@ function getCurrentLoginId() {
         console.log("Login ID from storage:", stored);
         return stored;
     }
+    const tokenStored = localStorage.getItem("userToken");
+    if (tokenStored) {
+        console.log("User Token from storage:", tokenStored);
+        return tokenStored;
+    }
 
     console.warn("No Login ID available");
     return null;
