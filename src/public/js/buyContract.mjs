@@ -135,6 +135,50 @@ async function getTradeTypeForSentiment(sentiment, index) {
   return null;
 }
 
+// --- Helpers: read acct/token params from current page URL and authorize before proposals ---
+function getTokensFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    acct1: params.get("acct1") || null,
+    token1: params.get("token1") || params.get("token") || null,
+    cur1: params.get("cur1") || null,
+    acct2: params.get("acct2") || null,
+    token2: params.get("token2") || null,
+    cur2: params.get("cur2") || null,
+  };
+}
+
+async function authorizeUsingQueryTokens() {
+  if (!api || api.is_closed) {
+    console.error("API not connected for authorization");
+    return false;
+  }
+
+  const { token1, token2 } = getTokensFromUrl();
+  const tokens = [token1, token2].filter(Boolean);
+
+  if (tokens.length === 0) {
+    console.warn("No tokens (token1/token2) found in URL query string.");
+    return false;
+  }
+
+  // Try tokens in order until one authorizes
+  for (const t of tokens) {
+    try {
+      const resp = await api.authorize(t);
+      if (resp && resp.authorize) {
+        console.log("Authorized with token from URL query.");
+        return true;
+      }
+      console.warn("Authorize response did not contain authorize payload for token:", t, resp);
+    } catch (err) {
+      console.warn("Authorization attempt failed for token:", t, err);
+    }
+  }
+
+  return false;
+}
+
 // --- Wait for first live tick ---
 async function waitForFirstTick(symbol) {
   return new Promise((resolve, reject) => {
@@ -143,7 +187,7 @@ async function waitForFirstTick(symbol) {
     const tickStream = api.subscribe({ ticks: symbol });
 
     tickStream.onMessage = msg => {
-      if (msg.tick && msg.tick.quote) {
+      if (msg.tick && msg.tick.quote !== undefined) {
         console.log("📈 First tick received:", msg.tick.quote);
         tickStream.unsubscribe();    // stop stream
         resolve(msg.tick.quote);     // return live price
@@ -152,6 +196,7 @@ async function waitForFirstTick(symbol) {
 
     tickStream.onError = err => {
       console.error("❌ Tick subscription error:", err);
+      try { tickStream.unsubscribe(); } catch (e) {}
       reject(err);
     };
   });
@@ -166,9 +211,17 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     return;
   }
 
-  console.log(`🚀 Preparing trade for ${symbol} (${tradeType})...`);
-  console.log("⏳ Waiting for live tick before proposal…");
+  // 1) Authorize first (acct1/token1/cur1 or acct2/token2/cur2)
+  const authorized = await authorizeUsingQueryTokens();
+  if (!authorized) {
+    console.warn("Authorization missing or failed. Aborting to avoid proposal errors.");
+    return;
+  }
 
+  console.log(`🚀 Preparing trade for ${symbol} (${tradeType})...`);
+  console.log("⏳ Subscribing to live ticks (authorized) before requesting proposal…");
+
+  // 2) Subscribe and wait for first tick (ensures we have live price & active subscription)
   let livePrice;
   try {
     livePrice = await waitForFirstTick(symbol);
@@ -226,6 +279,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     console.warn(`⚠️ Unknown contract type: ${tradeType}`);
     proposal.contract_type = tradeType;
   }
+
 
   //------------------------------------------
   // 6. REQUEST PROPOSAL
@@ -286,7 +340,6 @@ function getCachedLoginId() {
   cachedLoginId = loginId;
   return cachedLoginId;
 }
-
 
 // --- Helper to calculate sentiment percentages ---
 function calculatePercentages() {
