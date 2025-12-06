@@ -6,21 +6,29 @@ let api;
 const resultsContainer = document.getElementById("results-container");
 
 // --- WebSocket connection ---
-connection.onopen = async function () {
+connection.onopen = function () {
   api = new DerivAPIBasic({ connection });
   ping();
   console.log("WebSocket connection established.");
 
-  // AUTHORIZE IMMEDIATELY
-  const token = getCurrentToken();
-  if (token) {
-    console.log("Authorizing immediately with token:", token);
-    const resp = await api.authorize(token);
-    console.log("Authorize response:", resp);
-  } else {
-    console.warn("No token found at WebSocket open.");
-  }
+  document.addEventListener("DOMContentLoaded", async () => {
+      const token = getCurrentToken();
+      if (!token) {
+          console.warn("No token found at authorization.");
+          return;
+      }
+
+      console.log("Authorizing with token:", token);
+
+      try {
+          const resp = await api.authorize(token);
+          console.log("Authorize response:", resp);
+      } catch (err) {
+          console.error("Authorization failed:", err);
+      }
+  });
 };
+
 
 
 // --- Ping keep-alive ---
@@ -31,32 +39,24 @@ let pingInterval = null;
   }
 
 function getCurrentToken() {
-    // Ensure URL is ready
-    if (document.readyState === "loading") {
-        console.warn("DOM not ready yet, delaying token read...");
-        return null;
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get("userToken");
+
+    if (urlToken) {
+        localStorage.setItem("userToken", urlToken);
+        console.log("Saved User Token from query:", urlToken);
+        return urlToken;
     }
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const tokenQuery = urlParams.get("userToken");
-
-    // token exists in URL
-    if (tokenQuery) {
-        localStorage.setItem("userToken", tokenQuery);
-        console.log("Saved User Token from query:", tokenQuery);
-        return tokenQuery;
+    const stored = localStorage.getItem("userToken");
+    if (stored) {
+        console.log("Loaded User Token from storage:", stored);
+        return stored;
     }
 
-    // fallback to storage
-    const storedToken = localStorage.getItem("userToken");
-    if (storedToken) {
-        console.log("Loaded User Token from storage:", storedToken);
-        return storedToken;
-    }
-
-    console.warn("No Token available");
     return null;
 }
+
 // --- Automation Mode Control ---
 let isAutomationEnabled = false;
 let automationInterval = null;
