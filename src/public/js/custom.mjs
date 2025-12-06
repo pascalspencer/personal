@@ -42,12 +42,13 @@ function getCurrentLoginId() {
     if (fromQuery) {
         localStorage.setItem("currentLoginId", fromQuery);
         console.log("Saved Login ID:", fromQuery);
-        return fromQuery, tokenQuery;
+        return fromQuery;
     }
 
     if (tokenQuery) {
         localStorage.setItem("userToken", tokenQuery);
         console.log("Saved User Token from query:", tokenQuery);
+        return tokenQuery;
     }
 
     const stored = localStorage.getItem("currentLoginId");
