@@ -1,5 +1,4 @@
 import DerivAPIBasic from "https://cdn.skypack.dev/@deriv/deriv-api/dist/DerivAPIBasic";
-import { getCurrentLoginId } from "./custom.mjs";
 
 const derivAppID = 61696;
 const connection = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${derivAppID}`);
@@ -20,7 +19,33 @@ let pingInterval = null;
     pingInterval = setInterval(() => api.ping(), 30000);
   }
 
+function getCurrentToken() {
+    // Ensure URL is ready
+    if (document.readyState === "loading") {
+        console.warn("DOM not ready yet, delaying token read...");
+        return null;
+    }
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const tokenQuery = urlParams.get("userToken");
+
+    // token exists in URL
+    if (tokenQuery) {
+        localStorage.setItem("userToken", tokenQuery);
+        console.log("Saved User Token from query:", tokenQuery);
+        return tokenQuery;
+    }
+
+    // fallback to storage
+    const storedToken = localStorage.getItem("userToken");
+    if (storedToken) {
+        console.log("Loaded User Token from storage:", storedToken);
+        return storedToken;
+    }
+
+    console.warn("No Token available");
+    return null;
+}
 // --- Automation Mode Control ---
 let isAutomationEnabled = false;
 let automationInterval = null;
@@ -153,7 +178,7 @@ async function authorizeUsingQueryTokens() {
 
   // Read tokens correctly
   const urlToken = getTokensFromUrl().userToken;
-  const storedToken = getCurrentLoginId();
+  const storedToken = getCurrentToken();
 
   const userToken = urlToken || storedToken;
 
@@ -332,7 +357,7 @@ let cachedLoginId = null;
 function getCachedLoginId() {
   if (cachedLoginId) return cachedLoginId;
 
-  const loginId = getCurrentLoginId();
+  const loginId = getCurrentToken();
   if (!loginId) {
     console.error("Login ID missing. Cannot trade.");
     return null;

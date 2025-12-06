@@ -35,34 +35,8 @@ function getQueryParam(param) {
 }
 
 // Function to get current login ID from query params
-function getCurrentLoginId() {
-    // Ensure URL is ready
-    if (document.readyState === "loading") {
-        console.warn("DOM not ready yet, delaying token read...");
-        return null;
-    }
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const tokenQuery = urlParams.get("userToken");
-
-    // token exists in URL
-    if (tokenQuery) {
-        localStorage.setItem("userToken", tokenQuery);
-        console.log("Saved User Token from query:", tokenQuery);
-        return tokenQuery;
-    }
-
-    // fallback to storage
-    const storedToken = localStorage.getItem("userToken");
-    if (storedToken) {
-        console.log("Loaded User Token from storage:", storedToken);
-        return storedToken;
-    }
-
-    console.warn("No Token available");
-    return null;
-}
 
 
 
-export { getYear, myMap, getQueryParam, getCurrentLoginId };
+
+export { getYear, myMap, getQueryParam };
