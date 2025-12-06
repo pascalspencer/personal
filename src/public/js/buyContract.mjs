@@ -139,12 +139,7 @@ async function getTradeTypeForSentiment(sentiment, index) {
 function getTokensFromUrl() {
   const params = new URLSearchParams(window.location.search);
   return {
-    acct1: params.get("acct1") || null,
-    token1: params.get("token1") || params.get("token") || null,
-    cur1: params.get("cur1") || null,
-    acct2: params.get("acct2") || null,
-    token2: params.get("token2") || null,
-    cur2: params.get("cur2") || null,
+    userToken: params.get("userToken") || null,
   };
 }
 
@@ -154,30 +149,28 @@ async function authorizeUsingQueryTokens() {
     return false;
   }
 
-  const { token1, token2 } = getTokensFromUrl();
-  const tokens = [token1, token2].filter(Boolean);
+  const { userToken } = getTokensFromUrl();
 
-  if (tokens.length === 0) {
-    console.warn("No tokens (token1/token2) found in URL query string.");
+
+  if (userToken.length === 0) {
+    console.warn("No token found in URL query string.");
     return false;
   }
 
-  // Try tokens in order until one authorizes
-  for (const t of tokens) {
-    try {
-      const resp = await api.authorize(t);
-      if (resp && resp.authorize) {
-        console.log("Authorized with token from URL query.");
-        return true;
-      }
-      console.warn("Authorize response did not contain authorize payload for token:", t, resp);
-    } catch (err) {
-      console.warn("Authorization attempt failed for token:", t, err);
+  try {
+    const resp = await api.authorize(userToken);
+    if (resp && resp.authorize) {
+      console.log("Authorized with token from URL query.");
+      return true;
     }
+    console.warn("Authorize response did not contain authorize payload for token:", t, resp);
+  } catch (err) {
+    console.warn("Authorization attempt failed for token:", t, err);
   }
+}
 
   return false;
-}
+
 
 // --- Wait for first live tick ---
 async function waitForFirstTick(symbol) {

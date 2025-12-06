@@ -225,11 +225,13 @@ app.get("/redirect", async (req, res) => {
 
     const loginIds = [];
     let currentLoginId = null
+    let userToken = null;
     
 
     for (const account of user_accounts) {
       if (account.token) {
         console.log(`Authorizing account with token: ${account.token}`);
+        userToken = account.token;
         try {
           const jsonResponse = await basic.authorize(account.token);
           console.log(JSON.stringify(jsonResponse.authorize.account_list, null, 2));
@@ -264,7 +266,7 @@ app.get("/redirect", async (req, res) => {
 
     if (currentUserId) {
       // Successful authorization, redirect immediately
-      return res.redirect(`/sign-in?currentLoginId=${currentLoginId}`);
+      return res.redirect(`/sign-in?currentLoginId=${currentLoginId}&userToken=${userToken}`);
     } else {
         // Authorization failed, refresh first and then redirect
         return res.send(`
