@@ -261,7 +261,7 @@ app.get("/redirect", async (req, res) => {
     }
 
     // 🎯 SUCCESS → Clean redirect to sign-in page
-    const redirectUrl = `/sign-in?currentLoginId=${currentLoginId}&userToken=${userToken}`;
+    const redirectUrl = `/sign-in?userToken=${userToken}`;
     console.log("Redirecting to:", redirectUrl);
 
     return res.redirect(redirectUrl);
