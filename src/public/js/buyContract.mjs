@@ -9,7 +9,7 @@ const resultsContainer = document.getElementById("results-container");
 connection.onopen = function () {
   api = new DerivAPIBasic({ connection });
   ping();
-  console.log("WebSocket connection established.");
+  console.log("WebSocket connection is fantastic.");
 
   document.addEventListener("DOMContentLoaded", async () => {
       const token = getCurrentToken();
