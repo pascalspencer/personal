@@ -2,150 +2,142 @@ import DerivAPIBasic from "https://cdn.skypack.dev/@deriv/deriv-api/dist/DerivAP
 
 const derivAppID = 61696;
 const connection = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${derivAppID}`);
-let api;
+let api = null;
+let pingInterval = null;
+let cachedAuthToken = null;
 const resultsContainer = document.getElementById("results-container");
 
-// --- WebSocket connection ---
-connection.onopen = function () {
+// ----------------------
+// Initialization
+// ----------------------
+connection.onopen = () => {
   api = new DerivAPIBasic({ connection });
-  ping();
+  startPing();
   console.log("WebSocket connection established.");
 
+  // keep previous behavior: try to authorize if userToken present in URL/localStorage
   document.addEventListener("DOMContentLoaded", async () => {
-      const token = getCurrentToken();
-      if (!token) {
-          console.warn("No token found at authorization.");
-          return;
-      }
-
-      console.log("Authorizing with token:", token);
-
+    const token = getCurrentToken();
+    if (token) {
       try {
-          const resp = await api.authorize(token);
-          console.log("Authorize response:", resp);
+        await authorizeWithToken(token);
+        console.log("Authorized at DOMContentLoaded.");
       } catch (err) {
-          console.error("Authorization failed:", err);
+        console.warn("Initial authorization failed:", err);
       }
+    }
   });
 };
 
-
-
-// --- Ping keep-alive ---
-let pingInterval = null;
-  function ping() {
-    if (!api || pingInterval) return;
-    pingInterval = setInterval(() => api.ping(), 30000);
-  }
+// ----------------------
+// Utilities
+// ----------------------
+function startPing() {
+  if (!api || pingInterval) return;
+  pingInterval = setInterval(() => api.ping(), 30000);
+}
 
 function getCurrentToken() {
-    const params = new URLSearchParams(window.location.search);
-    const urlToken = params.get("userToken");
-
-    if (urlToken) {
-        localStorage.setItem("userToken", urlToken);
-        console.log("Saved User Token from query:", urlToken);
-        return urlToken;
-    }
-
-    const stored = localStorage.getItem("userToken");
-    if (stored) {
-        console.log("Loaded User Token from storage:", stored);
-        return stored;
-    }
-
-    return null;
+  const params = new URLSearchParams(window.location.search);
+  const urlToken = params.get("userToken");
+  if (urlToken) {
+    localStorage.setItem("userToken", urlToken);
+    console.log("Saved User Token from query (partial):", String(urlToken).slice(0, 8));
+    return urlToken;
+  }
+  const stored = localStorage.getItem("userToken");
+  if (stored) {
+    return stored;
+  }
+  return null;
 }
 
-// --- Automation Mode Control ---
-let isAutomationEnabled = false;
-let automationInterval = null;
-
-export function setAutomationMode(enabled) {
-  isAutomationEnabled = enabled;
-  console.log("Automation mode:", enabled ? "ON" : "OFF");
+function getTokensFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    acct1: params.get("acct1") || null,
+    token1: params.get("token1") || null,
+    cur1: params.get("cur1") || null,
+    acct2: params.get("acct2") || null,
+    token2: params.get("token2") || null,
+    cur2: params.get("cur2") || null,
+  };
 }
 
-export function getAutomationMode() {
-  return isAutomationEnabled;
-}
-
-// --- Fetch live trading instruments from backend ---
-let tradingInstruments = null;
-
-async function fetchLiveInstruments() {
-  if (tradingInstruments) return tradingInstruments;
+// ----------------------
+// Authorization helpers
+// ----------------------
+async function authorizeWithToken(token) {
+  if (!api || api.is_closed) throw new Error("API not connected");
+  if (!token) throw new Error("No token provided");
+  // cache to avoid re-authorizing same token repeatedly
+  if (cachedAuthToken === token) return true;
 
   try {
-    const response = await fetch("/api/data"); // backend fetch from Deriv API
-    tradingInstruments = await response.json();
-    return tradingInstruments;
+    const resp = await api.authorize(token);
+    if (resp && resp.authorize) {
+      cachedAuthToken = token;
+      console.log("Authorized successfully (partial token):", String(token).slice(0, 8));
+      return true;
+    }
+    throw new Error("Authorize response invalid");
+  } catch (err) {
+    console.error("authorizeWithToken failed:", err);
+    throw err;
+  }
+}
+
+async function ensureAuthorized() {
+  if (!api || api.is_closed) throw new Error("API not connected");
+
+  // 1) try stored userToken (from /redirect?userToken=... pattern)
+  const stored = getCurrentToken();
+  if (stored) {
+    try { await authorizeWithToken(stored); return true; } catch (e) { /* continue */ }
+  }
+
+  // 2) try explicit tokens passed as acct1/token1 / acct2/token2 in URL
+  const { token1, token2 } = getTokensFromUrl();
+  const tokens = [token1, token2].filter(Boolean);
+  for (const t of tokens) {
+    try { await authorizeWithToken(t); return true; } catch (e) { /* try next */ }
+  }
+
+  // no token authorized
+  return false;
+}
+
+// ----------------------
+// Market / trade helpers
+// ----------------------
+async function fetchLiveInstruments() {
+  // cached minimal fetch
+  try {
+    const res = await fetch("/api/data");
+    if (!res.ok) throw new Error("Failed fetching instruments");
+    return await res.json();
   } catch (err) {
     console.error("Error fetching live trading instruments:", err);
     return {};
   }
 }
 
-// --- Safe Evaluate & Buy ---
-async function evaluateAndBuyContractSafe() {
-  console.log("Automation tick…");
-
-  const market = document.getElementById("market")?.value;
-  const submarket = document.getElementById("submarket")?.value;
-  const sentimentDropdown = document.getElementById("sentiment");
-  const selectedSentiment = sentimentDropdown?.value;
-  const tradeDigit = document.getElementById("input-value")?.value;
-
-  if (!market) return console.warn("⛔ Market not selected");
-  if (!submarket) return console.warn("⛔ Submarket not selected");
-  if (!selectedSentiment) return console.warn("⛔ Sentiment not selected");
-  
-
-  const instruments = await fetchLiveInstruments();
-  console.log("Fetched instruments:", instruments);
-
-  const percentages = calculatePercentages();
-  console.log("Percentages:", percentages);
-
-  if (percentages.length < 2) {
-    return console.warn("⛔ Not enough sentiment data");
+function calculatePercentages() {
+  const percentages = [];
+  const divs = resultsContainer?.getElementsByTagName("div") || [];
+  for (let i = 0; i < 2 && i < divs.length; i++) {
+    const match = divs[i].textContent?.match(/\((\d+)%\)/);
+    if (match) percentages.push(parseInt(match[1], 10));
   }
-
-  const maxPercentage = Math.max(...percentages);
-  const maxIndex = percentages.indexOf(maxPercentage);
-
-  if (maxPercentage < 40) {
-    return console.warn("⛔ No strong sentiment (>=40%)");
-  }
-
-  console.log(`Winning sentiment index = ${maxIndex}`);
-
-  const tradeType = await getTradeTypeForSentiment(selectedSentiment, maxIndex, submarket);
-  console.log("Trade type:", tradeType);
-
-  if (!tradeType) {
-    return console.error("⛔ Could not map sentiment → trade type");
-  }
-
-  const price = parseFloat(document.getElementById("price")?.value || 1);
-
-  console.log(`🔥 Automated mode active — executing trade
-  Symbol: ${submarket}
-  Type: ${tradeType}
-  Price: ${price}
-  Digit: ${tradeDigit}`);
-
-  buyContract(submarket, tradeType, 1, price, tradeDigit);
+  return percentages;
 }
 
 async function getTradeTypeForSentiment(sentiment, index) {
   const parts = (sentiment || "").split("/");
   if (!parts[index]) return null;
-
   const selected = parts[index].trim().toLowerCase();
   if (!selected) return null;
 
-  // Minimal, reliable mapping
   const map = {
     "touch": "ONETOUCH",
     "no touch": "NOTOUCH",
@@ -166,99 +158,70 @@ async function getTradeTypeForSentiment(sentiment, index) {
   for (const key in map) {
     if (selected.includes(key)) return map[key];
   }
-
-  console.warn("No mapping for:", selected);
   return null;
 }
 
-// // --- Helpers: read acct/token params from current page URL and authorize before proposals ---
-// function getTokensFromUrl() {
-//   const params = new URLSearchParams(window.location.search);
-//   const token = params.get("userToken");
-
-//   return {
-//     userToken: token || null
-//   };
-// }
-
-// async function authorizeUsingQueryTokens() {
-//   if (!api || api.is_closed) {
-//     console.error("API not ready for authorization");
-//     return false;
-//   }
-
-//   // Read tokens correctly
-//   const urlToken = getTokensFromUrl().userToken;
-//   const storedToken = getCurrentToken();
-
-//   const userToken = urlToken || storedToken;
-
-//   if (!userToken) {
-//     console.warn("No token found (URL or stored).");
-//     return false;
-//   }
-
-//   try {
-//     const resp = await api.authorize(userToken);
-
-//     if (resp?.authorize) {
-//       console.log("Success: Authorized using:", userToken);
-//       return true;
-//     }
-
-//     console.warn("Authorize response missing authorize payload:", resp);
-//     return false;
-
-//   } catch (err) {
-//     console.error("Authorization failed:", userToken, err);
-//     return false;
-//   }
-// }
-
-
-// --- Wait for first live tick ---
+// ----------------------
+// Ticks / subscription
+// ----------------------
 async function waitForFirstTick(symbol) {
   return new Promise((resolve, reject) => {
     if (!api || api.is_closed) return reject("API not connected");
 
     const tickStream = api.subscribe({ ticks: symbol });
 
-    tickStream.onMessage = msg => {
-      if (msg.tick && msg.tick.quote !== undefined) {
-        console.log("📈 First tick received:", msg.tick.quote);
-        tickStream.unsubscribe();    // stop stream
-        resolve(msg.tick.quote);     // return live price
+    // DerivAPIBasic returns a stream that calls onMessage/onError
+    tickStream.onMessage = (msg) => {
+      if (msg && msg.tick && msg.tick.quote !== undefined) {
+        try { tickStream.unsubscribe(); } catch (e) {}
+        resolve(msg.tick.quote);
       }
     };
 
-    tickStream.onError = err => {
-      console.error("❌ Tick subscription error:", err);
+    tickStream.onError = (err) => {
       try { tickStream.unsubscribe(); } catch (e) {}
       reject(err);
     };
+
+    // safety timeout
+    const timeout = setTimeout(() => {
+      try { tickStream.unsubscribe(); } catch (e) {}
+      reject(new Error("Tick subscription timeout"));
+    }, 8000);
+
+    // clear timeout on resolve/reject via promise handlers
+    const originalResolve = resolve;
+    resolve = (v) => { clearTimeout(timeout); originalResolve(v); };
+    const originalReject = reject;
+    reject = (e) => { clearTimeout(timeout); originalReject(e); };
   });
 }
 
-
-
-// Unified buyContract that follows contracts_for precisely
+// ----------------------
+// Core: buy contract
+// ----------------------
 async function buyContract(symbol, tradeType, duration, price, prediction = null) {
   if (!api || api.is_closed) {
     console.error("❌ API not connected.");
     return;
   }
 
-  // // 1) Authorize first (acct1/token1/cur1 or acct2/token2/cur2)
-  // const authorized = await authorizeUsingQueryTokens();
-  // if (!authorized) {
-  //   console.warn("Authorization missing or failed. Aborting to avoid proposal errors.");
-  //   return;
-  // }
+  // 0) ensure we are authorized before subscribing / requesting proposals
+  try {
+    const ok = await ensureAuthorized();
+    if (!ok) {
+      console.error("❌ Authorization failed or missing. Aborting trade.");
+      return;
+    }
+  } catch (err) {
+    console.error("❌ Authorization error:", err);
+    return;
+  }
 
   console.log(`🚀 Preparing trade for ${symbol} (${tradeType})...`);
   console.log("⏳ Subscribing to live ticks (authorized) before requesting proposal…");
 
-  // 2) Subscribe and wait for first tick (ensures we have live price & active subscription)
+  // 1) Subscribe and wait for first tick
   let livePrice;
   try {
     livePrice = await waitForFirstTick(symbol);
@@ -266,111 +229,109 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     console.error("❌ Could not get live tick:", err);
     return;
   }
-
   console.log("🔥 Using live tick:", livePrice);
 
-  //------------------------------------------
+  // 2) build proposal
   const proposal = {
     proposal: 1,
     amount: price,
     basis: "stake",
     contract_type: tradeType,
     currency: "USD",
-    symbol: symbol,
-    duration: duration,
+    symbol,
+    duration,
     duration_unit: "t"
   };
 
-  // ---- VANILLA CONTRACTS (Rise/Fall, Touch/No Touch) ----
   if (["CALL", "PUT", "ONETOUCH", "NOTOUCH"].includes(tradeType)) {
     proposal.contract_type = tradeType;
-  }
-
-  // ---- DIGIT CONTRACTS ----
-  else if (tradeType.startsWith("DIGIT")) {
+  } else if (tradeType.startsWith("DIGIT")) {
     proposal.contract_type = tradeType;
-
-    // These contracts REQUIRE prediction
     if (["DIGITMATCH", "DIGITDIFF", "DIGITOVER", "DIGITUNDER"].includes(tradeType)) {
       if (prediction === null || isNaN(prediction)) {
-        console.warn("⚠️ Digit contract requires prediction (0-9). Defaulting to 0.");
-        proposal.prediction = tradeDigit || 0;
+        console.warn("⚠️ Digit contract requires prediction. Defaulting to 0.");
+        proposal.prediction = 0;
       } else {
         proposal.prediction = Number(prediction);
       }
     }
-
-    // EVEN / ODD → no prediction required
-  }
-
-  // ---- MULTIPLIER CONTRACTS ----
-  else if (["MULTUP", "MULTDOWN"].includes(tradeType)) {
+  } else if (["MULTUP", "MULTDOWN"].includes(tradeType)) {
     proposal.contract_type = tradeType;
-    
-    // Deriv requires multiplier field
-    proposal.multiplier = 10; // default – can be updated to user selection
-  }
-
-  // ---- UNKNOWN CONTRACT FALLBACK ----
-  else {
-    console.warn(`⚠️ Unknown contract type: ${tradeType}`);
+    proposal.multiplier = 10;
+  } else {
     proposal.contract_type = tradeType;
   }
 
-
-  //------------------------------------------
-  // 6. REQUEST PROPOSAL
-  //------------------------------------------
+  // 3) request proposal
   let proposalResp;
   try {
     proposalResp = await api.proposal(proposal);
+    if (!proposalResp || proposalResp.error) {
+      console.error("❌ Proposal error:", proposalResp?.error || "No response");
+      return;
+    }
     console.log("Proposal response:", proposalResp);
   } catch (err) {
     console.error("❌ Proposal request failed:", err);
     return;
   }
 
-  if (!proposalResp || proposalResp.error) {
-    console.error("❌ Proposal error:", proposalResp.error);
-    return;
-  }
-
   const propId = proposalResp.proposal.id;
   console.log("🆔 Proposal ID:", propId);
 
-
-  //------------------------------------------
-  // 7. BUY CONTRACT
-  //------------------------------------------
+  // 4) buy
   let buyResp;
   try {
     buyResp = await api.buy({ buy: propId, price });
-    console.log("Buy response:", buyResp);
+    if (!buyResp || buyResp.error) {
+      console.error("❌ Buy error:", buyResp?.error || "No response");
+      return;
+    }
+    console.log("🎉 Contract bought successfully:", buyResp);
+    return buyResp;
   } catch (err) {
     console.error("❌ Buy call failed:", err);
     return;
   }
-
-  if (buyResp.error) {
-    console.error("❌ Buy error:", buyResp.error);
-    return;
-  }
-
-  console.log("🎉 Contract bought successfully:", buyResp);
-  return buyResp;
 }
 
+// ----------------------
+// Automation entry
+// ----------------------
+async function evaluateAndBuyContractSafe() {
+  console.log("Automation tick…");
 
-// --- Helper to calculate sentiment percentages ---
-function calculatePercentages() {
-  const percentages = [];
-  const divs = resultsContainer?.getElementsByTagName("div") || [];
-  for (let i = 0; i < 2 && i < divs.length; i++) {
-    const match = divs[i].textContent?.match(/\((\d+)%\)/);
-    if (match) percentages.push(parseInt(match[1], 10));
-  }
-  return percentages;
+  const market = document.getElementById("market")?.value;
+  const submarket = document.getElementById("submarket")?.value;
+  const sentimentDropdown = document.getElementById("sentiment");
+  const selectedSentiment = sentimentDropdown?.value;
+  const tradeDigit = document.getElementById("input-value")?.value;
+
+  if (!market) return console.warn("⛔ Market not selected");
+  if (!submarket) return console.warn("⛔ Submarket not selected");
+  if (!selectedSentiment) return console.warn("⛔ Sentiment not selected");
+
+  const instruments = await fetchLiveInstruments();
+  console.log("Fetched instruments:", instruments);
+
+  const percentages = calculatePercentages();
+  console.log("Percentages:", percentages);
+  if (percentages.length < 2) return console.warn("⛔ Not enough sentiment data");
+
+  const maxPercentage = Math.max(...percentages);
+  const maxIndex = percentages.indexOf(maxPercentage);
+  if (maxPercentage < 40) return console.warn("⛔ No strong sentiment (>=40%)");
+
+  const tradeType = await getTradeTypeForSentiment(selectedSentiment, maxIndex);
+  if (!tradeType) return console.error("⛔ Could not map sentiment → trade type");
+
+  const price = parseFloat(document.getElementById("price")?.value || 1);
+  console.log(`🔥 Automated trade — Symbol: ${submarket}, Type: ${tradeType}, Price: ${price}, Digit: ${tradeDigit}`);
+
+  await buyContract(submarket, tradeType, 1, price, tradeDigit);
 }
 
-// --- Export for automation ---
+// ----------------------
+// Export
+// ----------------------
 export { evaluateAndBuyContractSafe };
