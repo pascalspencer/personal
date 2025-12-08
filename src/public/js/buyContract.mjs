@@ -356,7 +356,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     // Digit-specific
     if (tradeType.startsWith("DIGIT")) {
         if (["DIGITMATCH", "DIGITDIFF", "DIGITOVER", "DIGITUNDER"].includes(tradeType)) {
-            proposal.prediction = Number(prediction ?? 0);
+            proposal.barrier = String(prediction ?? 0);
         }
     }
 
