@@ -21,7 +21,7 @@ connection.onopen = function () {
       console.log("Authorizing with token:", token);
 
       try {
-          const resp = await connection.send(JSON.stringify({ authorize: token }));
+          const resp = await api.send(JSON.stringify({ authorize: token }));
           console.log("Authorize response:", resp);
       } catch (err) {
           console.error("Authorization failed:", err);
