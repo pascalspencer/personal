@@ -353,17 +353,19 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
         duration_unit: "t",
     };
 
-    // Digit-specific
-    if (tradeType.startsWith("DIGIT")) {
-        if (["DIGITMATCH", "DIGITDIFF", "DIGITOVER", "DIGITUNDER"].includes(tradeType)) {
+    const predictionTypes = ["DIGITMATCH", "DIGITDIFF", "DIGITOVER", "DIGITUNDER"];
+
+    if (predictionTypes.includes(tradeType)) {
+        // Synthetic indices DO NOT accept prediction for UNDER/OVER
+        const isSynthetic = symbol.startsWith("R_") || symbol.startsWith("1HZ") || symbol.startsWith("CRASH") || symbol.startsWith("BOOM");
+
+        if (isSynthetic && (tradeType === "DIGITUNDER" || tradeType === "DIGITOVER")) {
+            // Do NOT send prediction
+        } else {
             proposal.prediction = Number(prediction ?? 0);
         }
     }
-
-    // Multiplier
-    if (["MULTUP", "MULTDOWN"].includes(tradeType)) {
-        proposal.multiplier = 10;
-    }
+    console.log("📄 Proposal request:", proposal);
 
     // 3) SEND PROPOSAL
     let proposalResp;
