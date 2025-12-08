@@ -51,7 +51,7 @@ connection.onmessage = (evt) => {
     // handle tick responses streaming from a subscribe call
     if (msg.tick) {
       // resolve subscription promise with first quote (then send forget)
-      try { connection.send(JSON.stringify({ forget: id })); } catch (e) {}
+      try { connection.send(JSON.stringify({ forget: msg.tick.id })); } catch (e) {}
       clearTimeout(sub.timeout);
       sub.resolve(msg);
       subscriptions.delete(id);
