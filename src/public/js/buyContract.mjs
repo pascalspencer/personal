@@ -50,20 +50,13 @@ connection.onmessage = (evt) => {
     const sub = subscriptions.get(id);
     // handle tick responses streaming from a subscribe call
     if (msg.tick) {
-      const subId = msg.tick.id; // THIS is the real subscription ID
-
-      if (subId) {
-        try {
-          connection.send(JSON.stringify({ forget: subId }));
-        } catch (e) {}
-      }
-
+      // resolve subscription promise with first quote (then send forget)
+      try { connection.send(JSON.stringify({ forget: id })); } catch (e) {}
       clearTimeout(sub.timeout);
       sub.resolve(msg);
       subscriptions.delete(id);
       return;
     }
-
     // if error on subscription
     if (msg.error) {
       clearTimeout(sub.timeout);
@@ -128,19 +121,22 @@ function sendJson(payload, timeoutMs = 8000) {
 }
 
 // --- subscribe helper: resolves on first matching streaming message (e.g., ticks) ---
-async function subscribeOnce(payload, timeoutMs = 8000) {
+function subscribeOnce(payload, timeoutMs = 8000) {
   if (!connection || connection.readyState !== WebSocket.OPEN) {
     return Promise.reject(new Error("WebSocket not open"));
   }
-
   const req_id = reqCounter++;
   payload.req_id = req_id;
-  payload.subscribe = 1;
+  payload.subscribe = 1; // ensure subscribe semantics for streaming endpoints
 
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
-      subscriptions.delete(req_id);
-      reject(new Error("Subscription timeout"));
+      if (subscriptions.has(req_id)) {
+        subscriptions.delete(req_id);
+        // attempt to forget subscription on timeout
+        try { connection.send(JSON.stringify({ forget: req_id })); } catch (e) {}
+        reject(new Error("Subscription timeout"));
+      }
     }, timeoutMs);
 
     subscriptions.set(req_id, { resolve, reject, timeout });
@@ -150,11 +146,10 @@ async function subscribeOnce(payload, timeoutMs = 8000) {
     } catch (err) {
       clearTimeout(timeout);
       subscriptions.delete(req_id);
-      reject(err);
+      return reject(err);
     }
   });
 }
-
 
 // --- Token helpers ---
 function getCurrentToken() {
@@ -361,7 +356,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     // Digit-specific
     if (tradeType.startsWith("DIGIT")) {
         if (["DIGITMATCH", "DIGITDIFF", "DIGITOVER", "DIGITUNDER"].includes(tradeType)) {
-            proposal.barrier = String(prediction ?? 0);
+            proposal.prediction = Number(prediction ?? 0);
         }
     }
 
