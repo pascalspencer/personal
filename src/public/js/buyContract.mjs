@@ -21,7 +21,7 @@ connection.onopen = function () {
       console.log("Authorizing with token:", token);
 
       try {
-          const resp = await api.authorize(token);
+          const resp = await connection.send(JSON.stringify({ authorize: token }));
           console.log("Authorize response:", resp);
       } catch (err) {
           console.error("Authorization failed:", err);
@@ -198,115 +198,94 @@ async function waitForFirstTick(symbol) {
 
 // Unified buyContract that follows contracts_for precisely
 async function buyContract(symbol, tradeType, duration, price, prediction = null) {
-  if (!api || api.is_closed) {
-    console.error("❌ API not connected.");
-    return;
-  }
-
-
-  console.log(`🚀 Preparing trade for ${symbol} (${tradeType})...`);
-  console.log("⏳ Subscribing to live ticks (authorized) before requesting proposal…");
-
-  // 2) Subscribe and wait for first tick (ensures we have live price & active subscription)
-  let livePrice;
-  try {
-    livePrice = await waitForFirstTick(symbol);
-  } catch (err) {
-    console.error("❌ Could not get live tick:", err);
-    return;
-  }
-
-  console.log("🔥 Using live tick:", livePrice);
-
-  //------------------------------------------
-  const proposal = {
-    proposal: 1,
-    amount: price,
-    basis: "stake",
-    contract_type: tradeType,
-    currency: "USD",
-    symbol: symbol,
-    duration: duration,
-    duration_unit: "t"
-  };
-
-  // ---- VANILLA CONTRACTS (Rise/Fall, Touch/No Touch) ----
-  if (["CALL", "PUT", "ONETOUCH", "NOTOUCH"].includes(tradeType)) {
-    proposal.contract_type = tradeType;
-  }
-
-  // ---- DIGIT CONTRACTS ----
-  else if (tradeType.startsWith("DIGIT")) {
-    proposal.contract_type = tradeType;
-
-    // These contracts REQUIRE prediction
-    if (["DIGITMATCH", "DIGITDIFF", "DIGITOVER", "DIGITUNDER"].includes(tradeType)) {
-      if (prediction === null || isNaN(prediction)) {
-        console.warn("⚠️ Digit contract requires prediction (0-9). Defaulting to 0.");
-        proposal.prediction = tradeDigit || 0;
-      } else {
-        proposal.prediction = Number(prediction);
-      }
+    if (!api || api.is_closed) {
+        console.error("❌ API not connected.");
+        return;
     }
 
-    // EVEN / ODD → no prediction required
-  }
+    console.log(`🚀 Preparing trade for ${symbol} (${tradeType})...`);
+    console.log("⏳ Subscribing to live ticks before requesting proposal…");
 
-  // ---- MULTIPLIER CONTRACTS ----
-  else if (["MULTUP", "MULTDOWN"].includes(tradeType)) {
-    proposal.contract_type = tradeType;
-    
-    // Deriv requires multiplier field
-    proposal.multiplier = 10; // default – can be updated to user selection
-  }
+    // 1) Get live tick
+    let livePrice;
+    try {
+        livePrice = await waitForFirstTick(symbol);
+    } catch (err) {
+        console.error("❌ Could not get live tick:", err);
+        return;
+    }
 
-  // ---- UNKNOWN CONTRACT FALLBACK ----
-  else {
-    console.warn(`⚠️ Unknown contract type: ${tradeType}`);
-    proposal.contract_type = tradeType;
-  }
+    console.log("🔥 Using live tick:", livePrice);
 
+    // 2) Build PROPOSAL object
+    const proposal = {
+        proposal: 1,
+        amount: price,
+        basis: "stake",
+        contract_type: tradeType,
+        currency: "USD",
+        symbol: symbol,
+        duration: duration,
+        duration_unit: "t",
+    };
 
-  //------------------------------------------
-  // 6. REQUEST PROPOSAL
-  //------------------------------------------
-  let proposalResp;
-  try {
-    proposalResp = await api.proposal(proposal);
-    console.log("Proposal response:", proposalResp);
-  } catch (err) {
-    console.error("❌ Proposal request failed:", err);
-    return;
-  }
+    // Digit-specific
+    if (tradeType.startsWith("DIGIT")) {
+        if (["DIGITMATCH", "DIGITDIFF", "DIGITOVER", "DIGITUNDER"].includes(tradeType)) {
+            proposal.prediction = Number(prediction ?? 0);
+        }
+    }
 
-  if (!proposalResp || proposalResp.error) {
-    console.error("❌ Proposal error:", proposalResp.error);
-    return;
-  }
+    // Multiplier
+    if (["MULTUP", "MULTDOWN"].includes(tradeType)) {
+        proposal.multiplier = 10;
+    }
 
-  const propId = proposalResp.proposal.id;
-  console.log("🆔 Proposal ID:", propId);
+    // 3) SEND PROPOSAL (corrected!)
+    let proposalResp;
+    try {
+        proposalResp = await api.send({
+            proposal: 1,
+            ...proposal
+        });
+        console.log("Proposal response:", proposalResp);
+    } catch (err) {
+        console.error("❌ Proposal request failed:", err);
+        return;
+    }
 
+    if (proposalResp.error) {
+        console.error("❌ Proposal error:", proposalResp.error);
+        return;
+    }
 
-  //------------------------------------------
-  // 7. BUY CONTRACT
-  //------------------------------------------
-  let buyResp;
-  try {
-    buyResp = await api.buy({ buy: propId, price });
-    console.log("Buy response:", buyResp);
-  } catch (err) {
-    console.error("❌ Buy call failed:", err);
-    return;
-  }
+    // Extract correct proposal info
+    const propId = proposalResp.proposal.id;
+    const askPrice = proposalResp.proposal.ask_price;
 
-  if (buyResp.error) {
-    console.error("❌ Buy error:", buyResp.error);
-    return;
-  }
+    console.log("🆔 Proposal ID:", propId);
+    console.log("💵 Ask Price:", askPrice);
 
-  console.log("🎉 Contract bought successfully:", buyResp);
-  return buyResp;
+    // 4) BUY CONTRACT (corrected!)
+    let buyResp;
+    try {
+        buyResp = await api.send({
+            buy: propId,
+            price: askPrice
+        });
+        console.log("Buy response:", buyResp);
+    } catch (err) {
+        console.error("❌ Buy call failed:", err);
+        return;
+    }
+
+    if (buyResp.error) {
+        console.error("❌ Buy error:", buyResp.error);
+        return;
+    }
+
+    console.log("🎉 Contract bought successfully:", buyResp);
+    return buyResp;
 }
 
 
