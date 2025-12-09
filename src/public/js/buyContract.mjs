@@ -365,6 +365,16 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
         proposal.multiplier = 10;
     }
 
+    // --- TICKHIGH / TICKLOW ---
+    else if (contract_type === "TICKHIGH" || contract_type === "TICKLOW") {
+        proposal.selected_tick = 1;
+    }
+
+    // --- ONETOUCH / NOTOUCH ---
+    else if (contract_type === "ONETOUCH" || contract_type === "NOTOUCH") {
+        proposal.barrier = +0.05;
+    }
+
     // 3) SEND PROPOSAL
     let proposalResp;
     try {
