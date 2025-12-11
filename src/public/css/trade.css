@@ -226,3 +226,45 @@ input:checked + .slider:before {
   }
 }
 
+/* --- Trade result popup --- */
+.trade-popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.trade-popup {
+  min-width: 320px;
+  max-width: 420px;
+  background: #fff;
+  color: #111;
+  border-radius: 8px;
+  padding: 18px 20px;
+  box-shadow: 0 8px 30px rgba(2,6,23,0.25);
+  font-family: inherit;
+  text-align: left;
+}
+.trade-popup h3 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+}
+.trade-popup p { margin: 6px 0; }
+.trade-popup .amount { font-weight: 700; }
+.trade-popup .profit { color: #0a8a27; }
+.trade-popup .loss { color: #d32f2f; }
+.trade-popup .low-balance { color: #b45309; font-weight: 600; }
+.trade-popup .close-btn {
+  margin-top: 12px;
+  display: inline-block;
+  background: #0c0c0c;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+}
+.trade-popup .close-btn:hover { opacity: 0.95; }
+
