@@ -211,7 +211,41 @@ async function evaluateAndBuyContractSafe() {
   const maxIndex = percentages.indexOf(maxPercentage);
 
   if (maxPercentage < 40) {
-    return console.warn("⛔ No strong sentiment (>=40%)");
+    console.warn("⛔ No strong sentiment (>=40%)");
+    
+    // Show popup for weak sentiment
+    try {
+      const overlay = document.createElement('div');
+      overlay.className = 'trade-popup-overlay';
+
+      const popup = document.createElement('div');
+      popup.className = 'trade-popup';
+
+      const title = document.createElement('h3');
+      title.textContent = 'Insufficient Sentiment';
+      popup.appendChild(title);
+
+      const msgP = document.createElement('p');
+      msgP.textContent = `No strong sentiment detected. Maximum sentiment is ${maxPercentage}%, but at least 40% is required to execute a trade.`;
+      popup.appendChild(msgP);
+
+      const closeBtn = document.createElement('a');
+      closeBtn.className = 'close-btn';
+      closeBtn.href = '#';
+      closeBtn.textContent = 'Close';
+      closeBtn.addEventListener('click', (ev) => { ev.preventDefault(); overlay.remove(); });
+      popup.appendChild(closeBtn);
+
+      overlay.appendChild(popup);
+      try { document.body.appendChild(overlay); } catch (e) { console.warn('Could not show sentiment popup:', e); }
+      
+      // Auto-dismiss after 6 seconds
+      setTimeout(() => { try { overlay.remove(); } catch (e) {} }, 6000);
+    } catch (e) {
+      console.warn('Failed to build sentiment popup:', e);
+    }
+    
+    return;
   }
 
   console.log(`Winning sentiment index = ${maxIndex}`);
