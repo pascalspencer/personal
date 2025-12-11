@@ -455,7 +455,77 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
 
     if (buyResp.error) {
         console.error("❌ Buy error:", buyResp.error);
-        return;
+
+        // Show a user-friendly popup describing the error (e.g., insufficient balance)
+        try {
+          const err = buyResp.error;
+          const overlay = document.createElement('div');
+          overlay.className = 'trade-popup-overlay';
+
+          const popup = document.createElement('div');
+          popup.className = 'trade-popup';
+
+          const title = document.createElement('h3');
+          title.textContent = 'Trade Failed';
+          popup.appendChild(title);
+
+          const msgP = document.createElement('p');
+          msgP.textContent = err.message || 'Unable to complete buy request.';
+          popup.appendChild(msgP);
+
+          // Try to extract suggested stake / price from echo_req or response
+          const echo = buyResp.echo_req || {};
+          const echoBuy = echo.buy || echo;
+          const reqPrice = echoBuy.price ?? echo.price ?? null;
+          if (reqPrice !== null && reqPrice !== undefined) {
+            const reqP = document.createElement('p');
+            reqP.innerHTML = `Required stake: <span class="amount">$${Number(reqPrice).toFixed(2)}</span>`;
+            popup.appendChild(reqP);
+          }
+
+          // Attempt to parse current balance from error message or response
+          let parsedBalance = null;
+          // check common fields
+          const candidateFields = [buyResp.balance, buyResp.buy?.balance, buyResp.account_balance, buyResp.buy?.account_balance];
+          for (const c of candidateFields) {
+            if (typeof c === 'number') { parsedBalance = c; break; }
+            if (typeof c === 'string' && !Number.isNaN(Number(c))) { parsedBalance = Number(c); break; }
+          }
+          // parse from message like "Your account balance (0.00 USD) is insufficient"
+          if (parsedBalance === null && typeof err.message === 'string') {
+            const m = err.message.match(/\((\d+(?:\.\d+)?)\s*USD\)/i) || err.message.match(/balance\s*(\d+(?:\.\d+)?)/i);
+            if (m && m[1]) parsedBalance = Number(m[1]);
+          }
+          if (parsedBalance !== null) {
+            const balP = document.createElement('p');
+            balP.innerHTML = `Account balance: <span class="amount">$${Number(parsedBalance).toFixed(2)}</span>`;
+            popup.appendChild(balP);
+          }
+
+          // If error code indicates insufficient balance, add highlighted note
+          if (err.code === 'InsufficientBalance' || /insufficient/i.test(err.message || '')) {
+            const low = document.createElement('p');
+            low.className = 'low-balance';
+            low.textContent = `Insufficient balance to buy this contract. Please top up your account.`;
+            popup.appendChild(low);
+          }
+
+          const closeBtn = document.createElement('a');
+          closeBtn.className = 'close-btn';
+          closeBtn.href = '#';
+          closeBtn.textContent = 'Close';
+          closeBtn.addEventListener('click', (ev) => { ev.preventDefault(); overlay.remove(); });
+          popup.appendChild(closeBtn);
+
+          overlay.appendChild(popup);
+          try { document.body.appendChild(overlay); } catch (e) { console.warn('Could not show error popup:', e); }
+          // Auto-dismiss after 10 seconds
+          setTimeout(() => { try { overlay.remove(); } catch (e) {} }, 10000);
+        } catch (e) {
+          console.warn('Failed to build error popup:', e);
+        }
+
+        return buyResp;
     }
 
     console.log("🎉 Contract bought successfully:", buyResp);
