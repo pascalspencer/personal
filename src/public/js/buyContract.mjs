@@ -422,6 +422,19 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     console.log("💵 Ask Price:", askPrice);
 
     // 4) BUY CONTRACT
+    // Capture starting balance immediately before attempting the buy so we
+    // can determine whether the account decreased after the purchase.
+    let startingBalance = null;
+    try {
+        const balBefore = await sendJson({ balance: 1 });
+        if (balBefore && typeof balBefore.balance !== 'undefined') {
+          const parsed = Number(balBefore.balance);
+          if (!Number.isNaN(parsed)) startingBalance = parsed;
+        }
+    } catch (e) {
+      // ignore balance read errors
+    }
+
     let buyResp;
     try {
         buyResp = await sendJson({ buy: propId, price: askPrice });
@@ -532,6 +545,30 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
 
     console.log("🎉 Contract bought successfully:", buyResp);
 
+    // Determine ending balance (try response fields first, then fallback to balance request)
+    let endingBalance = null;
+    try {
+      const cand = [buyResp.balance, buyResp.buy?.balance, buyResp.account_balance, buyResp.buy?.account_balance];
+      for (const b of cand) {
+        if (typeof b === 'number') { endingBalance = b; break; }
+        if (typeof b === 'string' && !Number.isNaN(Number(b))) { endingBalance = Number(b); break; }
+      }
+    } catch (e) {}
+    if (endingBalance === null) {
+      try {
+        const balAfter = await sendJson({ balance: 1 });
+        if (balAfter && typeof balAfter.balance !== 'undefined') {
+          const parsed = Number(balAfter.balance);
+          if (!Number.isNaN(parsed)) endingBalance = parsed;
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    // If we have both balances and the ending balance decreased, treat as a loss
+    const isBalanceLoss = (startingBalance !== null && endingBalance !== null && endingBalance < startingBalance);
+
     // --- Show popup with profit / loss and low-balance info ---
     try {
       const buyInfo = buyResp.buy || buyResp || {};
@@ -547,13 +584,17 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       const payout = Number(buyInfo.payout ?? buyInfo.payout_amount ?? buyInfo.payoutValue ?? 0) || 0;
 
       // Compute profit relative to the stake (payout includes stake on success)
-      // If payout is present, profit = payout - stake. Otherwise, attempt fallback using buyPrice.
+      // If payout is present, profit = payout - stake. Otherwise fallback to zero.
       let profit = 0;
       if (!Number.isNaN(payout) && payout > 0) {
         profit = +(payout - stakeAmount).toFixed(2);
-      } else if (!Number.isNaN(buyPrice) && payout < 0) {
-        // fallback: compare buyPrice to stake (could be same)
-        profit = +(0.00).toFixed(2);
+      } else {
+        profit = 0;
+      }
+
+      // If balance shows a decrease after the buy, force a loss of the stake amount
+      if (isBalanceLoss) {
+        profit = -Number(stakeAmount);
       }
 
       // Try to determine account balance from response fields if present
@@ -601,7 +642,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       const profitP = document.createElement('p');
       if (profit > 0) {
         profitP.innerHTML = `Result: <span class="profit">+ $${profit.toFixed(2)}</span>`;
-      } else if (profit <= 0) {
+      } else if (profit < 0) {
         // Show the full stake as the loss amount — stake is gone on a loss
         profitP.innerHTML = `Result: <span class="loss">- $${Number(stakeAmount).toFixed(2)}</span>`;
       } else {
