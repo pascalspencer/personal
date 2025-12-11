@@ -100,11 +100,16 @@ document.addEventListener("DOMContentLoaded", function () {
     const sentiments = sentimentsData[contractType] || [];
     sentiments.forEach((sent) => addOption(sentimentDropdown, sent));
 
-    const selectedSentiment = sentimentDropdown.value;
-    document.getElementById("digit-value").style.display =
-      ["Matches/Differs", "Over/Under"].includes(selectedSentiment) ? "block" : "none";
-
+    updateDigitValueVisibility();
     sentimentDropdown.disabled = !sentiments.length;
+  }
+
+  // --- Update digit value visibility based on sentiment ---
+  function updateDigitValueVisibility() {
+    const selectedSentiment = document.getElementById("sentiment").value;
+    const digitValue = document.getElementById("digit-value");
+    digitValue.style.display =
+      ["Matches/Differs", "Over/Under"].includes(selectedSentiment) ? "block" : "none";
   }
 
   // --- Display results ---
@@ -132,8 +137,7 @@ document.addEventListener("DOMContentLoaded", function () {
       resultsContainer.appendChild(optionElement);
     });
 
-    document.getElementById("digit-value").style.display =
-      ["Matches/Differs", "Over/Under"].includes(selectedSentiment) ? "block" : "none";
+    updateDigitValueVisibility();
   }
 
   function generatePercentage() {
@@ -151,6 +155,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // --- Event listeners ---
   document.getElementById("market").addEventListener("change", populateSubmarkets);
   document.getElementById("contract_type").addEventListener("change", populateSentiments);
+  document.getElementById("sentiment").addEventListener("change", updateDigitValueVisibility);
   // window.addEventListener("load", populateSubmarkets);
 
   dataForm.addEventListener("submit", (event) => {
