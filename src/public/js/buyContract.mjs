@@ -608,19 +608,21 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       // payout — total return if contract wins (usually includes stake)
       const payout = Number(buyInfo.payout ?? buyInfo.payout_amount ?? buyInfo.payoutValue ?? 0) || 0;
 
-      // Compute profit relative to the stake (payout includes stake on success)
-      // If payout is present, profit = payout - stake. Otherwise fallback to zero.
+      // Compute profit. Prefer using balance delta (ending - starting) when available
+      // because it reflects the actual change to the account. Fall back to using
+      // the payout field if balances are not available.
       let profit = 0;
-      if (!Number.isNaN(payout) && payout > 0) {
+      if (startingBalance !== null && endingBalance !== null) {
+        profit = +(endingBalance - startingBalance).toFixed(2);
+      } else if (!Number.isNaN(payout) && payout > 0) {
         profit = +(payout - stakeAmount).toFixed(2);
       } else {
         profit = 0;
       }
 
-      // If balance shows a decrease after the buy, force a loss of the stake amount
-      if (isBalanceLoss) {
-        profit = -Number(stakeAmount);
-      }
+      // For display purposes, if profit is negative we show the stake as the
+      // lost amount (stake is gone on a loss). The actual numeric profit
+      // remains the balance-derived delta.
 
       // Try to determine account balance from response fields if present
       let balanceCandidate = null;
