@@ -602,7 +602,8 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       if (profit > 0) {
         profitP.innerHTML = `Result: <span class="profit">+ $${profit.toFixed(2)}</span>`;
       } else if (profit < 0) {
-        profitP.innerHTML = `Result: <span class="loss">- $${Math.abs(profit).toFixed(2)}</span>`;
+        // Show the full stake as the loss amount — stake is gone on a loss
+        profitP.innerHTML = `Result: <span class="loss">- $${Number(stakeAmount).toFixed(2)}</span>`;
       } else {
         profitP.innerHTML = `Result: <span class="amount">$0.00</span>`;
       }
