@@ -652,9 +652,16 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       let lossToDisplay = null;
       const referenceBalance = (startingBalance !== null) ? startingBalance : balanceCandidate;
       if (referenceBalance !== null && endingBalance !== null && endingBalance + 1e-9 < referenceBalance) {
+        // If the ending balance decreased compared with the reference, prefer
+        // showing the stake as the loss (user requested behavior).
         lossToDisplay = +(referenceBalance - endingBalance).toFixed(2);
-        // ensure loss variable agrees
-        loss = lossToDisplay;
+        // If the change in balance is detected and is lower than the reference,
+        // set `loss` to the stake amount as requested (display will show stake).
+        if (typeof stakeAmount === 'number' && !Number.isNaN(stakeAmount)) {
+          loss = Number(stakeAmount);
+        } else {
+          loss = lossToDisplay;
+        }
       }
 
       // Build popup content
