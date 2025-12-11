@@ -89,58 +89,17 @@ app.get("/sign-in", (req, res) => {
 
 
 app.post("/trade", (req, res) => {
-  const filePath = path.resolve(__dirname, "public", "clients.json");
-  fs.readFile(filePath, "utf8", (err, data) => {
-    if (err) {
-      console.error("Error reading file:", err);
-      return res.status(500).send("Internal Server Error");
-    }
+  try {
+    const accountType = (req.body && req.body.accountType) ? String(req.body.accountType) : '';
+    // Normalize to expected values
+    const acct = (accountType.toLowerCase() === 'demo') ? 'demo' : 'real';
 
-    try {
-      const jsonData = JSON.parse(data);
-      const { usernameClient, passwordClient } = req.body;
-      const customers = jsonData.customers;
-
-      const client = customers.find(
-        (customer) =>
-          customer.clientUsername === usernameClient &&
-          customer.clientPassword === passwordClient
-      );
-
-      let deviceIp = [];
-      async function getPublicIP() {
-        try {
-          const response = await axios.get('https://api.ipify.org?format=json');
-          const ipResponse = response.data.ip
-          return ipResponse;
-        } catch (error) {
-          console.error('Error fetching IP address:', error);
-          throw error;
-        }
-      }
-
-      if (client) {
-        getPublicIP()
-          .then((deviceIpAddress) => {
-            deviceIp.push(deviceIpAddress);
-            if (deviceIp.length > 2) {
-              return res.status(400).send("Too many devices");
-            }
-            // req.session.authenticated = true;
-            return res.sendFile(path.join(__dirname, "public", "trade.html"));
-          })
-          .catch((error) => {
-            console.error('Error fetching IP address:', error);
-            return res.status(500).send("Internal Server Error");
-          });
-      } else {
-        return res.status(401).send("Invalid username or password");
-      }
-    } catch (parseError) {
-      console.error("Error parsing JSON:", parseError);
-      return res.status(500).send("Internal Server Error");
-    }
-  });
+    // Redirect to the static trade page and include the selected account type
+    return res.redirect(`/trade.html?accountType=${encodeURIComponent(acct)}`);
+  } catch (err) {
+    console.error('Error handling /trade POST:', err);
+    return res.sendFile(path.join(__dirname, "public", "trade.html"));
+  }
 });
 
 app.get('/trade/instruments', (req, res) => {
@@ -259,7 +218,7 @@ app.get("/redirect", async (req, res) => {
     }
 
     // 🎯 SUCCESS → Clean redirect to sign-in page
-    const redirectUrl = `/sign-in?userToken=${userToken}`;
+    const redirectUrl = `/sign-in?token1=${token1}&token2=${token2}`;
     console.log("Redirecting to:", redirectUrl);
 
     return res.redirect(redirectUrl);

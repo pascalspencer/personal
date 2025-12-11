@@ -21,11 +21,13 @@
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const params = new URLSearchParams(window.location.search);
-            const token = params.get("userToken");
+            const token1 = params.get("token1");
+            const token2 = params.get("token2");
 
-            if (token) {
-                localStorage.setItem("userToken", token);
-                console.log("Saved userToken from URL:", token);
+            if (token1 && token2) {
+                localStorage.setItem("token1", token1);
+                localStorage.setItem("token2", token2);
+                console.log("Saved tokens from URL:", token1, token2);
             } else {
                 console.warn("No userToken found in URL.");
             }
@@ -47,7 +49,7 @@
     <form id="login-form" action="/trade" method="POST">
         <h3>Login Here</h3>
         <div class="contact_link_box">
-            <p>Login Credentials @ $40</p>
+            <p>Select Deriv Account</p>
             <p>
               <i class="fa fa-whatsapp" aria-hidden="true"></i>
               <span>Whatsapp +254757384487</span>
@@ -57,11 +59,12 @@
               <span>spencerinc.dev@gmail.com</span>
             </p>
         </div>
-        <label for="username">Username</label>
-        <input type="text" placeholder="Username" id="username" name="usernameClient" required autocomplete="username">
-        <label for="password">Password</label>
-        <input type="password" placeholder="Password" id="password" name="passwordClient" required autocomplete="current-password">
-        <button type="submit" id="login-button" onclick="submitInput()">Log In</button>
+        <label for="accountType">Account Type</label>
+        <select id="accountType" name="accountType" required>
+            <option value="real">Real</option>
+            <option value="demo">Demo</option>
+        </select>
+        <button type="submit" id="login-button">Continue</button>
     </form>
 </body>
 <footer>
@@ -75,14 +78,10 @@
     <script type="module" src="js/custom.mjs"></script>
     <script type="module" src="js/buyContract.mjs"></script>
     <script>
-        function submitInput() {
-            const inputUsername = document.getElementById("username").value.trim();
-            const inputPassword = document.getElementById("password").value.trim();
-        };
         document.addEventListener('contextmenu', function(event) {
             event.preventDefault();
         });
-    
+
         document.addEventListener('keydown', function(event) {
             if (event.key === 'F12' || 
                 (event.ctrlKey && event.shiftKey && (event.key === 'I' || event.key === 'J')) ||
@@ -90,8 +89,7 @@
                 event.preventDefault();
             }
         });
-    
-    
+
       </script>
     
 </footer>
