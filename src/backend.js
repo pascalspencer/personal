@@ -44,9 +44,7 @@ const marketsData = {
 };
 
 const tradeData = {
-  Multipliers: ["Up/Down"],
-  up_and_down: ["Rise/Fall", "Higher/Lower"],
-  high_and_low: ["Touch/No Touch"],
+  up_and_down: ["Rise/Fall"],
   digits: ["Matches/Differs", "Even/Odd", "Over/Under"],
 };
 
