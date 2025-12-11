@@ -545,29 +545,54 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
 
     console.log("🎉 Contract bought successfully:", buyResp);
 
-    // Determine ending balance (try response fields first, then fallback to balance request)
-    let endingBalance = null;
-    try {
-      const cand = [buyResp.balance, buyResp.buy?.balance, buyResp.account_balance, buyResp.buy?.account_balance];
-      for (const b of cand) {
-        if (typeof b === 'number') { endingBalance = b; break; }
-        if (typeof b === 'string' && !Number.isNaN(Number(b))) { endingBalance = Number(b); break; }
+    // Robust balance parsing helpers
+    const parseNumeric = (v) => {
+      if (v === null || typeof v === 'undefined') return null;
+      if (typeof v === 'number') return v;
+      const n = Number(v);
+      return Number.isNaN(n) ? null : n;
+    };
+
+    const firstNumeric = (arr) => {
+      for (const v of arr) {
+        const p = parseNumeric(v);
+        if (p !== null) return p;
       }
-    } catch (e) {}
+      return null;
+    };
+
+    // Determine ending balance (try response fields first, then fallback to balance request)
+    let endingBalance = firstNumeric([
+      buyResp.buy?.balance_after,
+      buyResp.buy?.balance,
+      buyResp.balance_after,
+      buyResp.balance,
+      buyResp.account_balance,
+      buyResp.buy?.account_balance,
+    ]);
     if (endingBalance === null) {
       try {
         const balAfter = await sendJson({ balance: 1 });
-        if (balAfter && typeof balAfter.balance !== 'undefined') {
-          const parsed = Number(balAfter.balance);
-          if (!Number.isNaN(parsed)) endingBalance = parsed;
-        }
+        if (balAfter) endingBalance = firstNumeric([balAfter.balance, balAfter.account_balance]);
       } catch (e) {
         // ignore
       }
     }
 
-    // If we have both balances and the ending balance decreased, treat as a loss
-    const isBalanceLoss = (startingBalance !== null && endingBalance !== null && endingBalance < startingBalance);
+    // If startingBalance wasn't captured before buy, try to extract it from the buy response
+    if (startingBalance === null) {
+      startingBalance = firstNumeric([
+        buyResp.buy?.balance_before,
+        buyResp.buy?.balance,
+        buyResp.balance_before,
+        buyResp.balance,
+        buyResp.account_balance,
+        buyResp.buy?.account_balance,
+      ]);
+    }
+
+    // If we have both balances and the ending balance decreased by at least a tiny epsilon, treat as a loss
+    const isBalanceLoss = (startingBalance !== null && endingBalance !== null && endingBalance + 1e-9 < startingBalance);
 
     // --- Show popup with profit / loss and low-balance info ---
     try {
