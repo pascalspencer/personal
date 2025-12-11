@@ -98,7 +98,7 @@ function sendJson(payload, timeoutMs = 8000) {
 
   return new Promise((resolve, reject) => {
     pending.set(req_id, (resp) => {
-      if (resp && resp.error) return reject(resp);
+      // Don't reject on API errors; resolve with the response so caller can handle it
       return resolve(resp);
     });
 
@@ -404,6 +404,30 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
         console.log("Buy response:", buyResp);
     } catch (err) {
         console.error("❌ Buy call failed:", err);
+        // Show error popup for WebSocket/connection errors
+        try {
+          const overlay = document.createElement('div');
+          overlay.className = 'trade-popup-overlay';
+          const popup = document.createElement('div');
+          popup.className = 'trade-popup';
+          const title = document.createElement('h3');
+          title.textContent = 'Buy Failed';
+          popup.appendChild(title);
+          const msgP = document.createElement('p');
+          msgP.textContent = err.message || 'Failed to execute buy request.';
+          popup.appendChild(msgP);
+          const closeBtn = document.createElement('a');
+          closeBtn.className = 'close-btn';
+          closeBtn.href = '#';
+          closeBtn.textContent = 'Close';
+          closeBtn.addEventListener('click', (ev) => { ev.preventDefault(); overlay.remove(); });
+          popup.appendChild(closeBtn);
+          overlay.appendChild(popup);
+          try { document.body.appendChild(overlay); } catch (e) { console.warn('Could not show error popup:', e); }
+          setTimeout(() => { try { overlay.remove(); } catch (e) {} }, 10000);
+        } catch (e) {
+          console.warn('Failed to build error popup:', e);
+        }
         return;
     }
 
