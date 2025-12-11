@@ -551,9 +551,9 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       let profit = 0;
       if (!Number.isNaN(payout) && payout > 0) {
         profit = +(payout - stakeAmount).toFixed(2);
-      } else if (!Number.isNaN(buyPrice) && stakeAmount > 0) {
+      } else if (!Number.isNaN(buyPrice) && payout < 0) {
         // fallback: compare buyPrice to stake (could be same)
-        profit = +(stakeAmount - buyPrice).toFixed(2);
+        profit = +(0.00).toFixed(2);
       }
 
       // Try to determine account balance from response fields if present
@@ -601,7 +601,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       const profitP = document.createElement('p');
       if (profit > 0) {
         profitP.innerHTML = `Result: <span class="profit">+ $${profit.toFixed(2)}</span>`;
-      } else if (profit < 0) {
+      } else if (profit <= 0) {
         // Show the full stake as the loss amount — stake is gone on a loss
         profitP.innerHTML = `Result: <span class="loss">- $${Number(stakeAmount).toFixed(2)}</span>`;
       } else {
