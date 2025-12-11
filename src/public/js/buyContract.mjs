@@ -534,10 +534,27 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
 
     // --- Show popup with profit / loss and low-balance info ---
     try {
-      const buyInfo = buyResp.buy || buyResp;
-      const buyPrice = parseFloat(buyInfo.buy_price ?? buyInfo.buy_price ?? askPrice) || parseFloat(askPrice) || 0;
-      const payout = parseFloat(buyInfo.payout ?? buyInfo.payout ?? 0) || 0;
-      const profit = +(payout - buyPrice).toFixed(2);
+      const buyInfo = buyResp.buy || buyResp || {};
+      // stake is the amount the user attempted to place
+      const stakeAmount = Number(price) || 0;
+
+      // buy price (amount charged) — prefer explicit fields, fall back to askPrice
+      const buyPrice = Number(
+        buyInfo.buy_price ?? buyInfo.price ?? buyInfo.buy_price ?? askPrice ?? 0
+      ) || 0;
+
+      // payout — total return if contract wins (usually includes stake)
+      const payout = Number(buyInfo.payout ?? buyInfo.payout_amount ?? buyInfo.payoutValue ?? 0) || 0;
+
+      // Compute profit relative to the stake (payout includes stake on success)
+      // If payout is present, profit = payout - stake. Otherwise, attempt fallback using buyPrice.
+      let profit = 0;
+      if (!Number.isNaN(payout) && payout > 0) {
+        profit = +(payout - stakeAmount).toFixed(2);
+      } else if (!Number.isNaN(buyPrice) && stakeAmount > 0) {
+        // fallback: compare buyPrice to stake (could be same)
+        profit = +(stakeAmount - buyPrice).toFixed(2);
+      }
 
       // Try to determine account balance from response fields if present
       let balanceCandidate = null;
