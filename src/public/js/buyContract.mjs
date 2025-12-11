@@ -11,6 +11,20 @@ const resultsContainer = document.getElementById("results-container");
 let reqCounter = 1;
 const pending = new Map();        // req_id -> resolve(response)
 const subscriptions = new Map();  // req_id -> { resolve, timeout }
+// default currency (fall back to USD)
+let defaultCurrency = 'USD';
+
+function parseCurrencyFromAuth(resp) {
+  try {
+    if (!resp) return null;
+    if (resp.authorize && resp.authorize.currency) return resp.authorize.currency;
+    if (resp.authorize && Array.isArray(resp.authorize.account_list) && resp.authorize.account_list.length) {
+      const a = resp.authorize.account_list[0];
+      if (a && a.currency) return a.currency;
+    }
+  } catch (e) {}
+  return null;
+}
 
 // --- WebSocket lifecycle ---
 connection.onopen = function () {
@@ -29,6 +43,11 @@ connection.onopen = function () {
     try {
       const resp = await sendJson({ authorize: token });
       console.log("Authorize response:", resp);
+      const cur = parseCurrencyFromAuth(resp);
+      if (cur) {
+        defaultCurrency = cur;
+        console.log('Using currency from authorize:', defaultCurrency);
+      }
     } catch (err) {
       console.error("Authorization failed:", err);
     }
@@ -331,6 +350,11 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
           // continue or abort depending on your preference; here we continue and let proposal fail if unauthorized
         } else {
           console.log("Authorized before proposal (masked token).");
+          const cur2 = parseCurrencyFromAuth(authResp);
+          if (cur2) {
+            defaultCurrency = cur2;
+            console.log('Using currency from authorize before proposal:', defaultCurrency);
+          }
         }
       } catch (err) {
         console.warn("Authorize request error:", err);
@@ -353,14 +377,14 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
 
     // 2) Build PROPOSAL object
     const proposal = {
-        proposal: 1,
-        amount: price,
-        basis: "stake",
-        contract_type: tradeType,
-        currency: "USD",
-        symbol: symbol,
-        duration: duration,
-        duration_unit: "t",
+      proposal: 1,
+      amount: price,
+      basis: "stake",
+      contract_type: tradeType,
+      currency: defaultCurrency || "USD",
+      symbol: symbol,
+      duration: duration,
+      duration_unit: "t",
     };
 
     // Digit-specific
