@@ -626,31 +626,35 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
         }
       }
 
-      // Compute profit. Prefer using balance delta (ending - starting) when available
-      // because it reflects the actual change to the account. Fall back to using
-      // the payout field if balances are not available.
+      // Compute profit and loss as separate positive numbers.
+      // Prefer balance delta (ending - starting) when available; otherwise use
+      // a comparison between endingBalance and balanceCandidate; finally fall
+      // back to payout-based computation.
       let profit = 0;
+      let loss = 0;
       if (startingBalance !== null && endingBalance !== null) {
-        profit = +(endingBalance - startingBalance).toFixed(2);
+        const delta = +(endingBalance - startingBalance);
+        if (delta > 0) profit = +delta.toFixed(2);
+        else if (delta < 0) loss = +Math.abs(delta).toFixed(2);
       } else if (balanceCandidate !== null && endingBalance !== null) {
-        // If we have a current balance estimate and an endingBalance from the buy
-        // response, compare those (use current as reference).
-        profit = +(endingBalance - balanceCandidate).toFixed(2);
-      } else if (!Number.isNaN(payout) && payout > 0) {
-        profit = +(payout - stakeAmount).toFixed(2);
-      } else {
-        profit = 0;
+        const delta = +(endingBalance - balanceCandidate);
+        if (delta > 0) profit = +delta.toFixed(2);
+        else if (delta < 0) loss = +Math.abs(delta).toFixed(2);
+      } else if (!Number.isNaN(payout)) {
+        const p = +(payout - stakeAmount);
+        if (p > 0) profit = +p.toFixed(2);
+        else if (p < 0) loss = +Math.abs(p).toFixed(2);
       }
 
-      // Determine loss amount to display: compare a reference balance (prefer startingBalance,
-      // otherwise use balanceCandidate) against endingBalance. If endingBalance is lower,
-      // display the difference as the loss (likely close to stakeAmount).
+      // For backward compatibility, compute a lossToDisplay (positive number)
+      // from the best available reference (startingBalance or balanceCandidate)
+      // compared to endingBalance.
       let lossToDisplay = null;
       const referenceBalance = (startingBalance !== null) ? startingBalance : balanceCandidate;
       if (referenceBalance !== null && endingBalance !== null && endingBalance + 1e-9 < referenceBalance) {
         lossToDisplay = +(referenceBalance - endingBalance).toFixed(2);
-        // ensure numeric profit matches balance delta
-        profit = -lossToDisplay;
+        // ensure loss variable agrees
+        loss = lossToDisplay;
       }
 
       // Build popup content
@@ -679,9 +683,11 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       const profitP = document.createElement('p');
       if (profit > 0) {
         profitP.innerHTML = `Result: <span class="profit">+ $${profit.toFixed(2)}</span>`;
-      } else if (profit < 0) {
-        // Show the full stake as the loss amount — stake is gone on a loss
-        profitP.innerHTML = `Result: <span class="loss">- $${Number(stakeAmount).toFixed(2)}</span>`;
+      } else if (loss > 0) {
+        // Prefer the explicit lossToDisplay if available, otherwise use the
+        // computed loss (both are positive numbers). Fallback to stakeAmount.
+        const displayLoss = (typeof lossToDisplay === 'number' && lossToDisplay > 0) ? lossToDisplay : (loss > 0 ? loss : Number(stakeAmount));
+        profitP.innerHTML = `Result: <span class="loss">- $${Number(displayLoss).toFixed(2)}</span>`;
       } else {
         profitP.innerHTML = `Result: <span class="amount">$0.00</span>`;
       }
