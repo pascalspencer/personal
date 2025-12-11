@@ -608,39 +608,49 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       // payout — total return if contract wins (usually includes stake)
       const payout = Number(buyInfo.payout ?? buyInfo.payout_amount ?? buyInfo.payoutValue ?? 0) || 0;
 
+      // Try to determine account balance from response fields if present (current balance candidate)
+      let balanceCandidate = firstNumeric([
+        buyResp.buy?.balance,
+        buyResp.balance,
+        buyResp.account_balance,
+        buyResp.buy?.account_balance,
+      ]);
+
+      // As a best-effort, attempt to request balance from server (optional and non-blocking)
+      if (balanceCandidate === null) {
+        try {
+          const balResp = await sendJson({ balance: 1 });
+          if (balResp) balanceCandidate = firstNumeric([balResp.balance, balResp.account_balance]);
+        } catch (e) {
+          // ignore if balance request not supported
+        }
+      }
+
       // Compute profit. Prefer using balance delta (ending - starting) when available
       // because it reflects the actual change to the account. Fall back to using
       // the payout field if balances are not available.
       let profit = 0;
       if (startingBalance !== null && endingBalance !== null) {
         profit = +(endingBalance - startingBalance).toFixed(2);
+      } else if (balanceCandidate !== null && endingBalance !== null) {
+        // If we have a current balance estimate and an endingBalance from the buy
+        // response, compare those (use current as reference).
+        profit = +(endingBalance - balanceCandidate).toFixed(2);
       } else if (!Number.isNaN(payout) && payout > 0) {
         profit = +(payout - stakeAmount).toFixed(2);
       } else {
         profit = 0;
       }
 
-      // For display purposes, if profit is negative we show the stake as the
-      // lost amount (stake is gone on a loss). The actual numeric profit
-      // remains the balance-derived delta.
-
-      // Try to determine account balance from response fields if present
-      let balanceCandidate = null;
-      const balanceFields = [buyResp.balance, buyResp.buy?.balance, buyResp.account_balance, buyResp.buy?.account_balance];
-      for (const b of balanceFields) {
-        if (typeof b === 'number') { balanceCandidate = b; break; }
-        if (typeof b === 'string' && !Number.isNaN(Number(b))) { balanceCandidate = Number(b); break; }
-      }
-
-      // As a best-effort, attempt to request balance from server (optional and non-blocking)
-      try {
-        const balResp = await sendJson({ balance: 1 });
-        if (balResp && typeof balResp.balance !== 'undefined') {
-          const parsed = Number(balResp.balance);
-          if (!Number.isNaN(parsed)) balanceCandidate = parsed;
-        }
-      } catch (e) {
-        // ignore if balance request not supported
+      // Determine loss amount to display: compare a reference balance (prefer startingBalance,
+      // otherwise use balanceCandidate) against endingBalance. If endingBalance is lower,
+      // display the difference as the loss (likely close to stakeAmount).
+      let lossToDisplay = null;
+      const referenceBalance = (startingBalance !== null) ? startingBalance : balanceCandidate;
+      if (referenceBalance !== null && endingBalance !== null && endingBalance + 1e-9 < referenceBalance) {
+        lossToDisplay = +(referenceBalance - endingBalance).toFixed(2);
+        // ensure numeric profit matches balance delta
+        profit = -lossToDisplay;
       }
 
       // Build popup content
