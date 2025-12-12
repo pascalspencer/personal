@@ -428,7 +428,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     try {
         const balBefore = await sendJson({ balance: 1 });
         if (balBefore) {
-          const candidates = [balBefore.balance.balance, balBefore.balance_after, balBefore.account_balance, balBefore.balance_before];
+          const candidates = [balBefore.balance, balBefore.balance_after, balBefore.account_balance, balBefore.balance_before];
           for (const c of candidates) {
             if (typeof c === 'number') { startingBalance = c; break; }
             if (typeof c === 'string' && !Number.isNaN(Number(c))) { startingBalance = Number(c); break; }
@@ -504,7 +504,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
           // Attempt to parse current balance from error message or response
           let parsedBalance = null;
           // check common fields
-          const candidateFields = [buyResp.balance.balance, buyResp.buy?.balance, buyResp.account_balance, buyResp.buy?.account_balance];
+          const candidateFields = [buyResp.balance, buyResp.buy?.balance, buyResp.account_balance, buyResp.buy?.account_balance];
           for (const c of candidateFields) {
             if (typeof c === 'number') { parsedBalance = c; break; }
             if (typeof c === 'string' && !Number.isNaN(Number(c))) { parsedBalance = Number(c); break; }
@@ -550,7 +550,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
 
     // Wait 3 seconds to allow contract to settle before fetching final balance
     await new Promise(r => setTimeout(r, 3000));
-    console.log("DEBUG buyContract - waited 1s for contract settlement");
+    console.log("DEBUG buyContract - waited 3s for contract settlement");
 
     // Robust balance parsing helpers
     const parseNumeric = (v) => {
@@ -568,22 +568,13 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       return null;
     };
 
-    // Determine ending balance (try response fields first, then fallback to balance request)
-    let endingBalance = firstNumeric([
-      buyResp.buy?.balance_after,
-      buyResp.buy?.balance,
-      buyResp.balance_after,
-      buyResp.balance,
-      buyResp.account_balance,
-      buyResp.buy?.account_balance,
-    ]);
-    if (endingBalance === null) {
-      try {
-        const balAfter = await sendJson({ balance: 1 });
-        if (balAfter) endingBalance = firstNumeric([balAfter.balance.balance, balAfter.account_balance]);
-      } catch (e) {
-        // ignore
-      }
+    // Fetch ending balance AFTER delay (do NOT use immediate buyResp fields)
+    let endingBalance = null;
+    try {
+      const balAfter = await sendJson({ balance: 1 });
+      if (balAfter) endingBalance = firstNumeric([balAfter.balance, balAfter.account_balance, balAfter.balance_after]);
+    } catch (e) {
+      console.warn("DEBUG buyContract - could not fetch ending balance:", e);
     }
 
     // If startingBalance wasn't captured before buy, try to extract it from the buy response
@@ -592,7 +583,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
         buyResp.buy?.balance_before,
         buyResp.buy?.balance,
         buyResp.balance_before,
-        buyResp.balance.balance,
+        buyResp.balance,
         buyResp.account_balance,
         buyResp.buy?.account_balance,
       ]);
@@ -633,7 +624,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       if (balanceCandidate === null) {
         try {
           const balResp = await sendJson({ balance: 1 });
-          if (balResp) balanceCandidate = firstNumeric([balResp.balance.balance, balResp.account_balance]);
+          if (balResp) balanceCandidate = firstNumeric([balResp.balance, balResp.account_balance, balResp.balance_after]);
         } catch (e) {
           // ignore if balance request not supported
         }
