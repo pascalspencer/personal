@@ -428,7 +428,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     try {
         const balBefore = await sendJson({ balance: 1 });
         if (balBefore) {
-          const candidates = [balBefore.balance, balBefore.balance_after, balBefore.account_balance, balBefore.balance_before];
+          const candidates = [balBefore.balance.balance, balBefore.balance_after, balBefore.account_balance, balBefore.balance_before];
           for (const c of candidates) {
             if (typeof c === 'number') { startingBalance = c; break; }
             if (typeof c === 'string' && !Number.isNaN(Number(c))) { startingBalance = Number(c); break; }
@@ -549,8 +549,8 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     console.log("🎉 Contract bought successfully:", buyResp);
 
     // Wait 3 seconds to allow contract to settle before fetching final balance
-    await new Promise(r => setTimeout(r, 3000));
-    console.log("DEBUG buyContract - waited 3s for contract settlement");
+    await new Promise(r => setTimeout(r, 1000));
+    console.debug("DEBUG buyContract - waited 1s for contract settlement");
 
     // Robust balance parsing helpers
     const parseNumeric = (v) => {
@@ -568,14 +568,10 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       return null;
     };
 
-    // Fetch ending balance AFTER delay (do NOT use immediate buyResp fields)
-    let endingBalance = null;
-    try {
-      const balAfter = await sendJson({ balance: 1 });
-      if (balAfter) endingBalance = firstNumeric([balAfter.balance.balance, balAfter.account_balance, balAfter.balance_after]);
-    } catch (e) {
-      console.warn("DEBUG buyContract - could not fetch ending balance:", e);
-    }
+    // Determine ending balance (try response fields first, then fallback to balance request)
+    let endingBalance = firstNumeric([
+      buyResp.buy?.balance_after,
+    ]);
 
     // If startingBalance wasn't captured before buy, try to extract it from the buy response
     if (startingBalance === null) {
@@ -583,7 +579,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
         buyResp.buy?.balance_before,
         buyResp.buy?.balance,
         buyResp.balance_before,
-        buyResp.balance,
+        buyResp.balance.balance,
         buyResp.account_balance,
         buyResp.buy?.account_balance,
       ]);
@@ -624,7 +620,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       if (balanceCandidate === null) {
         try {
           const balResp = await sendJson({ balance: 1 });
-          if (balResp) balanceCandidate = firstNumeric([balResp.balance.balance, balResp.account_balance, balResp.balance_after]);
+          if (balResp) balanceCandidate = firstNumeric([balResp.balance.balance, balResp.account_balance]);
         } catch (e) {
           // ignore if balance request not supported
         }
@@ -633,7 +629,11 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       // Compute profit as balance delta when possible (ending - starting).
       // Fallback to comparing endingBalance with balanceCandidate, then to payout-stake.
       let profit = null;
-      if (!Number.isNaN(payout)) {
+      if (startingBalance !== null && endingBalance !== null) {
+        profit = endingBalance - startingBalance;
+      } else if (endingBalance !== null && balanceCandidate !== null) {
+        profit = endingBalance - balanceCandidate;
+      } else if (!Number.isNaN(payout)) {
         profit = payout - stakeAmount;
       } else {
         profit = 0;
