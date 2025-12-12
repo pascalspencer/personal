@@ -677,10 +677,10 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       const profitP = document.createElement('p');
       if (profit > 0) {
         profitP.innerHTML = `Result: <span class="profit">+ $${profit.toFixed(2)}</span>`;
-      } else if (loss > 0) {
+      } else if (lossToDisplay > 0) {
         // Prefer the explicit lossToDisplay if available, otherwise use the
         // computed loss (both are positive numbers). Fallback to stakeAmount.
-        const displayLoss = (typeof lossToDisplay === 'number' && lossToDisplay > 0) ? lossToDisplay : (loss > 0 ? loss : Number(stakeAmount));
+        const displayLoss = (typeof lossToDisplay === 'number' && lossToDisplay > 0) ? lossToDisplay : (lossToDisplay > 0 ? lossToDisplay : Number(stakeAmount));
         profitP.innerHTML = `Result: <span class="loss">- $${Number(displayLoss).toFixed(2)}</span>`;
       } else {
         profitP.innerHTML = `Result: <span class="amount">$0.00</span>`;
