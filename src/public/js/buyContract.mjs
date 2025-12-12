@@ -580,11 +580,11 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     }
 
     // Capture ending balance after buy
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise(r => setTimeout(r, 1500));
 
     let endingBalance = null;
     if (buyResp.buy && (buyResp.buy.balance_after !== undefined || buyResp.buy.account_balance !== undefined)) {
-      await new Promise(r => setTimeout(r, 500));
+      await new Promise(r => setTimeout(r, 1500));
       console.debug("DEBUG buyContract - waited 1s for contract settlement");
       const finalBal = await sendJson({ balance: 1 });
       if (finalBal) {
