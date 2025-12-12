@@ -549,8 +549,8 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     console.log("🎉 Contract bought successfully:", buyResp);
 
     // Wait 3 seconds to allow contract to settle before fetching final balance
-    await new Promise(r => setTimeout(r, 1000));
-    console.debug("DEBUG buyContract - waited 1s for contract settlement");
+    await new Promise(r => setTimeout(r, 3000));
+    console.log("DEBUG buyContract - waited 1s for contract settlement");
 
     // Robust balance parsing helpers
     const parseNumeric = (v) => {
