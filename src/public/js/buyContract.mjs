@@ -174,7 +174,6 @@ function subscribeOnce(payload, timeoutMs = 8000) {
 
 // --- Automation Mode Control ---
 let isAutomationEnabled = false;
-let automationInterval = null;
 
 export function setAutomationMode(enabled) {
   isAutomationEnabled = enabled;
@@ -320,7 +319,6 @@ async function waitForFirstTick(symbol) {
   try {
     const msg = await subscribeOnce({ ticks: symbol });
     if (msg && msg.tick && msg.tick.quote !== undefined) {
-      console.log("📈 First tick received:", msg.tick.quote);
       return msg.tick.quote;
     }
     throw new Error("Invalid tick message");
@@ -349,7 +347,6 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
           console.warn("Authorization failed:", authResp.error);
           // continue or abort depending on your preference; here we continue and let proposal fail if unauthorized
         } else {
-          console.log("Authorized before proposal (masked token).");
           const cur2 = parseCurrencyFromAuth(authResp);
           if (cur2) {
             defaultCurrency = cur2;
@@ -361,9 +358,6 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       }
     }
 
-    console.log(`🚀 Preparing trade for ${symbol} (${tradeType})...`);
-    console.log("⏳ Subscribing to live ticks before requesting proposal…");
-
     // 1) Get live tick
     let livePrice;
     try {
@@ -373,7 +367,6 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
         return;
     }
 
-    console.log("🔥 Using live tick:", livePrice);
 
     // 2) Build PROPOSAL object
     const proposal = {
@@ -398,7 +391,6 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     let proposalResp;
     try {
         proposalResp = await sendJson(proposal);
-        console.log("Proposal response:", proposalResp);
     } catch (err) {
         console.error("❌ Proposal request failed:", err);
         return;
@@ -417,9 +409,6 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     }
     const propId = prop.id;
     const askPrice = prop.ask_price ?? prop.ask_price; // use ask_price if present
-
-    console.log("🆔 Proposal ID:", propId);
-    console.log("💵 Ask Price:", askPrice);
 
     // 4) BUY CONTRACT
     // Capture starting balance immediately before attempting the buy so we
@@ -603,21 +592,16 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     let endingBalance = null;
     if (buyResp.buy && (buyResp.buy.balance_after !== undefined || buyResp.buy.account_balance !== undefined)) {
       await new Promise(r => setTimeout(r, 1000));
-      console.debug("DEBUG buyContract - waited 1s for contract settlement");
       const finalBal = await sendJson({ balance: 1 });
       if (finalBal) {
         endingBalance = firstNumeric([finalBal.balance.balance, finalBal.account_balance, finalBal.buy?.balance, finalBal.buy?.account_balance]);
       }
     };
 
-    // Debug: log starting/ending balances detected
-    try {
-      console.log("DEBUG buyContract - startingBalance:", startingBalance, "endingBalance:", endingBalance);
-    } catch (e) {}
+   
 
     // If we have both balances and the ending balance decreased by at least a tiny epsilon, treat as a loss
     const isBalanceLoss = (startingBalance !== null && endingBalance !== null && endingBalance + 1e-9 < startingBalance);
-    try { console.log("DEBUG buyContract - isBalanceLoss check -> startingBalance:", startingBalance, "endingBalance:", endingBalance, "isBalanceLoss:", isBalanceLoss); } catch(e) {}
 
     // --- Show popup with profit / loss and low-balance info ---
     try {
@@ -658,35 +642,6 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
         profit = -Math.abs(+(referenceBalance - endingBalance).toFixed(2));
       }
 
-      // Debug: detailed decision trace for profit/loss detection
-      try {
-        console.log("DEBUG buyContract - decision trace:", {
-          stakeAmount,
-          buyPrice,
-          payout,
-          balanceCandidate,
-          startingBalance,
-          endingBalance,
-          referenceBalance,
-          isBalanceLoss,
-          lossToDisplay,
-          computedProfit: profit
-        });
-      } catch (e) {}
-      // Debug: log key financial variables for troubleshooting
-      try {
-        console.log("DEBUG buyContract - stakeAmount:", stakeAmount,
-          "buyPrice:", buyPrice,
-          "payout:", payout,
-          "balanceCandidate:", balanceCandidate,
-          "startingBalance:", startingBalance,
-          "endingBalance:", endingBalance,
-          "computedProfit:", profit,
-          "lossToDisplay:", lossToDisplay,
-          "buyResp:", buyResp);
-      } catch (e) {}
-      
-
       // Build popup content
       const overlay = document.createElement('div');
       overlay.className = 'trade-popup-overlay';
@@ -711,8 +666,6 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       popup.appendChild(payoutP);
 
       const profitP = document.createElement('p');
-      // Log which display branch we'll use
-      try { console.log("DEBUG buyContract - display branch check -> profit:", profit, "lossToDisplay:", lossToDisplay); } catch(e) {}
 
       if (profit > 0) {
         profitP.innerHTML = `Result: <span class="profit">+ $${profit.toFixed(2)}</span>`;
@@ -748,7 +701,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       try { document.body.appendChild(overlay); } catch (e) { console.warn('Could not show popup:', e); }
 
       // Auto-dismiss after 8 seconds
-      setTimeout(() => { try { overlay.remove(); } catch (e) {} }, 8000);
+      setTimeout(() => { try { overlay.remove(); } catch (e) {} }, 10000);
     } catch (err) {
       console.warn('Could not build trade popup:', err);
     }
