@@ -579,6 +579,24 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       ]);
     }
 
+    // Try to determine account balance from response fields if present (current balance candidate)
+    let balanceCandidate = firstNumeric([
+      buyResp.buy?.balance,
+      buyResp.balance,
+      buyResp.account_balance,
+      buyResp.buy?.account_balance,
+    ]);
+
+    // As a best-effort, attempt to request balance from server (optional and non-blocking)
+    if (balanceCandidate === null) {
+      try {
+        const balResp = await sendJson({ balance: 1 });
+        if (balResp) balanceCandidate = firstNumeric([balResp.balance.balance, balResp.account_balance]);
+      } catch (e) {
+        // ignore if balance request not supported
+      }
+    }
+
     // Capture ending balance after buy
     await new Promise(r => setTimeout(r, 1000));
 
@@ -614,24 +632,6 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
 
       // payout — total return if contract wins (usually includes stake)
       const payout = Number(buyInfo.payout ?? buyInfo.payout_amount ?? buyInfo.payoutValue ?? 0) || 0;
-
-      // Try to determine account balance from response fields if present (current balance candidate)
-      let balanceCandidate = firstNumeric([
-        buyResp.buy?.balance,
-        buyResp.balance,
-        buyResp.account_balance,
-        buyResp.buy?.account_balance,
-      ]);
-
-      // As a best-effort, attempt to request balance from server (optional and non-blocking)
-      if (balanceCandidate === null) {
-        try {
-          const balResp = await sendJson({ balance: 1 });
-          if (balResp) balanceCandidate = firstNumeric([balResp.balance.balance, balResp.account_balance]);
-        } catch (e) {
-          // ignore if balance request not supported
-        }
-      }
 
       // Compute profit as balance delta when possible (ending - starting).
       // Fallback to comparing endingBalance with balanceCandidate, then to payout-stake.
