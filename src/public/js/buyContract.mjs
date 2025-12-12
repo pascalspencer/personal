@@ -632,24 +632,13 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       // Compute profit as balance delta when possible (ending - starting).
       // Fallback to comparing endingBalance with balanceCandidate, then to payout-stake.
       let profit = 0;
-      if (startingBalance !== null && endingBalance !== null) {
-        profit = +(endingBalance - startingBalance).toFixed(2);
-      } else if (balanceCandidate !== null && endingBalance !== null) {
-        profit = +(endingBalance - balanceCandidate).toFixed(2);
-      } else if (!Number.isNaN(payout)) {
-        profit = +(payout - stakeAmount).toFixed(2);
-      } else {
-        profit = 0;
-      }
-
-      // For backward compatibility compute a lossToDisplay (positive number)
-      // when referenceBalance > endingBalance. We'll display the stake as the
-      // loss amount when profit < 0 per the user's request.
       let lossToDisplay = null;
-      const referenceBalance = (startingBalance !== null) ? startingBalance : balanceCandidate;
-      if (referenceBalance !== null && endingBalance !== null && endingBalance + 1e-9 < referenceBalance) {
-        lossToDisplay = +(referenceBalance - endingBalance).toFixed(2);
+      if (startingBalance !== null && endingBalance !== null && balanceCandidate !==null && endingBalance > startingBalance) {
+        profit = +(endingBalance - startingBalance || endingBalance - balanceCandidate || payout - stakeAmount).toFixed(2);
+      } else if (startingBalance !== null && endingBalance !== null && balanceCandidate !==null && startingBalance > endingBalance) {
+        lossToDisplay = (startingBalance - endingBalance || balanceCandidate - endingBalance || stakeAmount).toFixed(2);
       }
+      
 
       // Build popup content
       const overlay = document.createElement('div');
@@ -678,8 +667,6 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       if (profit > 0) {
         profitP.innerHTML = `Result: <span class="profit">+ $${profit.toFixed(2)}</span>`;
       } else if (lossToDisplay > 0) {
-        // Prefer the explicit lossToDisplay if available, otherwise use the
-        // computed loss (both are positive numbers). Fallback to stakeAmount.
         const displayLoss = (typeof lossToDisplay === 'number' && lossToDisplay > 0) ? lossToDisplay : (lossToDisplay > 0 ? lossToDisplay : Number(stakeAmount));
         profitP.innerHTML = `Result: <span class="loss">- $${Number(displayLoss).toFixed(2)}</span>`;
       } else {
