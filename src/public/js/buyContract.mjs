@@ -631,12 +631,27 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
 
       // Compute profit as balance delta when possible (ending - starting).
       // Fallback to comparing endingBalance with balanceCandidate, then to payout-stake.
-      let profit = 0;
+      let profit = null;
+      if (startingBalance !== null && endingBalance !== null) {
+        profit = endingBalance - startingBalance;
+      } else if (endingBalance !== null && balanceCandidate !== null) {
+        profit = endingBalance - balanceCandidate;
+      } else if (!Number.isNaN(payout)) {
+        profit = payout - stakeAmount;
+      } else {
+        profit = 0;
+      }
+      profit = +profit.toFixed(2);
+
+      // Determine lossToDisplay: if endingBalance is lower than a reference
+      // (prefer startingBalance, otherwise balanceCandidate) then display the
+      // stake as the loss per user's request.
       let lossToDisplay = null;
-      if (startingBalance !== null && endingBalance !== null && balanceCandidate !==null && endingBalance > startingBalance) {
-        profit = +(endingBalance - startingBalance || endingBalance - balanceCandidate || payout - stakeAmount).toFixed(2);
-      } else if (startingBalance !== null && endingBalance !== null && balanceCandidate !==null && startingBalance > endingBalance) {
-        lossToDisplay = (startingBalance - endingBalance || balanceCandidate - endingBalance || stakeAmount).toFixed(2);
+      const referenceBalance = (startingBalance !== null) ? startingBalance : balanceCandidate;
+      if (referenceBalance !== null && endingBalance !== null && endingBalance + 1e-9 < referenceBalance) {
+        lossToDisplay = Number(stakeAmount);
+        // Ensure profit reflects the negative delta for internal logic
+        profit = -Math.abs(+(referenceBalance - endingBalance).toFixed(2));
       }
       
 
