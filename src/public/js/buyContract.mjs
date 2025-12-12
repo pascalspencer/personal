@@ -69,14 +69,23 @@ connection.onmessage = (evt) => {
   if (id && subscriptions.has(id)) {
     const sub = subscriptions.get(id);
     // handle tick responses streaming from a subscribe call
+    // If this is a tick streaming message, resolve with the tick and forget it
     if (msg.tick) {
-      // resolve subscription promise with first quote (then send forget)
       try { connection.send(JSON.stringify({ forget: msg.tick.id })); } catch (e) {}
       clearTimeout(sub.timeout);
       sub.resolve(msg);
       subscriptions.delete(id);
       return;
     }
+
+    // If this is a proposal_open_contract (or other streaming update), resolve as well
+    if (msg.proposal_open_contract || msg.proposal || msg.contract || msg.sell) {
+      clearTimeout(sub.timeout);
+      sub.resolve(msg);
+      subscriptions.delete(id);
+      return;
+    }
+
     // if error on subscription
     if (msg.error) {
       clearTimeout(sub.timeout);
