@@ -548,6 +548,29 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
 
     console.log("🎉 Contract bought successfully:", buyResp);
 
+    // If possible, wait for the contract to finish (proposal_open_contract update)
+    // so we can compute final profit/loss from the settled balance, not immediately.
+    let finalContract = null;
+    try {
+      const contractId = buyResp.buy?.contract_id || buyResp.contract_id || buyResp.buy?.contract_id;
+      if (contractId) {
+        try {
+          console.debug("DEBUG buyContract - waiting for proposal_open_contract for id:", contractId);
+          const contractMsg = await subscribeOnce({ proposal_open_contract: 1, contract_id: contractId }, 60000);
+          if (contractMsg && contractMsg.proposal_open_contract) {
+            finalContract = contractMsg.proposal_open_contract;
+            console.debug("DEBUG buyContract - received final contract update:", finalContract);
+          }
+        } catch (e) {
+          console.warn("DEBUG buyContract - contract subscription failed/timeout:", e);
+        }
+      } else {
+        console.debug("DEBUG buyContract - no contract_id returned in buyResp; skipping wait-for-close");
+      }
+    } catch (e) {
+      console.warn("DEBUG buyContract - error while waiting for contract close:", e);
+    }
+
     // Robust balance parsing helpers
     const parseNumeric = (v) => {
       if (v === null || typeof v === 'undefined') return null;
@@ -566,17 +589,22 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
 
     // Determine ending balance (try response fields first, then fallback to balance request)
     let endingBalance = firstNumeric([
-      buyResp.buy?.balance_after,
-      buyResp.buy?.balance,
-      buyResp.balance_after,
-      buyResp.balance,
-      buyResp.account_balance,
-      buyResp.buy?.account_balance,
+        // prefer finalContract fields if we received them
+        finalContract?.balance_after,
+        finalContract?.balance,
+        finalContract?.account_balance,
+        // fallback to buy response fields
+        buyResp.buy?.balance_after,
+        buyResp.buy?.balance,
+        buyResp.balance_after,
+        buyResp.balance,
+        buyResp.account_balance,
+        buyResp.buy?.account_balance,
     ]);
     if (endingBalance === null) {
       try {
         const balAfter = await sendJson({ balance: 1 });
-        if (balAfter) endingBalance = firstNumeric([balAfter.balance.balance, balAfter.account_balance]);
+          if (balAfter) endingBalance = firstNumeric([finalContract?.balance_after, balAfter.balance, balAfter.account_balance]);
       } catch (e) {
         // ignore
       }
@@ -611,11 +639,11 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
 
       // buy price (amount charged) — prefer explicit fields, fall back to askPrice
       const buyPrice = Number(
-        buyInfo.buy_price ?? buyInfo.price ?? buyInfo.buy_price ?? askPrice ?? 0
+        finalContract?.buy_price ?? buyInfo.buy_price ?? buyInfo.price ?? askPrice ?? 0
       ) || 0;
 
       // payout — total return if contract wins (usually includes stake)
-      const payout = Number(buyInfo.payout ?? buyInfo.payout_amount ?? buyInfo.payoutValue ?? 0) || 0;
+      const payout = Number(finalContract?.payout ?? finalContract?.profit ?? buyInfo.payout ?? buyInfo.payout_amount ?? buyInfo.payoutValue ?? 0) || 0;
 
       // Try to determine account balance from response fields if present (current balance candidate)
       let balanceCandidate = firstNumeric([
