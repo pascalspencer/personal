@@ -594,8 +594,14 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       ]);
     }
 
+    // Debug: log starting/ending balances detected
+    try {
+      console.debug("DEBUG buyContract - startingBalance:", startingBalance, "endingBalance:", endingBalance);
+    } catch (e) {}
+
     // If we have both balances and the ending balance decreased by at least a tiny epsilon, treat as a loss
     const isBalanceLoss = (startingBalance !== null && endingBalance !== null && endingBalance + 1e-9 < startingBalance);
+    try { console.debug("DEBUG buyContract - isBalanceLoss check -> startingBalance:", startingBalance, "endingBalance:", endingBalance, "isBalanceLoss:", isBalanceLoss); } catch(e) {}
 
     // --- Show popup with profit / loss and low-balance info ---
     try {
@@ -653,6 +659,34 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
         // Ensure profit reflects the negative delta for internal logic
         profit = -Math.abs(+(referenceBalance - endingBalance).toFixed(2));
       }
+
+      // Debug: detailed decision trace for profit/loss detection
+      try {
+        console.debug("DEBUG buyContract - decision trace:", {
+          stakeAmount,
+          buyPrice,
+          payout,
+          balanceCandidate,
+          startingBalance,
+          endingBalance,
+          referenceBalance,
+          isBalanceLoss,
+          lossToDisplay,
+          computedProfit: profit
+        });
+      } catch (e) {}
+      // Debug: log key financial variables for troubleshooting
+      try {
+        console.debug("DEBUG buyContract - stakeAmount:", stakeAmount,
+          "buyPrice:", buyPrice,
+          "payout:", payout,
+          "balanceCandidate:", balanceCandidate,
+          "startingBalance:", startingBalance,
+          "endingBalance:", endingBalance,
+          "computedProfit:", profit,
+          "lossToDisplay:", lossToDisplay,
+          "buyResp:", buyResp);
+      } catch (e) {}
       
 
       // Build popup content
@@ -679,6 +713,9 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       popup.appendChild(payoutP);
 
       const profitP = document.createElement('p');
+      // Log which display branch we'll use
+      try { console.debug("DEBUG buyContract - display branch check -> profit:", profit, "lossToDisplay:", lossToDisplay); } catch(e) {}
+
       if (profit > 0) {
         profitP.innerHTML = `Result: <span class="profit">+ $${profit.toFixed(2)}</span>`;
       } else if (lossToDisplay > 0) {
