@@ -548,9 +548,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
 
     console.log("🎉 Contract bought successfully:", buyResp);
 
-    // Wait 3 seconds to allow contract to settle before fetching final balance
-    await new Promise(r => setTimeout(r, 1000));
-    console.debug("DEBUG buyContract - waited 1s for contract settlement");
+   
 
     // Robust balance parsing helpers
     const parseNumeric = (v) => {
@@ -567,11 +565,16 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       }
       return null;
     };
-
-    // Determine ending balance (try response fields first, then fallback to balance request)
-    let endingBalance = firstNumeric([
-      buyResp.buy?.balance_after,
-    ]);
+    // 5) FETCH ENDING BALANCE
+    let endingBalance = null;
+    if (buyResp.buy && (buyResp.buy.balance_after !== undefined || buyResp.buy.account_balance !== undefined)) {
+      await new Promise(r => setTimeout(r, 1000));
+      console.debug("DEBUG buyContract - waited 1s for contract settlement");
+      const finalBal = await sendJson({ balance: 1 });
+      if (finalBal) {
+        endingBalance = firstNumeric([finalBal.balance.balance, finalBal.account_balance, finalBal.buy?.balance, finalBal.buy?.account_balance]);
+      }
+    };
 
     // If startingBalance wasn't captured before buy, try to extract it from the buy response
     if (startingBalance === null) {
