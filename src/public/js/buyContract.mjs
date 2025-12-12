@@ -427,9 +427,12 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     let startingBalance = null;
     try {
         const balBefore = await sendJson({ balance: 1 });
-        if (balBefore && typeof balBefore.balance !== 'undefined') {
-          const parsed = Number(balBefore.balance);
-          if (!Number.isNaN(parsed)) startingBalance = parsed;
+        if (balBefore) {
+          const candidates = [balBefore.balance, balBefore.balance_after, balBefore.account_balance, balBefore.balance_before];
+          for (const c of candidates) {
+            if (typeof c === 'number') { startingBalance = c; break; }
+            if (typeof c === 'string' && !Number.isNaN(Number(c))) { startingBalance = Number(c); break; }
+          }
         }
     } catch (e) {
       // ignore balance read errors
@@ -626,10 +629,6 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
         }
       }
 
-      // Compute profit and loss as separate positive numbers.
-      // Prefer balance delta (ending - starting) when available; otherwise use
-      // a comparison between endingBalance and balanceCandidate; finally fall
-      // back to payout-based computation.
       let profit = 0;
       let loss = 0;
       if (startingBalance !== null && endingBalance !== null) {
@@ -646,17 +645,10 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
         else if (p < 0) loss = +Math.abs(p).toFixed(2);
       }
 
-      // For backward compatibility, compute a lossToDisplay (positive number)
-      // from the best available reference (startingBalance or balanceCandidate)
-      // compared to endingBalance.
       let lossToDisplay = null;
       const referenceBalance = (startingBalance !== null) ? startingBalance : balanceCandidate;
       if (referenceBalance !== null && endingBalance !== null && endingBalance + 1e-9 < referenceBalance) {
-        // If the ending balance decreased compared with the reference, prefer
-        // showing the stake as the loss (user requested behavior).
         lossToDisplay = +(referenceBalance - endingBalance).toFixed(2);
-        // If the change in balance is detected and is lower than the reference,
-        // set `loss` to the stake amount as requested (display will show stake).
         if (typeof stakeAmount === 'number' && !Number.isNaN(stakeAmount)) {
           loss = Number(stakeAmount);
         } else {
