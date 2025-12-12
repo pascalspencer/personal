@@ -629,31 +629,26 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
         }
       }
 
+      // Compute profit as balance delta when possible (ending - starting).
+      // Fallback to comparing endingBalance with balanceCandidate, then to payout-stake.
       let profit = 0;
-      let loss = 0;
       if (startingBalance !== null && endingBalance !== null) {
-        const delta = +(endingBalance - startingBalance);
-        if (delta > 0) profit = +delta.toFixed(2);
-        else if (delta < 0) loss = +Math.abs(delta).toFixed(2);
+        profit = +(endingBalance - startingBalance).toFixed(2);
       } else if (balanceCandidate !== null && endingBalance !== null) {
-        const delta = +(endingBalance - balanceCandidate);
-        if (delta > 0) profit = +delta.toFixed(2);
-        else if (delta < 0) loss = +Math.abs(delta).toFixed(2);
+        profit = +(endingBalance - balanceCandidate).toFixed(2);
       } else if (!Number.isNaN(payout)) {
-        const p = +(payout - stakeAmount);
-        if (p > 0) profit = +p.toFixed(2);
-        else if (p < 0) loss = +Math.abs(p).toFixed(2);
+        profit = +(payout - stakeAmount).toFixed(2);
+      } else {
+        profit = 0;
       }
 
+      // For backward compatibility compute a lossToDisplay (positive number)
+      // when referenceBalance > endingBalance. We'll display the stake as the
+      // loss amount when profit < 0 per the user's request.
       let lossToDisplay = null;
       const referenceBalance = (startingBalance !== null) ? startingBalance : balanceCandidate;
       if (referenceBalance !== null && endingBalance !== null && endingBalance + 1e-9 < referenceBalance) {
         lossToDisplay = +(referenceBalance - endingBalance).toFixed(2);
-        if (typeof stakeAmount === 'number' && !Number.isNaN(stakeAmount)) {
-          loss = Number(stakeAmount);
-        } else {
-          loss = lossToDisplay;
-        }
       }
 
       // Build popup content
