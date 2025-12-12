@@ -428,7 +428,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     try {
         const balBefore = await sendJson({ balance: 1 });
         if (balBefore) {
-          const candidates = [balBefore.balance, balBefore.balance_after, balBefore.account_balance, balBefore.balance_before];
+          const candidates = [balBefore.balance.balance, balBefore.balance_after, balBefore.account_balance, balBefore.balance_before];
           for (const c of candidates) {
             if (typeof c === 'number') { startingBalance = c; break; }
             if (typeof c === 'string' && !Number.isNaN(Number(c))) { startingBalance = Number(c); break; }
@@ -576,7 +576,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     if (endingBalance === null) {
       try {
         const balAfter = await sendJson({ balance: 1 });
-        if (balAfter) endingBalance = firstNumeric([balAfter.balance, balAfter.account_balance]);
+        if (balAfter) endingBalance = firstNumeric([balAfter.balance.balance, balAfter.account_balance]);
       } catch (e) {
         // ignore
       }
@@ -629,7 +629,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       if (balanceCandidate === null) {
         try {
           const balResp = await sendJson({ balance: 1 });
-          if (balResp) balanceCandidate = firstNumeric([balResp.balance, balResp.account_balance]);
+          if (balResp) balanceCandidate = firstNumeric([balResp.balance.balance, balResp.account_balance]);
         } catch (e) {
           // ignore if balance request not supported
         }
