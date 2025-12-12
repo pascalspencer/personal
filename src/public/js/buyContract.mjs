@@ -95,7 +95,7 @@ connection.onmessage = (evt) => {
   }
 
   // Untracked messages (e.g., general updates) — log at debug level
-  // console.debug("Unmatched message:", msg);
+  // console.log("Unmatched message:", msg);
 };
 
 // --- Ping keep-alive ---
@@ -596,12 +596,12 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
 
     // Debug: log starting/ending balances detected
     try {
-      console.debug("DEBUG buyContract - startingBalance:", startingBalance, "endingBalance:", endingBalance);
+      console.log("DEBUG buyContract - startingBalance:", startingBalance, "endingBalance:", endingBalance);
     } catch (e) {}
 
     // If we have both balances and the ending balance decreased by at least a tiny epsilon, treat as a loss
     const isBalanceLoss = (startingBalance !== null && endingBalance !== null && endingBalance + 1e-9 < startingBalance);
-    try { console.debug("DEBUG buyContract - isBalanceLoss check -> startingBalance:", startingBalance, "endingBalance:", endingBalance, "isBalanceLoss:", isBalanceLoss); } catch(e) {}
+    try { console.log("DEBUG buyContract - isBalanceLoss check -> startingBalance:", startingBalance, "endingBalance:", endingBalance, "isBalanceLoss:", isBalanceLoss); } catch(e) {}
 
     // --- Show popup with profit / loss and low-balance info ---
     try {
@@ -662,7 +662,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
 
       // Debug: detailed decision trace for profit/loss detection
       try {
-        console.debug("DEBUG buyContract - decision trace:", {
+        console.log("DEBUG buyContract - decision trace:", {
           stakeAmount,
           buyPrice,
           payout,
@@ -677,7 +677,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       } catch (e) {}
       // Debug: log key financial variables for troubleshooting
       try {
-        console.debug("DEBUG buyContract - stakeAmount:", stakeAmount,
+        console.log("DEBUG buyContract - stakeAmount:", stakeAmount,
           "buyPrice:", buyPrice,
           "payout:", payout,
           "balanceCandidate:", balanceCandidate,
@@ -714,7 +714,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
 
       const profitP = document.createElement('p');
       // Log which display branch we'll use
-      try { console.debug("DEBUG buyContract - display branch check -> profit:", profit, "lossToDisplay:", lossToDisplay); } catch(e) {}
+      try { console.log("DEBUG buyContract - display branch check -> profit:", profit, "lossToDisplay:", lossToDisplay); } catch(e) {}
 
       if (profit > 0) {
         profitP.innerHTML = `Result: <span class="profit">+ $${profit.toFixed(2)}</span>`;
