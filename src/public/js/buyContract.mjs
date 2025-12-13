@@ -490,6 +490,14 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
             popup.appendChild(reqP);
           }
 
+          // If error code indicates insufficient balance, add highlighted note
+          if (err.code === 'InsufficientBalance' || /insufficient/i.test(err.message || '')) {
+            const low = document.createElement('p');
+            low.className = 'low-balance';
+            low.textContent = `Insufficient balance to buy this contract. Please top up your account.`;
+            popup.appendChild(low);
+          }
+
           const closeBtn = document.createElement('a');
           closeBtn.className = 'close-btn';
           closeBtn.href = '#';
@@ -614,33 +622,6 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
         // Ensure profit reflects the negative delta for internal logic
         profit = -Math.abs(+(referenceBalance - endingBalance).toFixed(2));
       }
-
-      // Attempt to parse current balance from error message or response
-        let parsedBalance = null;
-        // check common fields
-        const candidateFields = [buyResp.balance, buyResp.buy?.balance, buyResp.account_balance, buyResp.buy?.account_balance];
-        for (const c of candidateFields) {
-          if (typeof c === 'number') { parsedBalance = c; break; }
-          if (typeof c === 'string' && !Number.isNaN(Number(c))) { parsedBalance = Number(c); break; }
-        }
-        // parse from message like "Your account balance (0.00 USD) is insufficient"
-        if (parsedBalance === null && typeof err.message === 'string') {
-          const m = err.message.match(/\((\d+(?:\.\d+)?)\s*USD\)/i) || err.message.match(/balance\s*(\d+(?:\.\d+)?)/i);
-          if (m && m[1]) parsedBalance = Number(m[1]);
-        }
-        if (parsedBalance !== null) {
-          const balP = document.createElement('p');
-          balP.innerHTML = `Account balance: <span class="amount">$${Number(parsedBalance).toFixed(2)}</span>`;
-          popup.appendChild(balP);
-        }
-
-        // If error code indicates insufficient balance, add highlighted note
-        if (err.code === 'InsufficientBalance' || /insufficient/i.test(err.message || '')) {
-          const low = document.createElement('p');
-          low.className = 'low-balance';
-          low.textContent = `Insufficient balance to buy this contract. Please top up your account.`;
-          popup.appendChild(low);
-        }
 
       // Build popup content
       const overlay = document.createElement('div');
