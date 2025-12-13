@@ -660,7 +660,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
 
       if (balanceCandidate !== null) {
         const balP = document.createElement('p');
-        balP.innerHTML = `Account balance: <span class="amount">$${Number(balanceCandidate).toFixed(2)}</span>`;
+        balP.innerHTML = `Account balance: <span class="amount">$${Number(endingBalance).toFixed(2)}</span>`;
         popup.appendChild(balP);
 
         if (Number(balanceCandidate) < Number(price)) {
