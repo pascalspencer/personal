@@ -618,7 +618,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       // Attempt to parse current balance from error message or response
         let parsedBalance = null;
         // check common fields
-        const candidateFields = [buyResp.balance.balance, buyResp.buy?.balance, buyResp.account_balance, buyResp.buy?.account_balance];
+        const candidateFields = [buyResp.balance, buyResp.buy?.balance, buyResp.account_balance, buyResp.buy?.account_balance];
         for (const c of candidateFields) {
           if (typeof c === 'number') { parsedBalance = c; break; }
           if (typeof c === 'string' && !Number.isNaN(Number(c))) { parsedBalance = Number(c); break; }
