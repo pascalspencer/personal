@@ -4,7 +4,6 @@ import { getCurrentToken } from './popupMessages.mjs';
 const derivAppID = 61696;
 const connection = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${derivAppID}`);
 
-let api = null; // kept for compatibility checks in other codepaths
 const resultsContainer = document.getElementById("results-container");
 
 // request bookkeeping
@@ -26,80 +25,111 @@ function parseCurrencyFromAuth(resp) {
   return null;
 }
 
-// --- WebSocket lifecycle ---
-connection.onopen = function () {
-  api = connection; // mark as available for simple checks elsewhere
-  startPing();
-  console.log("WebSocket connection is fantastic.");
+    if (buyResp.error) {
+        console.error("❌ Buy error:", buyResp.error);
 
-  document.addEventListener("DOMContentLoaded", async () => {
-    const token = getCurrentToken();
-    if (!token) {
-      console.warn("No token found at authorization.");
-      return;
+        // If it's an insufficient-balance error and the account currency isn't USD,
+        // attempt a one-time fallback: request a new proposal using USD and try buying that.
+        try {
+          const err = buyResp.error;
+          const isInsufficient = err.code === 'InsufficientBalance' || /insufficient/i.test(err.message || '');
+          if (isInsufficient && defaultCurrency && defaultCurrency.toUpperCase() !== 'USD') {
+            console.debug('DEBUG buyContract - Insufficient balance in', defaultCurrency, '- trying USD fallback');
+            // build USD proposal (reuse original proposal but force USD)
+            const usdProposal = Object.assign({}, proposal, { currency: 'USD' });
+            try {
+              const propRespUsd = await sendJson(usdProposal);
+              console.debug('DEBUG buyContract - USD proposal response:', propRespUsd);
+              if (!propRespUsd.error && propRespUsd.proposal && propRespUsd.proposal.id) {
+                const usdPropId = propRespUsd.proposal.id;
+                const usdAsk = propRespUsd.proposal.ask_price ?? askPrice;
+                const buyRespUsd = await sendJson({ buy: usdPropId, price: usdAsk });
+                console.debug('DEBUG buyContract - USD buy response:', buyRespUsd);
+                if (!buyRespUsd.error) {
+                  // Success with USD — adopt this response and set currency for display
+                  buyResp = buyRespUsd;
+                  defaultCurrency = 'USD';
+                } else {
+                  // USD buy also failed — fall through to showing error below
+                  buyResp = buyRespUsd;
+                }
+              }
+            } catch (e) {
+              console.warn('DEBUG buyContract - USD fallback attempt failed:', e);
+            }
+          }
+        } catch (e) {
+          console.warn('DEBUG buyContract - error while attempting USD fallback:', e);
+        }
+
+        // After optional USD retry, if buyResp still contains an error, show the friendly popup
+        if (buyResp.error) {
+          try {
+            const err = buyResp.error;
+            const overlay = document.createElement('div');
+            overlay.className = 'trade-popup-overlay';
+
+            const popup = document.createElement('div');
+            popup.className = 'trade-popup';
+
+            const title = document.createElement('h3');
+            title.textContent = 'Trade Failed';
+            popup.appendChild(title);
+
+            const msgP = document.createElement('p');
+            msgP.textContent = err.message || 'Unable to complete buy request.';
+            popup.appendChild(msgP);
+
+            const echo = buyResp.echo_req || {};
+            const echoBuy = echo.buy || echo;
+            const reqPrice = echoBuy.price ?? echo.price ?? null;
+            if (reqPrice !== null && reqPrice !== undefined) {
+              const reqP = document.createElement('p');
+              reqP.innerHTML = `Required stake: <span class="amount">$${Number(reqPrice).toFixed(2)}</span>`;
+              popup.appendChild(reqP);
+            }
+
+            // Attempt to parse current balance from error message or response
+            let parsedBalance = null;
+            const candidateFields = [buyResp.balance, buyResp.buy?.balance, buyResp.account_balance, buyResp.buy?.account_balance];
+            for (const c of candidateFields) {
+              if (typeof c === 'number') { parsedBalance = c; break; }
+              if (typeof c === 'string' && !Number.isNaN(Number(c))) { parsedBalance = Number(c); break; }
+            }
+            if (parsedBalance === null && typeof err.message === 'string') {
+              const m = err.message.match(/\((\d+(?:\.\d+)?)\s*USD\)/i) || err.message.match(/balance\s*(\d+(?:\.\d+)?)/i);
+              if (m && m[1]) parsedBalance = Number(m[1]);
+            }
+            if (parsedBalance !== null) {
+              const balP = document.createElement('p');
+              balP.innerHTML = `Account balance: <span class="amount">$${Number(parsedBalance).toFixed(2)}</span>`;
+              popup.appendChild(balP);
+            }
+
+            if (err.code === 'InsufficientBalance' || /insufficient/i.test(err.message || '')) {
+              const low = document.createElement('p');
+              low.className = 'low-balance';
+              low.textContent = `Insufficient balance to buy this contract. Please top up your account.`;
+              popup.appendChild(low);
+            }
+
+            const closeBtn = document.createElement('a');
+            closeBtn.className = 'close-btn';
+            closeBtn.href = '#';
+            closeBtn.textContent = 'Close';
+            closeBtn.addEventListener('click', (ev) => { ev.preventDefault(); overlay.remove(); });
+            popup.appendChild(closeBtn);
+
+            overlay.appendChild(popup);
+            try { document.body.appendChild(overlay); } catch (e) { console.warn('Could not show error popup:', e); }
+            setTimeout(() => { try { overlay.remove(); } catch (e) {} }, 10000);
+          } catch (e) {
+            console.warn('Failed to build error popup:', e);
+          }
+        }
+
+        return buyResp;
     }
-
-    console.log("Authorizing with token (masked):", String(token).slice(0, 8));
-    try {
-      const resp = await sendJson({ authorize: token });
-      console.log("Authorize response:", resp);
-      const cur = parseCurrencyFromAuth(resp);
-      if (cur) {
-        defaultCurrency = cur;
-        console.log('Using currency from authorize:', defaultCurrency);
-      }
-    } catch (err) {
-      console.error("Authorization failed:", err);
-    }
-  });
-};
-
-connection.onerror = (err) => {
-  console.error("WebSocket error:", err);
-};
-
-connection.onmessage = (evt) => {
-  let msg;
-  try { msg = JSON.parse(evt.data); } catch (e) { return; }
-
-  const echo = msg.echo_req || {};
-  const id = echo.req_id;
-
-  // If this response belongs to a subscription and contains tick -> route to subscription
-  if (id && subscriptions.has(id)) {
-    const sub = subscriptions.get(id);
-    // handle tick responses streaming from a subscribe call
-    if (msg.tick) {
-      // resolve subscription promise with first quote (then send forget)
-      try { connection.send(JSON.stringify({ forget: msg.tick.id })); } catch (e) {}
-      clearTimeout(sub.timeout);
-      sub.resolve(msg);
-      subscriptions.delete(id);
-      return;
-    }
-    // if error on subscription
-    if (msg.error) {
-      clearTimeout(sub.timeout);
-      sub.reject(msg);
-      subscriptions.delete(id);
-      return;
-    }
-  }
-
-  // Normal single-response routing
-  if (id && pending.has(id)) {
-    const resolver = pending.get(id);
-    pending.delete(id);
-    resolver(msg);
-    return;
-  }
-
-  // Untracked messages (e.g., general updates) — log at debug level
-  // console.log("Unmatched message:", msg);
-};
-
-// --- Ping keep-alive ---
-let pingInterval = null;
 function startPing() {
   if (!connection || pingInterval) return;
   pingInterval = setInterval(() => {
