@@ -390,14 +390,74 @@ async function executeTrade(symbol, type = "DIGITOVER", barrier = 0, liveQuote =
     liveQuote,
     true
   );
+  // Build unified popup details similar to buyContract.mjs logic
   if (resp?.error) {
     const details = (resp.error && resp.error.message) ? resp.error.message : 'Trade failed';
     popup('Trade failed', details, 6000);
-  } else {
-    const buyInfo = resp.buy || resp;
-    const stakeAmt = Number(stakeInput.value || 0).toFixed(2);
-    const details = `Type: ${type}<br>Stake: $${stakeAmt}${barrier ? `<br>Barrier: ${barrier}` : ''}`;
-    popup('Trade opened', details, 5000);
+    return resp;
+  }
+
+  try {
+    const buyInfo = resp.buy || resp || {};
+    const parseNumeric = (v) => {
+      if (v === null || typeof v === 'undefined') return null;
+      if (typeof v === 'number') return v;
+      const n = Number(v);
+      return Number.isNaN(n) ? null : n;
+    };
+    const firstNumeric = (arr) => {
+      for (const v of arr) {
+        const p = parseNumeric(v);
+        if (p !== null) return p;
+      }
+      return null;
+    };
+
+    const stakeAmt = Number(stakeInput.value || 0) || 0;
+    const buyPrice = Number(buyInfo.buy_price ?? buyInfo.price ?? buyInfo.ask_price ?? 0) || 0;
+    const payout = Number(buyInfo.payout ?? buyInfo.payout_amount ?? buyInfo.payoutValue ?? 0) || 0;
+
+    // attempt to infer balances from response fields
+    const startingBalance = firstNumeric([
+      buyInfo.balance_before,
+      resp.balance_before,
+      resp.buy?.balance_before,
+      resp.buy?.balance,
+      resp.balance
+    ]);
+    const endingBalance = firstNumeric([
+      resp.buy?.balance_after,
+      resp.balance,
+      resp.account_balance,
+      resp.buy?.account_balance,
+    ]);
+
+    let profit = null;
+    if (startingBalance !== null && endingBalance !== null) {
+      profit = endingBalance - startingBalance;
+    } else if (!Number.isNaN(payout)) {
+      profit = payout - stakeAmt;
+    } else {
+      profit = 0;
+    }
+    profit = +profit.toFixed(2);
+
+    let resultHtml = '';
+    if (profit > 0) {
+      resultHtml = `Result: <span class="profit">+ $${profit.toFixed(2)}</span>`;
+    } else if (profit < 0) {
+      const lossDisplay = Math.abs(profit) > 0 ? Math.abs(profit) : stakeAmt;
+      resultHtml = `Result: <span class="loss">- $${Number(lossDisplay).toFixed(2)}</span>`;
+    } else {
+      resultHtml = `Result: <span class="amount">$0.00</span>`;
+    }
+
+    const bal = endingBalance !== null ? `<br>Account balance: $${Number(endingBalance).toFixed(2)}` : '';
+
+    const details = `Type: ${type}<br>Stake: $${Number(stakeAmt).toFixed(2)}${barrier ? `<br>Barrier: ${barrier}` : ''}<br>Buy price: $${Number(buyPrice).toFixed(2)}<br>Payout: $${Number(payout).toFixed(2)}<br>${resultHtml}${bal}`;
+    popup('Trade Result', details, 8000);
+  } catch (e) {
+    popup('Trade Result', `Type: ${type}<br>Stake: $${Number(stakeInput.value || 0).toFixed(2)}`, 5000);
   }
 
   return resp;
