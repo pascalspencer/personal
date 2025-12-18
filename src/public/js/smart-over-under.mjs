@@ -113,6 +113,14 @@ document.addEventListener("DOMContentLoaded", () => {
     smartContainer.classList.remove('visible');
   }
 
+  // Watch for the `display` changes set by `smart-ui.mjs` tabs and
+  // activate smart-mode when the smart UI becomes visible.
+  const observer = new MutationObserver(() => {
+    const visible = window.getComputedStyle(smartContainer).display !== 'none';
+    if (visible) showSmartMode(); else hideSmartMode();
+  });
+  observer.observe(smartContainer, { attributes: true, attributeFilter: ['style', 'class'] });
+
   document.getElementById("run-smart").onclick = runSmart;
   document.getElementById("stop-smart").onclick = stopSmart;
 });
