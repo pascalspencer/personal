@@ -26,16 +26,15 @@ document.addEventListener("DOMContentLoaded", () => {
         <label for="stake">Stake (minimum 0.35):</label>
         <input type="number" id="stake" min="0.35" step="0.01" value="0.35">
 
-        <div class="toggle-container">
-        <span>Single</span>
-        <input type="checkbox" id="single-toggle" checked>
-        <span>Bulk</span>
-        <input type="checkbox" id="bulk-toggle">
-      </div>
         <div class="smart-buttons">
           <button id="run-smart">RUN</button>
           <button id="stop-smart">STOP</button>
         </div>
+      </div>
+
+      <div class="toggle-container">
+        <label class="small-toggle"><span>Single</span><input type="checkbox" id="single-toggle" checked></label>
+        <label class="small-toggle"><span>Bulk</span><input type="checkbox" id="bulk-toggle"></label>
       </div>
 
       <div id="smart-results"></div>
