@@ -149,15 +149,38 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("stop-smart").onclick = stopSmart;
 });
 
-function popup(msg) {
-  const overlay = document.createElement("div");
-  overlay.className = "trade-popup-overlay";
-  overlay.innerHTML = `
-    <div class="trade-popup">
-      <h3>${msg}</h3>
-    </div>`;
-  document.body.appendChild(overlay);
-  setTimeout(() => overlay.remove(), 2000);
+function popup(msg, details = null, timeout = 2000) {
+  try {
+    const overlay = document.createElement('div');
+    overlay.className = 'trade-popup-overlay';
+
+    const popup = document.createElement('div');
+    popup.className = 'trade-popup';
+
+    const title = document.createElement('h3');
+    title.textContent = msg;
+    popup.appendChild(title);
+
+    if (details) {
+      const p = document.createElement('p');
+      p.innerHTML = details;
+      popup.appendChild(p);
+    }
+
+    const closeBtn = document.createElement('a');
+    closeBtn.className = 'close-btn';
+    closeBtn.href = '#';
+    closeBtn.textContent = 'Close';
+    closeBtn.addEventListener('click', (ev) => { ev.preventDefault(); try { overlay.remove(); } catch (e) {} });
+    popup.appendChild(closeBtn);
+
+    overlay.appendChild(popup);
+    try { document.body.appendChild(overlay); } catch (e) { console.warn('Could not show popup:', e); }
+
+    if (timeout > 0) setTimeout(() => { try { overlay.remove(); } catch (e) {} }, timeout);
+  } catch (e) {
+    console.warn('Popup render failed:', e);
+  }
 }
 
 async function runSmart() {
