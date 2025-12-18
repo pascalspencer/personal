@@ -12,6 +12,58 @@ body {
   margin: 0;
   padding: 0;
 }
+#menu-btn {
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  font-size: 28px;
+  cursor: pointer;
+  z-index: 10001;
+}
+
+#side-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 260px;
+  height: 100%;
+  background: #ffffff;
+  box-shadow: 2px 0 20px rgba(0,0,0,0.15);
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+  z-index: 10000;
+}
+
+#side-panel.open {
+  transform: translateX(0);
+}
+
+.panel-header {
+  padding: 15px;
+  text-align: right;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.panel-tabs {
+  display: flex;
+  flex-direction: column;
+}
+
+.tab-btn {
+  padding: 15px;
+  border: none;
+  background: none;
+  text-align: left;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.tab-btn.active {
+  background: #00bbf0;
+  color: #fff;
+}
+
 
 form {
   width: 600px;

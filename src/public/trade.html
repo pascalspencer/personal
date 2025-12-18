@@ -68,6 +68,22 @@
   </style>
 </head>
 <body>
+  <div id="auto-analysis"></div>
+  <!-- Hamburger -->
+  <div id="menu-btn">☰</div>
+
+  <!-- Side Panel -->
+  <div id="side-panel" class="closed">
+    <div class="panel-header">
+      <span id="panel-close">✕</span>
+    </div>
+
+    <div class="panel-tabs">
+      <button class="tab-btn active" data-tab="auto">Auto Analysis</button>
+      <button class="tab-btn" data-tab="smart">Smart Over/Under</button>
+    </div>
+  </div>
+
   <form id="trade-form" aria-labelledby="form-heading">
     <h1 id="form-heading">Zodiac Algo-trade</h1>
 
@@ -149,9 +165,12 @@
 
   <div id="loading-message" aria-live="polite"></div>
   <div id="results-container"></div>
+  </div>
 
   <script type="module" src="/js/buyContract.mjs"></script>
   <script type="module" src="/js/formData.mjs"></script>
+  <script type="module" src="/js/smart-ui.mjs"></script>
+  <script type="module" src="/js/smart-over-under.mjs"></script>
 
   <script type="module">
     // Auto-populate Market → Submarket Dropdowns
