@@ -330,15 +330,13 @@ async function runBulkOnce(symbol) {
         // shouldn't happen since we use allSettled, but guard anyway
       }
 
+      let success = 0, failed = 0;
       results.forEach(r => {
-        if (r.status === 'fulfilled' && !(r.value && r.value.error)) {
-          resultsBox.innerHTML += `<div class="profit">Trade opened</div>`;
-        } else {
-          resultsBox.innerHTML += `<div class="loss">Trade failed</div>`;
-        }
+        if (r.status === 'fulfilled' && !(r.value && r.value.error)) success++; else failed++;
       });
 
-      popup("Bulk trade executed");
+      const details = `Executed ${n} buys: <strong>${success} succeeded</strong>, <strong>${failed} failed</strong>`;
+      popup('Bulk trade executed', details, 6000);
       tradeLock = false;
 
       try { tickWs.close(); } catch (e) {}
@@ -391,13 +389,17 @@ async function executeTrade(symbol, type = "DIGITOVER", barrier = 0, liveQuote =
     barrier,
     liveQuote
   );
-
   if (resp?.error) {
-    resultsBox.innerHTML += `<div class="loss">Trade failed</div>`;
+    const details = (resp.error && resp.error.message) ? resp.error.message : 'Trade failed';
+    popup('Trade failed', details, 6000);
   } else {
-    resultsBox.innerHTML += `<div class="profit">Trade opened</div>`;
-    popup("Trade successful");
+    const buyInfo = resp.buy || resp;
+    const stakeAmt = Number(stakeInput.value || 0).toFixed(2);
+    const details = `Type: ${type}<br>Stake: $${stakeAmt}${barrier ? `<br>Barrier: ${barrier}` : ''}`;
+    popup('Trade opened', details, 5000);
   }
+
+  return resp;
 }
 
 function stopSmart() {
