@@ -386,6 +386,14 @@ body.smart-mode > #side-panel.open { display: block; visibility: visible; transf
   #smart-over-under { width: calc(100% - 48px); max-width: calc(100% - 48px); margin: 8px 24px; padding: 10px; }
 }
 
+/* prevent hamburger overlap on very small screens by offsetting panel content */
+@media (max-width: 480px) {
+  /* push smart panel content right to leave space for fixed hamburger */
+  #smart-over-under { margin-left: 72px; padding-left: 12px; }
+  /* ensure the menu button remains above content */
+  #menu-btn { z-index: 10002; }
+}
+
 /* Clean toggle layout below price */
 #smart-over-under .toggle-container {
   display: flex;
