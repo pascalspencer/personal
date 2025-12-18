@@ -12,58 +12,35 @@ let singleToggle, bulkToggle, resultsBox;
 document.addEventListener("DOMContentLoaded", () => {
   // UI Injection
   document.body.insertAdjacentHTML("beforeend", `
-    <section id="smart-over-under" aria-hidden="true">
-      <div class="smart-card">
-        <header class="smart-header">
-          <h2 class="smart-title">Smart Over / Under</h2>
-          <p class="smart-sub">Quickly execute digit strategies with clear controls and results.</p>
-        </header>
+    <div id="smart-over-under" style="display:none">
+      <h2>Smart Over / Under</h2>
 
-        <form class="smart-form" onsubmit="event.preventDefault()" aria-label="Smart Over Under Controls">
-          <div class="row two-cols">
-            <div class="field">
-              <label for="over-digit">Over</label>
-              <select id="over-digit" aria-label="Over digit"></select>
-            </div>
-            <div class="field">
-              <label for="under-digit">Under</label>
-              <select id="under-digit" aria-label="Under digit"></select>
-            </div>
-          </div>
+      <label>Over:</label>
+      <select id="over-digit"></select>
 
-          <div class="row two-cols">
-            <div class="field">
-              <label for="tick-count">Number of ticks</label>
-              <input type="number" id="tick-count" min="1" value="5" aria-label="Number of ticks">
-            </div>
-            <div class="field">
-              <label for="stake">Stake (min $0.35)</label>
-              <input type="number" id="stake" min="0.35" step="0.01" value="0.35" aria-label="Stake amount">
-            </div>
-          </div>
+      <label>Under:</label>
+      <select id="under-digit"></select>
 
-          <div class="row toggles" role="group" aria-label="Mode toggles">
-            <label class="toggle">
-              <input type="checkbox" id="single-toggle" checked aria-checked="true">
-              <span>Single (sequential)</span>
-            </label>
-            <label class="toggle">
-              <input type="checkbox" id="bulk-toggle" aria-checked="false">
-              <span>Bulk (concurrent)</span>
-            </label>
-          </div>
+      <label>Number of ticks:</label>
+      <input type="number" id="tick-count" min="1" value="5">
 
-          <div class="row actions">
-            <div class="smart-buttons">
-              <button id="run-smart" class="btn primary" type="button">Run</button>
-              <button id="stop-smart" class="btn" type="button">Stop</button>
-            </div>
-          </div>
-        </form>
-
-        <div id="smart-results" class="smart-results" aria-live="polite"></div>
+      <div class="toggle-container">
+        <label class="small-toggle"><span>Single</span><input type="checkbox" id="single-toggle" checked></label>
+        <label class="small-toggle"><span>Bulk</span><input type="checkbox" id="bulk-toggle"></label>
       </div>
-    </section>
+
+      <div class="stake-row">
+        <label for="stake">Stake (minimum 0.35):</label>
+        <input type="number" id="stake" min="0.35" step="0.01" value="0.35">
+
+        <div class="smart-buttons">
+          <button id="run-smart">RUN</button>
+          <button id="stop-smart">STOP</button>
+        </div>
+      </div>
+
+      <div id="smart-results"></div>
+    </div>
   `);
 
   overDigit = document.getElementById("over-digit");
@@ -100,20 +77,6 @@ document.addEventListener("DOMContentLoaded", () => {
   bulkToggle.addEventListener('change', updateToggles);
   // ensure initial state
   updateToggles();
-
-  // Accessibility & validation: enable/disable Run button based on stake and tickCount
-  const runBtn = document.getElementById('run-smart');
-  const stopBtn = document.getElementById('stop-smart');
-  function validateInputs() {
-    const stakeVal = Number(stakeInput.value || 0);
-    const ticksVal = Number(tickCount.value || 0);
-    const disabled = (isNaN(stakeVal) || stakeVal < 0.35) || (isNaN(ticksVal) || ticksVal < 1);
-    runBtn.disabled = disabled;
-    runBtn.setAttribute('aria-disabled', disabled ? 'true' : 'false');
-  }
-  stakeInput.addEventListener('input', validateInputs);
-  tickCount.addEventListener('input', validateInputs);
-  validateInputs();
 
   // Preserve references to original market/submarket parents so we can
   // restore them when switching back to Auto Analysis.
