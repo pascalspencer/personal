@@ -696,6 +696,21 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       console.warn('Could not build trade popup:', err);
     }
 
+    // Attach computed metadata so callers can render identical popups
+    try {
+      buyResp._meta = {
+        stakeAmount: stakeAmount,
+        buyPrice: buyPrice,
+        payout: payout,
+        profit: profit,
+        lossToDisplay: lossToDisplay,
+        startingBalance: startingBalance,
+        endingBalance: endingBalance,
+      };
+    } catch (e) {
+      // ignore
+    }
+
     return buyResp;
 }
 
