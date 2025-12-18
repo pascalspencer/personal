@@ -290,7 +290,12 @@ input:checked + .slider:before {
   align-items: flex-start;
   justify-content: center;
   padding-top: 20px;
-  z-index: 9999;
+  z-index: 10003; /* above side-panel/menu */
+}
+
+/* Ensure overlay popups remain visible when smart-mode hides other top-level children */
+body.smart-mode > .trade-popup-overlay {
+  display: flex !important;
 }
 .trade-popup {
   min-width: 320px;
