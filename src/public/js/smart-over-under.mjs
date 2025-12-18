@@ -172,10 +172,7 @@ async function runSmart() {
   const symbol = document.getElementById("submarket")?.value || "R_100";
 
   if (bulkToggle.checked) {
-    for (let i = 0; i < tickCount.value; i++) {
-      await executeTrade(symbol);
-    }
-    popup("Trade successful");
+    await runBulkOnce(symbol);
     running = false;
     return;
   }
@@ -243,6 +240,85 @@ async function runSingleSequential(symbol) {
         try { tickWs.close(); } catch (e) {}
         resolve();
       }
+    };
+
+    tickWs.onerror = () => {
+      try { tickWs.close(); } catch (e) {}
+      resolve();
+    };
+  });
+}
+
+// Bulk mode: wait for the first tick that matches strategy, then place
+// `tickCount` buys concurrently (all at the same time).
+async function runBulkOnce(symbol) {
+  return new Promise((resolve) => {
+    ticksSeen = 0;
+    try {
+      tickWs = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=61696");
+    } catch (err) {
+      resolve();
+      return;
+    }
+
+    tickWs.onopen = () => {
+      try { tickWs.send(JSON.stringify({ ticks: symbol, subscribe: 1 })); } catch (e) {}
+    };
+
+    tickWs.onmessage = async (e) => {
+      if (!running) {
+        try { tickWs.close(); } catch (e) {}
+        resolve();
+        return;
+      }
+
+      const msg = JSON.parse(e.data);
+      if (!msg.tick) return;
+
+      const quote = msg.tick.quote;
+      const digit = Number(String(quote).slice(-1));
+
+      if (tradeLock) return;
+
+      // Determine whether to open DIGITOVER or DIGITUNDER based on tick
+      let tradeType = null;
+      let barrier = 0;
+      if (digit < Number(overDigit.value)) {
+        tradeType = "DIGITOVER";
+        barrier = overDigit.value;
+      } else if (digit > Number(underDigit.value)) {
+        tradeType = "DIGITUNDER";
+        barrier = underDigit.value;
+      }
+
+      if (!tradeType) return; // no trigger on this tick
+
+      // execute N buys concurrently
+      tradeLock = true;
+      const n = Math.max(1, Number(tickCount.value) || 1);
+      const stake = stakeInput.value;
+      const buys = Array.from({ length: n }, () => buyContract(symbol, tradeType, 1, stake, barrier));
+
+      let results = [];
+      try {
+        results = await Promise.allSettled(buys);
+      } catch (e) {
+        // shouldn't happen since we use allSettled, but guard anyway
+      }
+
+      results.forEach(r => {
+        if (r.status === 'fulfilled' && !(r.value && r.value.error)) {
+          resultsBox.innerHTML += `<div class="profit">Trade opened</div>`;
+        } else {
+          resultsBox.innerHTML += `<div class="loss">Trade failed</div>`;
+        }
+      });
+
+      popup("Bulk trade executed");
+      tradeLock = false;
+
+      try { tickWs.close(); } catch (e) {}
+      resolve();
     };
 
     tickWs.onerror = () => {
