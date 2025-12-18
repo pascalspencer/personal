@@ -356,8 +356,10 @@ input:checked + .slider:before {
 body.smart-mode > * { display: none; }
 body.smart-mode > #smart-over-under { display: block; }
 body.smart-mode > #menu-btn { display: block; }
-body.smart-mode > [id*="toggle"] { display: block; }
-body.smart-mode > .toggle { display: block; }
+/* hide the global Manual/Automated mode toggle while in Smart mode */
+body.smart-mode #mode-toggle,
+body.smart-mode #mode-display,
+body.smart-mode .toggle-label { display: none; }
 
 /* ensure market/submarket (if top-level) are visible alongside smart UI */
 body.smart-mode > #market,
@@ -366,6 +368,34 @@ body.smart-mode > #submarket { display: block; }
 /* Allow the side panel to open while smart-mode is active */
 body.smart-mode > #side-panel { display: none; }
 body.smart-mode > #side-panel.open { display: block; position: fixed; top: 0; left: 0; z-index: 10000; }
+
+/* Make smart UI mirror Auto Analysis spacing and responsiveness */
+#smart-over-under {
+  display: none;
+  box-sizing: border-box;
+  padding: 20px;
+  background: #ffffff;
+  border: 1px solid #e6e6e6;
+  border-radius: 8px;
+  max-width: 600px;
+  width: 100%;
+  margin: 0 auto;
+  gap: 8px;
+}
+
+#smart-over-under.visible { display: block; }
+
+/* Keep some left padding so the hamburger doesn't overlap content */
+#smart-over-under { padding-left: 32px; }
+
+/* Match form responsive behavior */
+@media (max-width: 768px) {
+  #smart-over-under { width: 70%; padding: 15px; }
+}
+
+@media (max-width: 480px) {
+  #smart-over-under { padding: 10px; width: 100%; margin: 8px; padding-left: 12px; }
+}
 
 /* layout inside smart UI */
 #smart-over-under { display: flex; flex-direction: column; }
