@@ -53,16 +53,6 @@ document.addEventListener("DOMContentLoaded", () => {
     overDigit.innerHTML += `<option value="${i}">${i}</option>`;
     underDigit.innerHTML += `<option value="${i}">${i}</option>`;
   }
-
-  // If the page already has market/submarket controls, move them into
-  // the smart UI so we maintain the original components instead of
-  // recreating them.
-  const smartContainer = document.getElementById("smart-over-under");
-  const marketEl = document.getElementById("market");
-  const submarketEl = document.getElementById("submarket");
-  if (marketEl) smartContainer.insertBefore(marketEl, smartContainer.firstChild);
-  if (submarketEl) smartContainer.insertBefore(submarketEl, smartContainer.firstChild);
-
   // Make single and bulk toggles mutually exclusive: when one is checked,
   // disable the other; when unchecked, re-enable the counterpart.
   function updateToggles() {
