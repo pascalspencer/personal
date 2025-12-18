@@ -336,3 +336,44 @@ input:checked + .slider:before {
 }
 .trade-popup .close-btn:hover { opacity: 0.95; }
 
+/* Smart Over/Under UI styles — use when body.smart-mode is active */
+#smart-over-under {
+  display: none;
+  box-sizing: border-box;
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid #e6e6e6;
+  border-radius: 8px;
+  max-width: 420px;
+  width: 100%;
+  gap: 8px;
+}
+
+/* visible class makes it show */
+#smart-over-under.visible { display: block; }
+
+/* when smart-mode is active, hide other top-level content but keep toggles/menu */
+body.smart-mode > * { display: none; }
+body.smart-mode > #smart-over-under { display: block; }
+body.smart-mode > #menu-btn { display: block; }
+body.smart-mode > [id*="toggle"] { display: block; }
+body.smart-mode > .toggle { display: block; }
+
+/* ensure market/submarket (if top-level) are visible alongside smart UI */
+body.smart-mode > #market,
+body.smart-mode > #submarket { display: block; }
+
+/* layout inside smart UI */
+#smart-over-under { display: flex; flex-direction: column; }
+#smart-over-under label, #smart-over-under select, #smart-over-under input, #smart-over-under .toggle-container, #smart-over-under .smart-buttons, #smart-over-under #smart-results { width: 100%; }
+
+/* toggle container layout */
+#smart-over-under .toggle-container { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+#smart-over-under .smart-buttons { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* Responsive: mirror Auto Analysis on small screens */
+@media (max-width: 480px) {
+  body.smart-mode > #smart-over-under { max-width: 100%; margin: 8px; }
+  #smart-over-under { padding: 10px; }
+}
+
