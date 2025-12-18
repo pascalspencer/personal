@@ -22,19 +22,20 @@ document.addEventListener("DOMContentLoaded", () => {
       <label>Number of ticks:</label>
       <input type="number" id="tick-count" min="1" value="5">
 
-      <label>Stake (minimum 0.35):</label>
-      <input type="number" id="stake" min="0.35" step="0.01" value="0.35">
+      <div class="stake-row">
+        <label for="stake">Stake (minimum 0.35):</label>
+        <input type="number" id="stake" min="0.35" step="0.01" value="0.35">
 
-      <div class="toggle-container">
+        <div class="toggle-container">
         <span>Single</span>
         <input type="checkbox" id="single-toggle" checked>
         <span>Bulk</span>
         <input type="checkbox" id="bulk-toggle">
       </div>
-
-      <div class="smart-buttons">
-        <button id="run-smart">RUN</button>
-        <button id="stop-smart">STOP</button>
+        <div class="smart-buttons">
+          <button id="run-smart">RUN</button>
+          <button id="stop-smart">STOP</button>
+        </div>
       </div>
 
       <div id="smart-results"></div>

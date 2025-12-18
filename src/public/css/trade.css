@@ -386,3 +386,49 @@ body.smart-mode > #side-panel.open { display: block; visibility: visible; transf
   #smart-over-under { width: calc(100% - 48px); max-width: calc(100% - 48px); margin: 8px 24px; padding: 10px; }
 }
 
+/* stake row: put stake input and run/stop buttons on one line */
+#smart-over-under .stake-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+#smart-over-under .stake-row label {
+  margin: 0;
+  font-weight: 600;
+}
+
+#smart-over-under #stake {
+  width: 120px;
+  height: 45px;
+  padding: 8px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+#smart-over-under .smart-buttons button {
+  height: 45px;
+  padding: 0 18px;
+  border-radius: 5px;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+#smart-over-under .smart-buttons #run-smart {
+  background: #00bbf0;
+  color: #fff;
+}
+
+#smart-over-under .smart-buttons #stop-smart {
+  background: #d32f2f;
+  color: #fff;
+}
+
+@media (max-width: 480px) {
+  #smart-over-under .stake-row { flex-direction: column; align-items: stretch; }
+  #smart-over-under #stake { width: 100%; }
+  #smart-over-under .smart-buttons { display: flex; gap: 8px; }
+}
+
