@@ -3,6 +3,7 @@ import { buyContract } from "./buyContract.mjs";
 let running = false;
 let ticksSeen = 0;
 let tradeLock = false;
+let tickWs = null;
 
 let overDigit, underDigit, tickCount, stakeInput;
 let singleToggle, bulkToggle, resultsBox;
@@ -187,6 +188,49 @@ async function runSmart() {
   running = false;
 }
 
+// Sequential buys driven by ticks: subscribe and trigger a buy on each incoming tick
+async function runSingleSequential(symbol) {
+  ticksSeen = 0;
+  return new Promise((resolve) => {
+    try {
+      tickWs = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=61696");
+    } catch (err) {
+      resolve();
+      return;
+    }
+
+    tickWs.onopen = () => {
+      try { tickWs.send(JSON.stringify({ ticks: symbol, subscribe: 1 })); } catch (e) {}
+    };
+
+    tickWs.onmessage = async (e) => {
+      if (!running) {
+        try { tickWs.close(); } catch (e) {}
+        resolve();
+        return;
+      }
+
+      const msg = JSON.parse(e.data);
+      if (!msg.tick) return;
+
+      // On each tick, initiate one trade, then wait for it to finish before
+      // proceeding to the next tick-driven trade.
+      ticksSeen++;
+      await executeTrade(symbol);
+
+      if (ticksSeen >= Number(tickCount.value) || !running) {
+        try { tickWs.close(); } catch (e) {}
+        resolve();
+      }
+    };
+
+    tickWs.onerror = () => {
+      try { tickWs.close(); } catch (e) {}
+      resolve();
+    };
+  });
+}
+
 async function checkTick(symbol) {
   if (tradeLock) return;
 
@@ -237,5 +281,9 @@ async function executeTrade(symbol, type = "DIGITOVER", barrier = 0) {
 function stopSmart() {
   running = false;
   tradeLock = false;
+  if (tickWs) {
+    try { tickWs.close(); } catch (e) {}
+    tickWs = null;
+  }
   popup("Stopped");
 }
