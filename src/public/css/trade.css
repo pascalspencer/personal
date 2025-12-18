@@ -336,40 +336,7 @@ input:checked + .slider:before {
 }
 .trade-popup .close-btn:hover { opacity: 0.95; }
 
-/* Smart Over/Under UI styles — use when body.smart-mode is active */
-#smart-over-under {
-  display: none;
-  box-sizing: border-box;
-  padding: 12px;
-  background: #ffffff;
-  border: 1px solid #e6e6e6;
-  border-radius: 8px;
-  max-width: 420px;
-  width: 100%;
-  gap: 8px;
-}
-
-/* visible class makes it show */
-#smart-over-under.visible { display: block; }
-
-/* when smart-mode is active, hide other top-level content but keep toggles/menu */
-body.smart-mode > * { display: none; }
-body.smart-mode > #smart-over-under { display: block; }
-body.smart-mode > #menu-btn { display: block; }
-/* hide the global Manual/Automated mode toggle while in Smart mode */
-body.smart-mode #mode-toggle,
-body.smart-mode #mode-display,
-body.smart-mode .toggle-label { display: none; }
-
-/* ensure market/submarket (if top-level) are visible alongside smart UI */
-body.smart-mode > #market,
-body.smart-mode > #submarket { display: block; }
-
-/* Allow the side panel to open while smart-mode is active */
-body.smart-mode > #side-panel { display: none; }
-body.smart-mode > #side-panel.open { display: block; position: fixed; top: 0; left: 0; z-index: 10000; }
-
-/* Make smart UI mirror Auto Analysis spacing and responsiveness */
+/* Smart Over/Under UI styles — mirror Auto Analysis layout and spacing */
 #smart-over-under {
   display: none;
   box-sizing: border-box;
@@ -378,24 +345,28 @@ body.smart-mode > #side-panel.open { display: block; position: fixed; top: 0; le
   border: 1px solid #e6e6e6;
   border-radius: 8px;
   max-width: 600px;
-  width: 100%;
+  width: 600px;
   margin: 0 auto;
   gap: 8px;
 }
 
+/* visible class makes it show */
 #smart-over-under.visible { display: block; }
 
-/* Keep some left padding so the hamburger doesn't overlap content */
-#smart-over-under { padding-left: 32px; }
+/* when smart-mode is active, hide other top-level content but keep toggles/menu and allow side-panel */
+body.smart-mode > * { display: none; }
+body.smart-mode > #smart-over-under { display: block; }
+body.smart-mode > #menu-btn { display: block; }
+body.smart-mode > [id*="toggle"] { display: block; }
+body.smart-mode > .toggle { display: block; }
 
-/* Match form responsive behavior */
-@media (max-width: 768px) {
-  #smart-over-under { width: 70%; padding: 15px; }
-}
+/* ensure market/submarket (if top-level) are visible alongside smart UI */
+body.smart-mode > #market,
+body.smart-mode > #submarket { display: block; }
 
-@media (max-width: 480px) {
-  #smart-over-under { padding: 10px; width: 100%; margin: 8px; padding-left: 12px; }
-}
+/* keep side-panel in the flow but off-screen so transform transition works */
+body.smart-mode > #side-panel { visibility: hidden; transform: translateX(-100%); }
+body.smart-mode > #side-panel.open { visibility: visible; transform: translateX(0); position: fixed; top: 0; left: 0; z-index: 10000; }
 
 /* layout inside smart UI */
 #smart-over-under { display: flex; flex-direction: column; }
@@ -405,9 +376,12 @@ body.smart-mode > #side-panel.open { display: block; position: fixed; top: 0; le
 #smart-over-under .toggle-container { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 #smart-over-under .smart-buttons { display: flex; gap: 8px; justify-content: flex-end; }
 
-/* Responsive: mirror Auto Analysis on small screens */
+/* Responsive: mirror Auto Analysis on medium and small screens */
+@media (max-width: 768px) {
+  #smart-over-under { width: 70%; max-width: calc(100% - 48px); padding: 15px; }
+}
+
 @media (max-width: 480px) {
-  body.smart-mode > #smart-over-under { max-width: 100%; margin: 8px; }
-  #smart-over-under { padding: 10px; }
+  #smart-over-under { width: calc(100% - 48px); max-width: calc(100% - 48px); margin: 8px 24px; padding: 10px; }
 }
 

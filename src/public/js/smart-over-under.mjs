@@ -86,6 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const smartContainer = document.getElementById("smart-over-under");
+  let smartHeadingEl = null;
 
   // When smart UI is shown, keep only market and submarket from the
   // original interface and rely on CSS (trade.css) for hiding/spacing.
@@ -101,6 +102,15 @@ document.addEventListener("DOMContentLoaded", () => {
       smartContainer.insertBefore(submarketEl, marketEl && marketEl.parentNode === smartContainer ? marketEl.nextSibling : smartContainer.firstChild);
     }
 
+    // ensure Zodiac heading is present in smart UI (copy original if available)
+    if (!smartHeadingEl) {
+      const originalHeading = document.getElementById('form-heading');
+      smartHeadingEl = document.createElement('h1');
+      smartHeadingEl.textContent = (originalHeading && originalHeading.textContent.trim()) || 'Zodiac Algo-trade';
+      smartHeadingEl.style.margin = '0 0 8px 0';
+    }
+    if (smartHeadingEl.parentNode !== smartContainer) smartContainer.insertBefore(smartHeadingEl, smartContainer.firstChild);
+
     smartContainer.classList.add('visible');
   }
 
@@ -114,6 +124,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (originalPos.submarket && submarketEl) {
       originalPos.submarket.parent.insertBefore(submarketEl, originalPos.submarket.next);
     }
+
+    // remove smart heading from panel
+    if (smartHeadingEl && smartHeadingEl.parentNode === smartContainer) smartHeadingEl.remove();
 
     smartContainer.classList.remove('visible');
   }
