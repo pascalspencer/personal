@@ -18,8 +18,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const closeBtn = document.getElementById("panel-close");
   const tabs = document.querySelectorAll(".tab-btn");
 
-  menuBtn.onclick = () => sidePanel.classList.add("open");
-  closeBtn.onclick = () => sidePanel.classList.remove("open");
+  menuBtn.onclick = () => {
+    sidePanel.classList.add("open");
+    // hide hamburger while side panel is open
+    menuBtn.style.display = 'none';
+  };
+  closeBtn.onclick = () => {
+    sidePanel.classList.remove("open");
+    // restore hamburger when panel closed
+    menuBtn.style.display = '';
+  };
 
   tabs.forEach(btn => {
     btn.onclick = () => {
@@ -33,6 +41,8 @@ document.addEventListener("DOMContentLoaded", () => {
         btn.dataset.tab === "smart" ? "block" : "none";
 
       sidePanel.classList.remove("open");
+      // restore hamburger after choosing a tab
+      menuBtn.style.display = '';
     };
   });
 });

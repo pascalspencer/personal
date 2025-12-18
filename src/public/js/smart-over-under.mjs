@@ -123,6 +123,15 @@ document.addEventListener("DOMContentLoaded", () => {
       originalPos.submarket.parent.insertBefore(submarketEl, originalPos.submarket.next);
     }
 
+    // Restore the mode toggle wrapper (if we moved it)
+    if (originalPos.modeToggle && modeToggleWrapper) {
+      try {
+        if (modeToggleWrapper.parentNode !== originalPos.modeToggle.parent) {
+          originalPos.modeToggle.parent.insertBefore(modeToggleWrapper, originalPos.modeToggle.next);
+        }
+      } catch (e) {}
+    }
+
     smartContainer.classList.remove('visible');
   }
 
