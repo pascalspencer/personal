@@ -703,4 +703,4 @@ function calculatePercentages() {
 }
 
 // --- Export for automation ---
-export { evaluateAndBuyContractSafe };
+export { evaluateAndBuyContractSafe, buyContract };
