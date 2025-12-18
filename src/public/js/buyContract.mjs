@@ -4,8 +4,8 @@ import { getCurrentToken } from './popupMessages.mjs';
 const derivAppID = 61696;
 const connection = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${derivAppID}`);
 
+let api = null; // kept for compatibility checks in other codepaths
 const resultsContainer = document.getElementById("results-container");
-let pingInterval = null;
 
 // request bookkeeping
 let reqCounter = 1;
@@ -26,7 +26,80 @@ function parseCurrencyFromAuth(resp) {
   return null;
 }
 
-    // The actual buy-response handling exists inside `buyContract` below.
+// --- WebSocket lifecycle ---
+connection.onopen = function () {
+  api = connection; // mark as available for simple checks elsewhere
+  startPing();
+  console.log("WebSocket connection is fantastic.");
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    const token = getCurrentToken();
+    if (!token) {
+      console.warn("No token found at authorization.");
+      return;
+    }
+
+    console.log("Authorizing with token (masked):", String(token).slice(0, 8));
+    try {
+      const resp = await sendJson({ authorize: token });
+      console.log("Authorize response:", resp);
+      const cur = parseCurrencyFromAuth(resp);
+      if (cur) {
+        defaultCurrency = cur;
+        console.log('Using currency from authorize:', defaultCurrency);
+      }
+    } catch (err) {
+      console.error("Authorization failed:", err);
+    }
+  });
+};
+
+connection.onerror = (err) => {
+  console.error("WebSocket error:", err);
+};
+
+connection.onmessage = (evt) => {
+  let msg;
+  try { msg = JSON.parse(evt.data); } catch (e) { return; }
+
+  const echo = msg.echo_req || {};
+  const id = echo.req_id;
+
+  // If this response belongs to a subscription and contains tick -> route to subscription
+  if (id && subscriptions.has(id)) {
+    const sub = subscriptions.get(id);
+    // handle tick responses streaming from a subscribe call
+    if (msg.tick) {
+      // resolve subscription promise with first quote (then send forget)
+      try { connection.send(JSON.stringify({ forget: msg.tick.id })); } catch (e) {}
+      clearTimeout(sub.timeout);
+      sub.resolve(msg);
+      subscriptions.delete(id);
+      return;
+    }
+    // if error on subscription
+    if (msg.error) {
+      clearTimeout(sub.timeout);
+      sub.reject(msg);
+      subscriptions.delete(id);
+      return;
+    }
+  }
+
+  // Normal single-response routing
+  if (id && pending.has(id)) {
+    const resolver = pending.get(id);
+    pending.delete(id);
+    resolver(msg);
+    return;
+  }
+
+  // Untracked messages (e.g., general updates) — log at debug level
+  // console.log("Unmatched message:", msg);
+};
+
+// --- Ping keep-alive ---
+let pingInterval = null;
 function startPing() {
   if (!connection || pingInterval) return;
   pingInterval = setInterval(() => {
