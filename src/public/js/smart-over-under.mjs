@@ -226,12 +226,12 @@ async function runSingleSequential(symbol) {
 
       if (digit < Number(overDigit.value)) {
         tradeLock = true;
-        await executeTrade(symbol, "DIGITOVER", overDigit.value);
+        await executeTrade(symbol, "DIGITOVER", overDigit.value, quote);
         tradeLock = false;
         ticksSeen++;
       } else if (digit > Number(underDigit.value)) {
         tradeLock = true;
-        await executeTrade(symbol, "DIGITUNDER", underDigit.value);
+        await executeTrade(symbol, "DIGITUNDER", underDigit.value, quote);
         tradeLock = false;
         ticksSeen++;
       }
@@ -293,11 +293,12 @@ async function runBulkOnce(symbol) {
 
       if (!tradeType) return; // no trigger on this tick
 
-      // execute N buys concurrently
+      // execute N buys concurrently using the known tick quote to avoid
+      // duplicate subscriptions inside buyContract
       tradeLock = true;
       const n = Math.max(1, Number(tickCount.value) || 1);
       const stake = stakeInput.value;
-      const buys = Array.from({ length: n }, () => buyContract(symbol, tradeType, 1, stake, barrier));
+      const buys = Array.from({ length: n }, () => buyContract(symbol, tradeType, 1, stake, barrier, quote));
 
       let results = [];
       try {
@@ -347,24 +348,25 @@ async function checkTick(symbol) {
 
   if (digit < Number(overDigit.value)) {
     tradeLock = true;
-    await executeTrade(symbol, "DIGITOVER", overDigit.value);
+    await executeTrade(symbol, "DIGITOVER", overDigit.value, tick);
   }
 
   if (digit > Number(underDigit.value)) {
     tradeLock = true;
-    await executeTrade(symbol, "DIGITUNDER", underDigit.value);
+    await executeTrade(symbol, "DIGITUNDER", underDigit.value, tick);
   }
 
   tradeLock = false;
 }
 
-async function executeTrade(symbol, type = "DIGITOVER", barrier = 0) {
+async function executeTrade(symbol, type = "DIGITOVER", barrier = 0, liveQuote = null) {
   const resp = await buyContract(
     symbol,
     type,
     1,
     stakeInput.value,
-    barrier
+    barrier,
+    liveQuote
   );
 
   if (resp?.error) {

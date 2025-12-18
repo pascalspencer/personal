@@ -329,7 +329,7 @@ async function waitForFirstTick(symbol) {
 
 
 // Unified buyContract that follows contracts_for precisely
-async function buyContract(symbol, tradeType, duration, price, prediction = null) {
+async function buyContract(symbol, tradeType, duration, price, prediction = null, liveTickQuote = null) {
     if (!connection || connection.readyState !== WebSocket.OPEN) {
         console.error("❌ WebSocket not connected.");
         return;
@@ -358,13 +358,17 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       }
     }
 
-    // 1) Get live tick
-    let livePrice;
-    try {
+    // 1) Get live tick (use provided quote if available to avoid duplicate subscriptions)
+    let livePrice = null;
+    if (liveTickQuote !== null && typeof liveTickQuote !== 'undefined') {
+      livePrice = liveTickQuote;
+    } else {
+      try {
         livePrice = await waitForFirstTick(symbol);
-    } catch (err) {
+      } catch (err) {
         console.error("❌ Could not get live tick:", err);
         return;
+      }
     }
 
 
