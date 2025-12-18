@@ -180,6 +180,13 @@ async function runSmart() {
     return;
   }
 
+  if (singleToggle.checked) {
+    // run sequential buys driven by ticks
+    await runSingleSequential(symbol);
+    running = false;
+    return;
+  }
+
   while (running && ticksSeen < tickCount.value) {
     await checkTick(symbol);
     ticksSeen++;
@@ -213,10 +220,24 @@ async function runSingleSequential(symbol) {
       const msg = JSON.parse(e.data);
       if (!msg.tick) return;
 
-      // On each tick, initiate one trade, then wait for it to finish before
-      // proceeding to the next tick-driven trade.
-      ticksSeen++;
-      await executeTrade(symbol);
+      // determine last digit and decide whether to open a trade
+      const quote = msg.tick.quote;
+      const digit = Number(String(quote).slice(-1));
+
+      // if a trade is already in progress, skip this tick
+      if (tradeLock) return;
+
+      if (digit < Number(overDigit.value)) {
+        tradeLock = true;
+        await executeTrade(symbol, "DIGITOVER", overDigit.value);
+        tradeLock = false;
+        ticksSeen++;
+      } else if (digit > Number(underDigit.value)) {
+        tradeLock = true;
+        await executeTrade(symbol, "DIGITUNDER", underDigit.value);
+        tradeLock = false;
+        ticksSeen++;
+      }
 
       if (ticksSeen >= Number(tickCount.value) || !running) {
         try { tickWs.close(); } catch (e) {}
