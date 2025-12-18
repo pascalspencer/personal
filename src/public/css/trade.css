@@ -363,6 +363,10 @@ body.smart-mode > .toggle { display: block; }
 body.smart-mode > #market,
 body.smart-mode > #submarket { display: block; }
 
+/* Allow the side panel to open while smart-mode is active */
+body.smart-mode > #side-panel { display: none; }
+body.smart-mode > #side-panel.open { display: block; position: fixed; top: 0; left: 0; z-index: 10000; }
+
 /* layout inside smart UI */
 #smart-over-under { display: flex; flex-direction: column; }
 #smart-over-under label, #smart-over-under select, #smart-over-under input, #smart-over-under .toggle-container, #smart-over-under .smart-buttons, #smart-over-under #smart-results { width: 100%; }

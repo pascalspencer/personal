@@ -80,12 +80,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // restore them when switching back to Auto Analysis.
   const marketEl = document.getElementById("market");
   const submarketEl = document.getElementById("submarket");
-  const modeToggleEl = document.getElementById("mode-toggle");
-  const modeToggleWrapper = modeToggleEl ? modeToggleEl.closest('.toggle-container') : null;
   const originalPos = {
     market: marketEl ? { parent: marketEl.parentNode, next: marketEl.nextSibling } : null,
     submarket: submarketEl ? { parent: submarketEl.parentNode, next: submarketEl.nextSibling } : null,
-    modeToggle: modeToggleWrapper ? { parent: modeToggleWrapper.parentNode, next: modeToggleWrapper.nextSibling } : null,
   };
 
   const smartContainer = document.getElementById("smart-over-under");
@@ -104,11 +101,6 @@ document.addEventListener("DOMContentLoaded", () => {
       smartContainer.insertBefore(submarketEl, marketEl && marketEl.parentNode === smartContainer ? marketEl.nextSibling : smartContainer.firstChild);
     }
 
-    // Move the top mode toggle into the smart UI so it remains clickable
-    if (modeToggleWrapper && modeToggleWrapper.parentNode !== smartContainer) {
-      smartContainer.insertBefore(modeToggleWrapper, smartContainer.firstChild);
-    }
-
     smartContainer.classList.add('visible');
   }
 
@@ -121,15 +113,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (originalPos.submarket && submarketEl) {
       originalPos.submarket.parent.insertBefore(submarketEl, originalPos.submarket.next);
-    }
-
-    // Restore the mode toggle wrapper (if we moved it)
-    if (originalPos.modeToggle && modeToggleWrapper) {
-      try {
-        if (modeToggleWrapper.parentNode !== originalPos.modeToggle.parent) {
-          originalPos.modeToggle.parent.insertBefore(modeToggleWrapper, originalPos.modeToggle.next);
-        }
-      } catch (e) {}
     }
 
     smartContainer.classList.remove('visible');
