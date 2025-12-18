@@ -18,6 +18,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const closeBtn = document.getElementById("panel-close");
   const tabs = document.querySelectorAll(".tab-btn");
 
+  // Detect whether the menu/hamburger is positioned on the right side of the
+  // viewport and toggle a `body.menu-right` class so CSS can mirror offsets.
+  function updateMenuSide() {
+    const rect = menuBtn.getBoundingClientRect();
+    if (rect.left > window.innerWidth / 2) {
+      document.body.classList.add('menu-right');
+    } else {
+      document.body.classList.remove('menu-right');
+    }
+  }
+  updateMenuSide();
+  window.addEventListener('resize', updateMenuSide);
+
   menuBtn.onclick = () => {
     sidePanel.classList.add("open");
     // hide hamburger while side panel is open
