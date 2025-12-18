@@ -92,9 +92,14 @@ document.addEventListener("DOMContentLoaded", () => {
   function showSmartMode() {
     document.body.classList.add('smart-mode');
 
-    // ensure market comes before submarket inside smart container
-    if (marketEl) smartContainer.insertBefore(marketEl, smartContainer.firstChild);
-    if (submarketEl) smartContainer.insertBefore(submarketEl, marketEl ? marketEl.nextSibling : smartContainer.firstChild);
+    // ensure market comes before submarket inside smart container; avoid
+    // repeated moves by checking current parent
+    if (marketEl && marketEl.parentNode !== smartContainer) {
+      smartContainer.insertBefore(marketEl, smartContainer.firstChild);
+    }
+    if (submarketEl && submarketEl.parentNode !== smartContainer) {
+      smartContainer.insertBefore(submarketEl, marketEl && marketEl.parentNode === smartContainer ? marketEl.nextSibling : smartContainer.firstChild);
+    }
 
     smartContainer.classList.add('visible');
   }
@@ -113,13 +118,18 @@ document.addEventListener("DOMContentLoaded", () => {
     smartContainer.classList.remove('visible');
   }
 
-  // Watch for the `display` changes set by `smart-ui.mjs` tabs and
-  // activate smart-mode when the smart UI becomes visible.
-  const observer = new MutationObserver(() => {
+  // Lightweight visibility polling to react when `smart-ui.mjs` shows/hides
+  // the smart panel. Polling avoids heavy MutationObserver activity that
+  // was causing repeated DOM reflows and freezes.
+  let lastVisible = window.getComputedStyle(smartContainer).display !== 'none';
+  const visibilityPoll = setInterval(() => {
     const visible = window.getComputedStyle(smartContainer).display !== 'none';
+    if (visible === lastVisible) return;
+    lastVisible = visible;
     if (visible) showSmartMode(); else hideSmartMode();
-  });
-  observer.observe(smartContainer, { attributes: true, attributeFilter: ['style', 'class'] });
+  }, 250);
+
+  window.addEventListener('beforeunload', () => clearInterval(visibilityPoll));
 
   document.getElementById("run-smart").onclick = runSmart;
   document.getElementById("stop-smart").onclick = stopSmart;
