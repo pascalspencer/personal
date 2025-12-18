@@ -321,7 +321,7 @@ async function runBulkOnce(symbol) {
       tradeLock = true;
       const n = Math.max(1, Number(tickCount.value) || 1);
       const stake = stakeInput.value;
-      const buys = Array.from({ length: n }, () => buyContract(symbol, tradeType, 1, stake, barrier, quote));
+      const buys = Array.from({ length: n }, () => buyContract(symbol, tradeType, 1, stake, barrier, quote, true));
 
       let results = [];
       try {
@@ -387,7 +387,8 @@ async function executeTrade(symbol, type = "DIGITOVER", barrier = 0, liveQuote =
     1,
     stakeInput.value,
     barrier,
-    liveQuote
+    liveQuote,
+    true
   );
   if (resp?.error) {
     const details = (resp.error && resp.error.message) ? resp.error.message : 'Trade failed';

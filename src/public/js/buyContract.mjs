@@ -329,7 +329,7 @@ async function waitForFirstTick(symbol) {
 
 
 // Unified buyContract that follows contracts_for precisely
-async function buyContract(symbol, tradeType, duration, price, prediction = null, liveTickQuote = null) {
+async function buyContract(symbol, tradeType, duration, price, prediction = null, liveTickQuote = null, suppressPopup = false) {
     if (!connection || connection.readyState !== WebSocket.OPEN) {
         console.error("❌ WebSocket not connected.");
         return;
@@ -437,29 +437,30 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
         console.log("Buy response:", buyResp);
     } catch (err) {
         console.error("❌ Buy call failed:", err);
-        // Show error popup for WebSocket/connection errors
-        try {
-          const overlay = document.createElement('div');
-          overlay.className = 'trade-popup-overlay';
-          const popup = document.createElement('div');
-          popup.className = 'trade-popup';
-          const title = document.createElement('h3');
-          title.textContent = 'Buy Failed';
-          popup.appendChild(title);
-          const msgP = document.createElement('p');
-          msgP.textContent = err.message || 'Failed to execute buy request.';
-          popup.appendChild(msgP);
-          const closeBtn = document.createElement('a');
-          closeBtn.className = 'close-btn';
-          closeBtn.href = '#';
-          closeBtn.textContent = 'Close';
-          closeBtn.addEventListener('click', (ev) => { ev.preventDefault(); overlay.remove(); });
-          popup.appendChild(closeBtn);
-          overlay.appendChild(popup);
-          try { document.body.appendChild(overlay); } catch (e) { console.warn('Could not show error popup:', e); }
-          setTimeout(() => { try { overlay.remove(); } catch (e) {} }, 10000);
-        } catch (e) {
-          console.warn('Failed to build error popup:', e);
+        if (!suppressPopup) {
+          try {
+            const overlay = document.createElement('div');
+            overlay.className = 'trade-popup-overlay';
+            const popup = document.createElement('div');
+            popup.className = 'trade-popup';
+            const title = document.createElement('h3');
+            title.textContent = 'Buy Failed';
+            popup.appendChild(title);
+            const msgP = document.createElement('p');
+            msgP.textContent = err.message || 'Failed to execute buy request.';
+            popup.appendChild(msgP);
+            const closeBtn = document.createElement('a');
+            closeBtn.className = 'close-btn';
+            closeBtn.href = '#';
+            closeBtn.textContent = 'Close';
+            closeBtn.addEventListener('click', (ev) => { ev.preventDefault(); overlay.remove(); });
+            popup.appendChild(closeBtn);
+            overlay.appendChild(popup);
+            try { document.body.appendChild(overlay); } catch (e) { console.warn('Could not show error popup:', e); }
+            setTimeout(() => { try { overlay.remove(); } catch (e) {} }, 10000);
+          } catch (e) {
+            console.warn('Failed to build error popup:', e);
+          }
         }
         return;
     }
@@ -470,49 +471,51 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
         // Show a user-friendly popup describing the error (e.g., insufficient balance)
         try {
           const err = buyResp.error;
-          const overlay = document.createElement('div');
-          overlay.className = 'trade-popup-overlay';
+          if (!suppressPopup) {
+            const overlay = document.createElement('div');
+            overlay.className = 'trade-popup-overlay';
 
-          const popup = document.createElement('div');
-          popup.className = 'trade-popup';
+            const popup = document.createElement('div');
+            popup.className = 'trade-popup';
 
-          const title = document.createElement('h3');
-          title.textContent = 'Trade Failed';
-          popup.appendChild(title);
+            const title = document.createElement('h3');
+            title.textContent = 'Trade Failed';
+            popup.appendChild(title);
 
-          const msgP = document.createElement('p');
-          msgP.textContent = err.message || 'Unable to complete buy request.';
-          popup.appendChild(msgP);
+            const msgP = document.createElement('p');
+            msgP.textContent = err.message || 'Unable to complete buy request.';
+            popup.appendChild(msgP);
 
-          // Try to extract suggested stake / price from echo_req or response
-          const echo = buyResp.echo_req || {};
-          const echoBuy = echo.buy || echo;
-          const reqPrice = echoBuy.price ?? echo.price ?? null;
-          if (reqPrice !== null && reqPrice !== undefined) {
-            const reqP = document.createElement('p');
-            reqP.innerHTML = `Required stake: <span class="amount">$${Number(reqPrice).toFixed(2)}</span>`;
-            popup.appendChild(reqP);
+            // Try to extract suggested stake / price from echo_req or response
+            const echo = buyResp.echo_req || {};
+            const echoBuy = echo.buy || echo;
+            const reqPrice = echoBuy.price ?? echo.price ?? null;
+            if (reqPrice !== null && reqPrice !== undefined) {
+              const reqP = document.createElement('p');
+              reqP.innerHTML = `Required stake: <span class="amount">$${Number(reqPrice).toFixed(2)}</span>`;
+              popup.appendChild(reqP);
+            }
+
+            // If error code indicates insufficient balance, add highlighted note
+            if (err.code === 'InsufficientBalance' || /insufficient/i.test(err.message || '')) {
+              const low = document.createElement('p');
+              low.className = 'low-balance';
+              low.textContent = `Insufficient balance to buy this contract. Please top up your account.`;
+              popup.appendChild(low);
+            }
+
+            const closeBtn = document.createElement('a');
+            closeBtn.className = 'close-btn';
+            closeBtn.href = '#';
+            closeBtn.textContent = 'Close';
+            closeBtn.addEventListener('click', (ev) => { ev.preventDefault(); overlay.remove(); });
+            popup.appendChild(closeBtn);
+
+            overlay.appendChild(popup);
+            try { document.body.appendChild(overlay); } catch (e) { console.warn('Could not show error popup:', e); }
+            // Auto-dismiss after 10 seconds
+            setTimeout(() => { try { overlay.remove(); } catch (e) {} }, 10000);
           }
-
-          // If error code indicates insufficient balance, add highlighted note
-          if (err.code === 'InsufficientBalance' || /insufficient/i.test(err.message || '')) {
-            const low = document.createElement('p');
-            low.className = 'low-balance';
-            low.textContent = `Insufficient balance to buy this contract. Please top up your account.`;
-            popup.appendChild(low);
-          }
-
-          const closeBtn = document.createElement('a');
-          closeBtn.className = 'close-btn';
-          closeBtn.href = '#';
-          closeBtn.textContent = 'Close';
-          closeBtn.addEventListener('click', (ev) => { ev.preventDefault(); overlay.remove(); });
-          popup.appendChild(closeBtn);
-
-          overlay.appendChild(popup);
-          try { document.body.appendChild(overlay); } catch (e) { console.warn('Could not show error popup:', e); }
-          // Auto-dismiss after 10 seconds
-          setTimeout(() => { try { overlay.remove(); } catch (e) {} }, 10000);
         } catch (e) {
           console.warn('Failed to build error popup:', e);
         }
@@ -627,66 +630,68 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
         profit = -Math.abs(+(referenceBalance - endingBalance).toFixed(2));
       }
 
-      // Build popup content
-      const overlay = document.createElement('div');
-      overlay.className = 'trade-popup-overlay';
+      // Build popup content (skip if caller requested suppression)
+      if (!suppressPopup) {
+        const overlay = document.createElement('div');
+        overlay.className = 'trade-popup-overlay';
 
-      const popup = document.createElement('div');
-      popup.className = 'trade-popup';
+        const popup = document.createElement('div');
+        popup.className = 'trade-popup';
 
-      const title = document.createElement('h3');
-      title.textContent = 'Trade Result';
-      popup.appendChild(title);
+        const title = document.createElement('h3');
+        title.textContent = 'Trade Result';
+        popup.appendChild(title);
 
-      const stakeP = document.createElement('p');
-      stakeP.innerHTML = `Stake: <span class="amount">$${Number(price).toFixed(2)}</span>`;
-      popup.appendChild(stakeP);
+        const stakeP = document.createElement('p');
+        stakeP.innerHTML = `Stake: <span class="amount">$${Number(price).toFixed(2)}</span>`;
+        popup.appendChild(stakeP);
 
-      const buyP = document.createElement('p');
-      buyP.innerHTML = `Buy price: <span class="amount">$${Number(buyPrice).toFixed(2)}</span>`;
-      popup.appendChild(buyP);
+        const buyP = document.createElement('p');
+        buyP.innerHTML = `Buy price: <span class="amount">$${Number(buyPrice).toFixed(2)}</span>`;
+        popup.appendChild(buyP);
 
-      const payoutP = document.createElement('p');
-      payoutP.innerHTML = `Payout: <span class="amount">$${Number(payout).toFixed(2)}</span>`;
-      popup.appendChild(payoutP);
+        const payoutP = document.createElement('p');
+        payoutP.innerHTML = `Payout: <span class="amount">$${Number(payout).toFixed(2)}</span>`;
+        popup.appendChild(payoutP);
 
-      const profitP = document.createElement('p');
+        const profitP = document.createElement('p');
 
-      if (profit > 0) {
-        profitP.innerHTML = `Result: <span class="profit">+ $${profit.toFixed(2)}</span>`;
-      } else if (lossToDisplay > 0) {
-        const displayLoss = (typeof lossToDisplay === 'number' && lossToDisplay > 0) ? lossToDisplay : (lossToDisplay > 0 ? lossToDisplay : Number(stakeAmount));
-        profitP.innerHTML = `Result: <span class="loss">- $${Number(displayLoss).toFixed(2)}</span>`;
-      } else {
-        profitP.innerHTML = `Result: <span class="amount">$0.00</span>`;
-      }
-      popup.appendChild(profitP);
-
-      if (balanceCandidate !== null) {
-        const balP = document.createElement('p');
-        balP.innerHTML = `Account balance: <span class="amount">$${Number(endingBalance).toFixed(2)}</span>`;
-        popup.appendChild(balP);
-
-        if (Number(balanceCandidate) < Number(price)) {
-          const low = document.createElement('p');
-          low.className = 'low-balance';
-          low.textContent = `Low balance compared with stake ($${Number(price).toFixed(2)}). Please top up.`;
-          popup.appendChild(low);
+        if (profit > 0) {
+          profitP.innerHTML = `Result: <span class="profit">+ $${profit.toFixed(2)}</span>`;
+        } else if (lossToDisplay > 0) {
+          const displayLoss = (typeof lossToDisplay === 'number' && lossToDisplay > 0) ? lossToDisplay : (lossToDisplay > 0 ? lossToDisplay : Number(stakeAmount));
+          profitP.innerHTML = `Result: <span class="loss">- $${Number(displayLoss).toFixed(2)}</span>`;
+        } else {
+          profitP.innerHTML = `Result: <span class="amount">$0.00</span>`;
         }
+        popup.appendChild(profitP);
+
+        if (balanceCandidate !== null) {
+          const balP = document.createElement('p');
+          balP.innerHTML = `Account balance: <span class="amount">$${Number(endingBalance).toFixed(2)}</span>`;
+          popup.appendChild(balP);
+
+          if (Number(balanceCandidate) < Number(price)) {
+            const low = document.createElement('p');
+            low.className = 'low-balance';
+            low.textContent = `Low balance compared with stake ($${Number(price).toFixed(2)}). Please top up.`;
+            popup.appendChild(low);
+          }
+        }
+
+        const closeBtn = document.createElement('a');
+        closeBtn.className = 'close-btn';
+        closeBtn.href = '#';
+        closeBtn.textContent = 'Close';
+        closeBtn.addEventListener('click', (ev) => { ev.preventDefault(); overlay.remove(); });
+        popup.appendChild(closeBtn);
+
+        overlay.appendChild(popup);
+        try { document.body.appendChild(overlay); } catch (e) { console.warn('Could not show popup:', e); }
+
+        // Auto-dismiss after 8 seconds
+        setTimeout(() => { try { overlay.remove(); } catch (e) {} }, 10000);
       }
-
-      const closeBtn = document.createElement('a');
-      closeBtn.className = 'close-btn';
-      closeBtn.href = '#';
-      closeBtn.textContent = 'Close';
-      closeBtn.addEventListener('click', (ev) => { ev.preventDefault(); overlay.remove(); });
-      popup.appendChild(closeBtn);
-
-      overlay.appendChild(popup);
-      try { document.body.appendChild(overlay); } catch (e) { console.warn('Could not show popup:', e); }
-
-      // Auto-dismiss after 8 seconds
-      setTimeout(() => { try { overlay.remove(); } catch (e) {} }, 10000);
     } catch (err) {
       console.warn('Could not build trade popup:', err);
     }
