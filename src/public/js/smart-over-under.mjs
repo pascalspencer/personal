@@ -382,6 +382,77 @@ async function checkTick(symbol) {
 }
 
 async function executeTrade(symbol, type = "DIGITOVER", barrier = 0, liveQuote = null) {
+  // helpers for numeric parsing and balance fetch (used to compute final profit)
+  const parseNumeric = (v) => {
+    if (v === null || typeof v === 'undefined') return null;
+    if (typeof v === 'number') return v;
+    const n = Number(v);
+    return Number.isNaN(n) ? null : n;
+  };
+  const firstNumeric = (arr) => {
+    for (const v of arr) {
+      const p = parseNumeric(v);
+      if (p !== null) return p;
+    }
+    return null;
+  };
+
+  async function fetchBalanceOnce(timeoutMs = 3000) {
+    return new Promise((resolve) => {
+      let resolved = false;
+      let ws;
+      const timer = setTimeout(() => {
+        try { if (ws) ws.close(); } catch (e) {}
+        if (!resolved) { resolved = true; resolve(null); }
+      }, timeoutMs);
+
+      try {
+        ws = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=61696`);
+      } catch (e) {
+        clearTimeout(timer);
+        return resolve(null);
+      }
+
+      ws.onopen = () => {
+        const token = getCurrentToken();
+        if (token) {
+          try { ws.send(JSON.stringify({ authorize: token })); } catch (e) {}
+        }
+        try { ws.send(JSON.stringify({ balance: 1 })); } catch (e) {}
+      };
+
+      ws.onmessage = (ev) => {
+        if (resolved) return;
+        let msg;
+        try { msg = JSON.parse(ev.data); } catch (e) { return; }
+        if (msg && (msg.balance !== undefined || msg.account_balance !== undefined)) {
+          clearTimeout(timer);
+          try { ws.close(); } catch (e) {}
+          resolved = true;
+          resolve(msg);
+        }
+      };
+
+      ws.onerror = () => {
+        if (!resolved) {
+          clearTimeout(timer);
+          try { ws.close(); } catch (e) {}
+          resolved = true;
+          resolve(null);
+        }
+      };
+    });
+  }
+
+  // capture starting balance before buy to compute true delta
+  let startingBalance = null;
+  try {
+    const balBefore = await fetchBalanceOnce(2500);
+    if (balBefore) startingBalance = firstNumeric([balBefore.balance?.balance, balBefore.account_balance, balBefore.balance_after, balBefore.buy?.balance]);
+  } catch (e) {
+    startingBalance = null;
+  }
+
   const resp = await buyContract(
     symbol,
     type,
@@ -406,62 +477,7 @@ async function executeTrade(symbol, type = "DIGITOVER", barrier = 0, liveQuote =
       const n = Number(v);
       return Number.isNaN(n) ? null : n;
     };
-    const firstNumeric = (arr) => {
-      for (const v of arr) {
-        const p = parseNumeric(v);
-        if (p !== null) return p;
-      }
-      return null;
-    };
-
-    // ability to fetch balance independently if buyContract didn't provide metadata
-    async function fetchBalanceOnce(timeoutMs = 3000) {
-      return new Promise((resolve) => {
-        let resolved = false;
-        let ws;
-        const timer = setTimeout(() => {
-          try { if (ws) ws.close(); } catch (e) {}
-          if (!resolved) { resolved = true; resolve(null); }
-        }, timeoutMs);
-
-        try {
-          ws = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=61696`);
-        } catch (e) {
-          clearTimeout(timer);
-          return resolve(null);
-        }
-
-        ws.onopen = () => {
-          const token = getCurrentToken();
-          if (token) {
-            try { ws.send(JSON.stringify({ authorize: token })); } catch (e) {}
-          }
-          try { ws.send(JSON.stringify({ balance: 1 })); } catch (e) {}
-        };
-
-        ws.onmessage = (ev) => {
-          if (resolved) return;
-          let msg;
-          try { msg = JSON.parse(ev.data); } catch (e) { return; }
-          if (msg && (msg.balance !== undefined || msg.account_balance !== undefined)) {
-            clearTimeout(timer);
-            try { ws.close(); } catch (e) {}
-            resolved = true;
-            resolve(msg);
-          }
-          // ignore other messages (authorize, tick, etc.)
-        };
-
-        ws.onerror = () => {
-          if (!resolved) {
-            clearTimeout(timer);
-            try { ws.close(); } catch (e) {}
-            resolved = true;
-            resolve(null);
-          }
-        };
-      });
-    }
+    
 
     // Prefer metadata computed inside buyContract where possible (ensures same delays/reads)
     const meta = resp && resp._meta ? resp._meta : null;
@@ -469,14 +485,35 @@ async function executeTrade(symbol, type = "DIGITOVER", barrier = 0, liveQuote =
       const stakeAmt = Number(meta.stakeAmount || stakeInput.value || 0).toFixed(2);
       const buyPrice = Number(meta.buyPrice || 0).toFixed(2);
       const payout = Number(meta.payout || 0).toFixed(2);
-      const profit = Number(typeof meta.profit !== 'undefined' ? meta.profit : 0).toFixed(2);
-      const bal = (meta.endingBalance !== null && typeof meta.endingBalance !== 'undefined') ? `<br>Account balance: $${Number(meta.endingBalance).toFixed(2)}` : '';
+      let profit = Number(typeof meta.profit !== 'undefined' ? meta.profit : 0);
+
+      // If buyContract didn't supply a final endingBalance, try to fetch one now
+      let endingBalanceLocal = (meta.endingBalance !== null && typeof meta.endingBalance !== 'undefined') ? meta.endingBalance : null;
+      if (endingBalanceLocal === null) {
+        // attempt two delayed balance reads to allow backend to settle
+        await new Promise(r => setTimeout(r, 1000));
+        const b1 = await fetchBalanceOnce(2500);
+        if (b1) endingBalanceLocal = firstNumeric([b1.balance?.balance, b1.account_balance, b1.balance_after, b1.buy?.balance]);
+        if (endingBalanceLocal === null) {
+          await new Promise(r => setTimeout(r, 1000));
+          const b2 = await fetchBalanceOnce(2500);
+          if (b2) endingBalanceLocal = firstNumeric([b2.balance?.balance, b2.account_balance, b2.balance_after, b2.buy?.balance]);
+        }
+      }
+
+      if (endingBalanceLocal !== null) {
+        const refStart = (meta.startingBalance !== null && typeof meta.startingBalance !== 'undefined') ? meta.startingBalance : startingBalance;
+        if (refStart !== null) profit = +(endingBalanceLocal - refStart).toFixed(2);
+      }
+
+      const profitStr = Number(profit).toFixed(2);
+      const bal = (endingBalanceLocal !== null) ? `<br>Account balance: $${Number(endingBalanceLocal).toFixed(2)}` : ((meta.endingBalance !== null && typeof meta.endingBalance !== 'undefined') ? `<br>Account balance: $${Number(meta.endingBalance).toFixed(2)}` : '');
 
       let resultHtml = '';
-      if (Number(profit) > 0) {
-        resultHtml = `Result: <span class="profit">+ $${Number(profit).toFixed(2)}</span>`;
-      } else if (Number(profit) < 0) {
-        const lossDisplay = (meta.lossToDisplay && Number(meta.lossToDisplay) > 0) ? Number(meta.lossToDisplay) : Math.abs(Number(profit));
+      if (Number(profitStr) > 0) {
+        resultHtml = `Result: <span class="profit">+ $${Number(profitStr).toFixed(2)}</span>`;
+      } else if (Number(profitStr) < 0) {
+        const lossDisplay = (meta.lossToDisplay && Number(meta.lossToDisplay) > 0) ? Number(meta.lossToDisplay) : Math.abs(Number(profitStr));
         resultHtml = `Result: <span class="loss">- $${Number(lossDisplay).toFixed(2)}</span>`;
       } else {
         resultHtml = `Result: <span class="amount">$0.00</span>`;
@@ -491,14 +528,16 @@ async function executeTrade(symbol, type = "DIGITOVER", barrier = 0, liveQuote =
       const buyPrice = Number(buyInfo.buy_price ?? buyInfo.price ?? buyInfo.ask_price ?? 0) || 0;
       const payout = Number(buyInfo.payout ?? buyInfo.payout_amount ?? buyInfo.payoutValue ?? 0) || 0;
 
-      // attempt to get starting balance from response fields
-      let startingBalance = firstNumeric([
-        buyInfo.balance_before,
-        resp.balance_before,
-        resp.buy?.balance_before,
-        resp.buy?.balance,
-        resp.balance
-      ]);
+      // attempt to get starting balance from response fields if we didn't capture it before buy
+      if (startingBalance === null) {
+        startingBalance = firstNumeric([
+          buyInfo.balance_before,
+          resp.balance_before,
+          resp.buy?.balance_before,
+          resp.buy?.balance,
+          resp.balance
+        ]);
+      }
 
       // ending balance: try response fields first; if not present, try fetching balance with small delays
       let endingBalance = firstNumeric([
