@@ -365,8 +365,9 @@ body.smart-mode > #market,
 body.smart-mode > #submarket { display: block; }
 
 /* keep side-panel in the flow but off-screen so transform transition works */
-body.smart-mode > #side-panel { visibility: hidden; transform: translateX(-100%); }
-body.smart-mode > #side-panel.open { visibility: visible; transform: translateX(0); position: fixed; top: 0; left: 0; z-index: 10000; }
+/* Ensure the side-panel is present (not display:none) so transform transition works */
+body.smart-mode > #side-panel { display: block; visibility: hidden; transform: translateX(-100%); transition: transform 0.3s ease; }
+body.smart-mode > #side-panel.open { display: block; visibility: visible; transform: translateX(0); position: fixed; top: 0; left: 0; z-index: 10000; }
 
 /* layout inside smart UI */
 #smart-over-under { display: flex; flex-direction: column; }
