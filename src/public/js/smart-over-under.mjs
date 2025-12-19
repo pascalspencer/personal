@@ -15,33 +15,50 @@ document.addEventListener("DOMContentLoaded", () => {
     <div id="smart-over-under" style="display:none">
       <h2>Smart Over / Under</h2>
 
-      <label>Over:</label>
-      <select id="over-digit"></select>
+      <!-- Over / Under side by side -->
+      <div class="ou-row">
+        <div class="ou-field">
+          <label for="over-digit">Over</label>
+          <select id="over-digit"></select>
+        </div>
 
-      <label>Under:</label>
-      <select id="under-digit"></select>
+        <div class="ou-field">
+          <label for="under-digit">Under</label>
+          <select id="under-digit"></select>
+        </div>
+      </div>
 
-      <label>Number of ticks:</label>
+      <label for="tick-count">Number of ticks</label>
       <input type="number" id="tick-count" min="1" value="5">
 
       <div class="toggle-container">
-        <label class="small-toggle"><span>Single</span><input type="checkbox" id="single-toggle" checked></label>
-        <label class="small-toggle"><span>Bulk</span><input type="checkbox" id="bulk-toggle"></label>
+        <label class="small-toggle">
+          <span>Single</span>
+          <input type="checkbox" id="single-toggle" checked>
+        </label>
+        <label class="small-toggle">
+          <span>Bulk</span>
+          <input type="checkbox" id="bulk-toggle">
+        </label>
       </div>
 
-      <div class="stake-row">
-        <label for="stake">Stake (minimum 0.35):</label>
-        <input type="number" id="stake" min="0.35" step="0.01" value="0.35">
+      <!-- Stake label ALWAYS above input -->
+      <div class="stake-block">
+        <label for="stake">Stake (minimum 0.35)</label>
+        <div class="stake-row">
+          <input type="number" id="stake" min="0.35" step="0.01" value="0.35">
 
-        <div class="smart-buttons">
-          <button id="run-smart">RUN</button>
-          <button id="stop-smart">STOP</button>
+          <div class="smart-buttons">
+            <button id="run-smart">RUN</button>
+            <button id="stop-smart">STOP</button>
+          </div>
         </div>
       </div>
 
       <div id="smart-results"></div>
     </div>
   `);
+
 
   overDigit = document.getElementById("over-digit");
   underDigit = document.getElementById("under-digit");

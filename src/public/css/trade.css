@@ -487,3 +487,67 @@ select:focus,input:focus{outline:none;border-color:#00bbf0;box-shadow:0 0 0 4px 
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+/* ===== Smart Over / Under UI Improvements ===== */
+
+/* Over / Under side-by-side */
+#smart-over-under .ou-row {
+  display: flex;
+  gap: 12px;
+}
+
+#smart-over-under .ou-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Stake block: label always above */
+#smart-over-under .stake-block {
+  margin-top: 14px;
+}
+
+#smart-over-under .stake-block label {
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+/* Stake + buttons row */
+#smart-over-under .stake-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#smart-over-under #stake {
+  width: 140px;
+}
+
+/* Make UI feel lighter & cleaner */
+#smart-over-under h2 {
+  margin-bottom: 12px;
+}
+
+#smart-over-under select,
+#smart-over-under input {
+  background: #fff;
+}
+
+/* Mobile adjustments */
+@media (max-width: 480px) {
+  #smart-over-under .ou-row {
+    flex-direction: column;
+  }
+
+  #smart-over-under .stake-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #smart-over-under #stake {
+    width: 100%;
+  }
+
+  #smart-over-under .smart-buttons {
+    justify-content: space-between;
+  }
+}
