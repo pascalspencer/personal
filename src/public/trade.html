@@ -68,6 +68,19 @@
   </style>
 </head>
 <body>
+  <div id="skeleton">
+    <div class="skel-form"></div>
+  </div>
+  <style>
+  #skeleton{position:fixed;inset:0;background:#fff;z-index:9999;animation:fadeOut .4s 1.2s forwards}
+  .skel-form{width:600px;height:70vh;margin:15vh auto;background:#f2f4f7;border-radius:10px;animation:shimmer 1s infinite}
+  @keyframes shimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
+  @keyframes fadeOut{to{opacity:0;pointer-events:none}}
+  @media (max-width:768px){.skel-form{width:80%}}
+  </style>
+  <script>
+  window.addEventListener("DOMContentLoaded",()=> requestAnimationFrame(()=> document.getElementById("skeleton").remove()));
+  </script>
   <div id="auto-analysis"></div>
 
   <form id="trade-form" aria-labelledby="form-heading">
@@ -86,7 +99,7 @@
     
     <!-- Market Dropdown -->
     <label for="market">Market:</label>
-    <select id="market" name="market" required>
+    <select aria-label="Choose market" id="market" name="market" required>
       <option value="">Select Market</option>
       <option value="forex">Forex</option>
       <option value="indices">Indices</option>
@@ -97,13 +110,13 @@
 
     <!-- Submarket Dropdown -->
     <label for="submarket">Submarket:</label>
-    <select id="submarket" name="submarket" disabled>
+    <select aria-label="Choose submarket" id="submarket" name="submarket" disabled>
       <option value="">Select Submarket</option>
     </select>
 
     <!-- Contract Type Dropdown -->
     <label for="contract_type">Trade Type:</label>
-    <select id="contract_type" name="contract_type" required>
+    <select aria-label="Choose tradeType" id="contract_type" name="contract_type" required>
       <option value="">Select Trade</option>
       <option value="up_and_down">Up and Down</option>
       <option value="digits">Digits</option>
@@ -111,14 +124,14 @@
 
     <!-- Sentiment Dropdown -->
     <label for="sentiment">Sentiment:</label>
-    <select id="sentiment" name="sentiment" required>
+    <select aria-label="Choose sentiment" id="sentiment" name="sentiment" required>
       <option value="">Select Sentiment</option>
     </select>
 
     <!-- Digits Input -->
     <div id="digit-value" style="display: none;">
       <label for="input-value">Digits:</label>
-      <select name="input-value" id="input-value">
+      <select aria-label="Choose digit" name="input-value" id="input-value">
         <option value="">Select Digit</option>
         <option value="0">0</option>
         <option value="1">1</option>
@@ -157,6 +170,7 @@
   <script type="module" src="/js/formData.mjs"></script>
   <script type="module" src="/js/smart-ui.mjs"></script>
   <script type="module" src="/js/smart-over-under.mjs"></script>
+  <script type="module" src="/js/ripple.mjs"></script>
 
   <script type="module">
     // Auto-populate Market → Submarket Dropdowns

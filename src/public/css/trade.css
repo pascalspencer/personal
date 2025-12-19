@@ -1,6 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
 
+html{font-size:16px}
+@media (max-width:768px){html{font-size:15px}}
+@media (max-width:480px){html{font-size:14px}}
 body {
+  line-height: 1.5;
   font-family: "Poppins";
   color: #0c0c0c;
   background-color: #ffffff;
@@ -20,23 +24,20 @@ body {
   cursor: pointer;
   z-index: 10001;
 }
+#menu-btn{transition:transform .2s}
+#menu-btn:active{transform:scale(.92)}
 
-#side-panel {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 260px;
-  height: 100%;
-  background: #ffffff;
-  box-shadow: 2px 0 20px rgba(0,0,0,0.15);
-  transform: translateX(-100%);
-  transition: transform 0.3s ease;
-  z-index: 10000;
+#side-panel{
+  position:fixed; inset:0; width:280px;
+  background:rgba(255,255,255,.85);
+  backdrop-filter:blur(12px) saturate(180%);
+  -webkit-backdrop-filter:blur(12px) saturate(180%);
+  border-right:1px solid rgba(0,0,0,.05);
+  transform:translateX(-100%);
+  transition:transform .45s cubic-bezier(.4,0,.2,1);
+  z-index:10000;
 }
-
-#side-panel.open {
-  transform: translateX(0);
-}
+#side-panel.open{transform:none}
 
 .panel-header {
   padding: 15px;
@@ -126,58 +127,18 @@ input[type="submit"]:hover {
   background-color: #007fa4;
 }
 
-/* --- Automation Toggle Styles --- */
-.toggle-container {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 10px 0 15px;
-}
+/* ======  ON / OFF switch with icon  ====== */
+.toggle-container{gap:12px}
+.switch{position:relative;display:inline-block;width:54px;height:28px}
+.switch input{opacity:0;width:0;height:0}
+.slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#e4e6eb;transition:.3s;border-radius:28px}
+.slider:before{position:absolute;content:"";height:20px;width:20px;left:4px;bottom:4px;background:#fff;transition:.3s;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,.2)}
+input:checked+.slider{background:#34c759}
+input:checked+.slider:before{transform:translateX(26px)}
+/* little icon inside knob */
+.slider::after{content:"✕";position:absolute;left:50%;top:50%;font-size:14px;color:#adb5bd;transform:translate(-50%,-50%)}
+input:checked+.slider::after{content:"✓";color:#fff}
 
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 50px;
-  height: 26px;
-}
-
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.slider {
-  position: absolute;
-  cursor: pointer;
-  background-color: #ccc;
-  transition: 0.4s;
-  border-radius: 26px;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-}
-
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 20px;
-  width: 20px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: 0.4s;
-  border-radius: 50%;
-}
-
-input:checked + .slider {
-  background-color: #4caf50;
-}
-
-input:checked + .slider:before {
-  transform: translateX(24px);
-}
 
 
 @keyframes ldio-s69gk832n0l {
@@ -355,6 +316,10 @@ body.smart-mode > .trade-popup-overlay {
   gap: 8px;
 }
 
+button,input[type=submit],select{position:relative;overflow:hidden}
+.ripple{position:absolute;border-radius:50%;background:rgba(0,187,240,.45);transform:scale(0);animation:ripple .6s linear}
+@keyframes ripple{to{transform:scale(4);opacity:0}}
+
 /* visible class makes it show */
 #smart-over-under.visible { display: block; }
 
@@ -415,6 +380,8 @@ body.smart-mode > #side-panel.open { display: block; visibility: visible; transf
   padding-top: 10px;
   border-top: 1px solid rgba(0,0,0,0.06);
 }
+.trade-popup.autoclose{animation:slideDown .3s ease-out, fadeOut .4s .9s forwards}
+@keyframes fadeOut{to{opacity:0}}
 
 #smart-over-under .small-toggle {
   display: inline-flex;
@@ -456,6 +423,8 @@ body.smart-mode > #side-panel.open { display: block; visibility: visible; transf
   background: #d32f2f;
   color: #fff;
 }
+
+select:focus,input:focus{outline:none;border-color:#00bbf0;box-shadow:0 0 0 4px rgba(0,187,240,.2)}
 
 @media (max-width: 480px) {
   #smart-over-under .toggle-container { flex-direction: column; align-items: stretch; gap: 8px; border-top: none; }
@@ -515,4 +484,6 @@ body.smart-mode > #side-panel.open { display: block; visibility: visible; transf
   #smart-over-under #stake { width: 100%; }
   #smart-over-under .smart-buttons { display: flex; gap: 8px; }
 }
-
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}

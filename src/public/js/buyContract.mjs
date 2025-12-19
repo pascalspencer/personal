@@ -256,6 +256,7 @@ async function evaluateAndBuyContractSafe() {
 
       overlay.appendChild(popup);
       try { document.body.appendChild(overlay); } catch (e) { console.warn('Could not show sentiment popup:', e); }
+      popup.classList.add("autoclose");
       
       // Auto-dismiss after 6 seconds
       setTimeout(() => { try { overlay.remove(); } catch (e) {} }, 6000);
