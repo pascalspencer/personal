@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         <div class="stake-row">
           <div class="field stake-field">
-            <label for="stake">Stake</label>
+            <label for="stake">(Minimum 0.35)</label>
             <input type="number" id="stake" min="0.35" step="0.01" value="0.35">
           </div>
 
