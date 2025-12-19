@@ -11,8 +11,35 @@ const resultsContainer = document.getElementById("results-container");
 let reqCounter = 1;
 const pending = new Map();        // req_id -> resolve(response)
 const subscriptions = new Map();  // req_id -> { resolve, timeout }
-// default currency (fall back to USD)
-let defaultCurrency = 'USD';
+
+// detected account currency (NO hardcoded fallback)
+let defaultCurrency = null;
+
+/**
+ * Robustly detect the active account currency from authorize response
+ */
+function getBestAccountCurrency(authResp) {
+  if (!authResp || !authResp.authorize) return null;
+
+  // Preferred: explicit currency
+  if (authResp.authorize.currency) {
+    return authResp.authorize.currency;
+  }
+
+  // Fallback: account_list (real or virtual)
+  const list = authResp.authorize.account_list;
+  if (Array.isArray(list) && list.length) {
+    // Prefer non-virtual if present, otherwise virtual
+    const real = list.find(a => a.is_virtual === 0 && a.currency);
+    if (real) return real.currency;
+
+    const demo = list.find(a => a.is_virtual === 1 && a.currency);
+    if (demo) return demo.currency;
+  }
+
+  return null;
+}
+
 
 function parseCurrencyFromAuth(resp) {
   try {
@@ -43,10 +70,13 @@ connection.onopen = function () {
     try {
       const resp = await sendJson({ authorize: token });
       console.log("Authorize response:", resp);
-      const cur = parseCurrencyFromAuth(resp);
+
+      const cur = getBestAccountCurrency(resp);
       if (cur) {
         defaultCurrency = cur;
-        console.log('Using currency from authorize:', defaultCurrency);
+        console.log("✅ Account currency detected:", defaultCurrency);
+      } else {
+        console.warn("⛔ Could not detect account currency — trading disabled");
       }
     } catch (err) {
       console.error("Authorization failed:", err);
@@ -343,14 +373,13 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       // ensure authorization on server-side was done via /redirect; re-authorize if necessary
       try {
         const authResp = await sendJson({ authorize: token });
-        if (authResp.error) {
+        if (authResp?.error) {
           console.warn("Authorization failed:", authResp.error);
-          // continue or abort depending on your preference; here we continue and let proposal fail if unauthorized
         } else {
-          const cur2 = parseCurrencyFromAuth(authResp);
+          const cur2 = getBestAccountCurrency(authResp);
           if (cur2) {
             defaultCurrency = cur2;
-            console.log('Using currency from authorize before proposal:', defaultCurrency);
+            console.log("✅ Currency refreshed before proposal:", defaultCurrency);
           }
         }
       } catch (err) {
@@ -371,14 +400,26 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       }
     }
 
+    if (!defaultCurrency) {
+      console.warn("⛔ Trade blocked — account currency not detected");
+      return;
+    }
 
+    const balResp = await sendJson({ balance: 1 });
+    const bal = balResp?.balance?.balance;
+
+    if (!bal || Number(bal) <= 0) {
+      console.warn(`⛔ Zero balance detected in ${defaultCurrency}`);
+    }
+
+    
     // 2) Build PROPOSAL object
     const proposal = {
       proposal: 1,
       amount: price,
       basis: "stake",
       contract_type: tradeType,
-      currency: defaultCurrency || "USD",
+      currency: defaultCurrency,
       symbol: symbol,
       duration: duration,
       duration_unit: "t",
