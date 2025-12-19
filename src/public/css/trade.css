@@ -64,7 +64,6 @@ body {
   color: #fff;
 }
 
-
 form {
   width: 600px;
   margin: 0 auto;
@@ -120,7 +119,6 @@ input[type="number"] {
   cursor: pointer;
   transition: background-color 0.3s;
 }
-
 
 input[type="submit"]:hover {
   background-color: #007fa4;
@@ -179,127 +177,40 @@ input:checked + .slider:before {
   transform: translateX(24px);
 }
 
-
+/* Loading Animation */
 @keyframes ldio-s69gk832n0l {
-  0% {
-    transform: rotate(0deg);
-  }
-  50% {
-    transform: rotate(22.5deg);
-  }
-  100% {
-    transform: rotate(45deg);
-  }
+  0% { transform: rotate(0deg); }
+  50% { transform: rotate(22.5deg); }
+  100% { transform: rotate(45deg); }
 }
-.ldio-s69gk832n0l > div {
-  transform-origin: 100px 100px;
-  animation: ldio-s69gk832n0l 0.2s infinite linear;
-}
-.ldio-s69gk832n0l > div div {
-  position: absolute;
-  width: 22px;
-  height: 152px;
-  background: #2c55b9;
-  left: 100px;
-  top: 100px;
-  transform: translate(-50%, -50%);
-}
-
-#loading-message {
-  text-align: center;
-  margin-top: 20px;
-}
-
-
-
-.ldio-s69gk832n0l > div div:nth-child(1) {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-}
-.ldio-s69gk832n0l > div div:nth-child(6) {
-  width: 80px;
-  height: 80px;
-  background: #ffffff;
-  border-radius: 50%;
-}
-.ldio-s69gk832n0l > div div:nth-child(3) {
-  transform: translate(-50%, -50%) rotate(45deg);
-}
-.ldio-s69gk832n0l > div div:nth-child(4) {
-  transform: translate(-50%, -50%) rotate(90deg);
-}
-.ldio-s69gk832n0l > div div:nth-child(5) {
-  transform: translate(-50%, -50%) rotate(135deg);
-}
-.loadingio-spinner-gear-5fyuz6nbepy {
-  width: 200px;
-  height: 200px;
-  display: none;
-  flex-direction: column;
-  text-align: center;
-  justify-content: center;
-  overflow: hidden;
-  background: #ffffff;
-}
-.ldio-s69gk832n0l {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  transform: translateZ(0) scale(1);
-  backface-visibility: hidden;
-  transform-origin: 0 0; /* see note above */
-}
-.ldio-s69gk832n0l div {
-  box-sizing: content-box;
-}
+.ldio-s69gk832n0l > div { transform-origin: 100px 100px; animation: ldio-s69gk832n0l 0.2s infinite linear; }
+.ldio-s69gk832n0l > div div { position: absolute; width: 22px; height: 152px; background: #2c55b9; left: 100px; top: 100px; transform: translate(-50%, -50%); }
+#loading-message { text-align: center; margin-top: 20px; }
 
 /* Media Queries */
 @media (max-width: 768px) {
-  form {
-    width: 70%;
-    padding: 15px;
-  }
-
-  
+  form { width: 70%; padding: 15px; }
 }
-
 @media (max-width: 480px) {
-  form {
-    padding: 10px;
-  }
-
-  select, input[type="submit"] {
-    font-size: 14px;
-  }
-
-  #loading-message {
-    font-size: 14px;
-  }
+  form { padding: 10px; }
+  select, input[type="submit"] { font-size: 14px; }
+  #loading-message { font-size: 14px; }
 }
 
 /* --- Trade result popup --- */
 .trade-popup-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(0,0,0,0.35);
   display: flex;
   align-items: flex-start;
   justify-content: center;
   padding-top: 20px;
-  z-index: 10003; /* above side-panel/menu */
+  z-index: 10003;
 }
-
-/* Ensure overlay popups remain visible when smart-mode hides other top-level children */
-body.smart-mode > .trade-popup-overlay {
-  display: flex !important;
-}
+body.smart-mode > .trade-popup-overlay { display: flex !important; }
 .trade-popup {
-  min-width: 320px;
-  max-width: 420px;
+  min-width: 320px; max-width: 420px;
   background: #fff;
   color: #111;
   border-radius: 8px;
@@ -309,369 +220,135 @@ body.smart-mode > .trade-popup-overlay {
   text-align: left;
   animation: slideDown 0.3s ease-out;
 }
+@keyframes slideDown { from { opacity:0; transform:translateY(-30px);} to { opacity:1; transform:translateY(0);} }
+.trade-popup h3 { margin:0 0 8px 0; font-size:18px; }
+.trade-popup p { margin:6px 0; }
+.trade-popup .amount { font-weight:700; }
+.trade-popup .profit { color:#0a8a27; }
+.trade-popup .loss { color:#d32f2f; }
+.trade-popup .low-balance { color:#b45309; font-weight:600; }
+.trade-popup .close-btn { margin-top:12px; display:inline-block; background:#0c0c0c; color:#fff; padding:8px 12px; border-radius:6px; cursor:pointer; text-decoration:none; }
+.trade-popup .close-btn:hover { opacity:0.95; }
 
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-.trade-popup h3 {
-  margin: 0 0 8px 0;
-  font-size: 18px;
-}
-.trade-popup p { margin: 6px 0; }
-.trade-popup .amount { font-weight: 700; }
-.trade-popup .profit { color: #0a8a27; }
-.trade-popup .loss { color: #d32f2f; }
-.trade-popup .low-balance { color: #b45309; font-weight: 600; }
-.trade-popup .close-btn {
-  margin-top: 12px;
-  display: inline-block;
-  background: #0c0c0c;
-  color: #fff;
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  text-decoration: none;
-}
-.trade-popup .close-btn:hover { opacity: 0.95; }
-
-/* Smart Over/Under UI styles — mirror Auto Analysis layout and spacing */
+/* ===========================
+   SMART OVER / UNDER – CLEAN & SYMMETRICAL
+=========================== */
 #smart-over-under {
   display: none;
-  box-sizing: border-box;
+  flex-direction: column;
   padding: 18px;
   background: #ffffff;
-  border: 1px solid #f0f0f2;
   border-radius: 12px;
   max-width: 680px;
   width: 100%;
   margin: 12px auto;
-  gap: 12px;
+  gap: 14px;
+  box-shadow: 0 8px 24px rgba(2,6,23,0.08);
 }
 
-/* visible class makes it show */
-#smart-over-under.visible { display: block; }
-
-/* when smart-mode is active, hide other top-level content but keep toggles/menu and allow side-panel */
-body.smart-mode > * { display: none; }
-body.smart-mode > #smart-over-under { display: block; }
-body.smart-mode > #menu-btn { display: block; }
-body.smart-mode > [id*="toggle"] { display: block; }
-body.smart-mode > .toggle { display: block; }
-
-/* ensure market/submarket (if top-level) are visible alongside smart UI */
-body.smart-mode > #market,
-body.smart-mode > #submarket { display: block; }
-
-/* keep side-panel in the flow but off-screen so transform transition works */
-/* Ensure the side-panel is present (not display:none) so transform transition works */
-body.smart-mode > #side-panel { display: block; visibility: hidden; transform: translateX(-100%); transition: transform 0.3s ease; }
-body.smart-mode > #side-panel.open { display: block; visibility: visible; transform: translateX(0); position: fixed; top: 0; left: 0; z-index: 10000; }
-
-/* layout inside smart UI */
-#smart-over-under { display: flex; flex-direction: column; }
-#smart-over-under .smart-card { display:block; }
-#smart-over-under .smart-header { margin-bottom: 8px; }
-#smart-over-under .smart-title { margin: 0; font-size: 20px; }
-#smart-over-under .smart-sub { margin: 4px 0 12px 0; color: #5a6170; font-size: 13px; }
-
-#smart-over-under .smart-form { display: grid; gap: 12px; }
-#smart-over-under .row { display: flex; gap: 12px; align-items: center; }
-#smart-over-under .two-cols { grid-template-columns: 1fr 1fr; display: grid; }
-#smart-over-under .field {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-}
-
-#smart-over-under .field input,
-#smart-over-under .field select {
-  width: 100%;
-}
-#smart-over-under label { font-weight:600; font-size:13px; color:#222; }
-#smart-over-under select, #smart-over-under input[type="number"] { height:44px; border:1px solid #e3e6ea; border-radius:8px; padding:0 10px; font-size:14px; }
-#smart-over-under .toggles { display:flex; gap:12px; align-items:center; }
-#smart-over-under .toggle { display:flex; align-items:center; gap:8px; font-size:14px; color:#333; }
-#smart-over-under .smart-buttons { display:flex; gap:8px; justify-content:flex-end; }
-
-/* Buttons */
-.btn { height:40px; padding: 0 14px; border-radius:8px; border:1px solid #d1d5db; background:#fff; cursor:pointer; font-weight:600; }
-.btn.primary { background:#0077c8; color:#fff; border-color:#0077c8; }
-.btn:disabled, .btn[aria-disabled="true"] { opacity:0.6; cursor:not-allowed; }
-
-/* Results */
-.smart-results { margin-top: 12px; min-height: 40px; border-top: 1px dashed #eef0f3; padding-top: 12px; color:#222; }
-
-@media (max-width: 768px) {
-  #smart-over-under { width: 90%; max-width: calc(100% - 48px); padding: 12px; }
-  #smart-over-under .two-cols { grid-template-columns: 1fr; }
-}
-
-/* Responsive: mirror Auto Analysis on medium and small screens */
-@media (max-width: 768px) {
-  #smart-over-under { width: 70%; max-width: calc(100% - 48px); padding: 15px; }
-}
-
-@media (max-width: 480px) {
-  #smart-over-under { width: calc(100% - 48px); max-width: calc(100% - 48px); margin: 8px 24px; padding: 10px; }
-}
-
-/* prevent hamburger overlap on very small screens by offsetting panel content */
-@media (max-width: 480px) {
-  /* push smart panel content right to leave space for fixed hamburger */
-  #smart-over-under { margin-left: 72px; padding-left: 12px; }
-  /* ensure the menu button remains above content */
-  #menu-btn { z-index: 10002; }
-}
-
-/* When the hamburger/menu is positioned on the right, mirror the left offset
-   so the smart panel doesn't butt up against the screen edge. */
-@media (max-width: 480px) {
-  body.menu-right #smart-over-under { margin-right: 72px; padding-right: 12px; margin-left: 8px; }
-  /* ensure the menu button remains above content when on right */
-  body.menu-right #menu-btn { z-index: 10002; right: 15px; left: auto; }
-}
-
-/* Clean toggle layout below price */
-#smart-over-under .toggle-container {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  padding-top: 10px;
-  border-top: 1px solid rgba(0,0,0,0.06);
-}
-
-#smart-over-under .small-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(0,0,0,0.02);
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-weight: 600;
-}
-
-#smart-over-under .small-toggle input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  margin-left: 6px;
-  accent-color: #00bbf0;
-}
-
-/* Make buttons match Auto Analysis styling and look crisp */
-#smart-over-under .smart-buttons { display: flex; gap: 8px; }
-#smart-over-under .smart-buttons button {
-  height: 42px;
-  padding: 0 16px;
-  border-radius: 6px;
-  border: none;
-  font-size: 15px;
-  font-weight: 600;
-  box-shadow: 0 2px 6px rgba(2,6,23,0.08);
-}
-
-#smart-over-under .smart-buttons #run-smart {
-  background: #00bbf0;
-  color: #fff;
-}
-
-#smart-over-under .smart-buttons #run-smart:hover { filter: brightness(0.95); }
-
-#smart-over-under .smart-buttons #stop-smart {
-  background: #d32f2f;
-  color: #fff;
-}
-
-@media (max-width: 480px) {
-  #smart-over-under .toggle-container { flex-direction: column; align-items: stretch; gap: 8px; border-top: none; }
-  #smart-over-under .small-toggle { justify-content: space-between; }
-  /* keep stake input fixed width like Auto Analysis even on small screens */
-  #smart-over-under .stake-row { flex-direction: row; align-items: center; gap: 8px; }
-  #smart-over-under .smart-buttons { justify-content: flex-end; }
-  #smart-over-under .smart-buttons button { width: auto; }
-}
-
-/* spacing adjustments to prevent elements touching */
-#tick-count { margin-bottom: 12px; }
-#smart-over-under .stake-row { margin-top: 12px; }
-
-/* stake row: put stake input and run/stop buttons on one line */
-#smart-over-under .stake-row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-#smart-over-under .stake-row label {
-  margin: 0;
-  font-weight: 600;
-}
-
-#smart-over-under #stake {
-  width: 120px;
-  height: 45px;
-  padding: 8px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-}
-
-#smart-over-under .smart-buttons button {
-  height: 45px;
-  padding: 0 18px;
-  border-radius: 5px;
-  border: none;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-#smart-over-under .smart-buttons #run-smart {
-  background: #00bbf0;
-  color: #fff;
-}
-
-#smart-over-under .smart-buttons #stop-smart {
-  background: #d32f2f;
-  color: #fff;
-}
-
-@media (max-width: 480px) {
-  #smart-over-under .stake-row { flex-direction: column; align-items: stretch; }
-  #smart-over-under #stake { width: 100%; }
-  #smart-over-under .smart-buttons { display: flex; gap: 8px; }
-}
-/* ===========================
-   SMART OVER / UNDER – POLISH
-=========================== */
-
-#smart-over-under {
-  background: linear-gradient(180deg, #ffffff, #fafbfc);
-}
+#smart-over-under.visible { display: flex; }
 
 #smart-over-under .smart-card {
-  background: #ffffff;
+  background: #fff;
   border-radius: 14px;
-  padding: 18px;
-  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.08);
+  padding: 20px;
+  box-shadow: 0 8px 24px rgba(2,6,23,0.08);
 }
 
 #smart-over-under .smart-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   border-bottom: 1px solid #eef0f3;
-  margin-bottom: 14px;
-  padding-bottom: 10px;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
 }
 
-#smart-over-under .smart-title {
-  font-size: 22px;
-  font-weight: 700;
-  margin: 0;
-}
+#smart-over-under .smart-title { font-size:22px; font-weight:700; margin:0; }
+#smart-over-under .smart-sub { font-size:13px; color:#6b7280; margin:4px 0 0; }
 
-#smart-over-under .smart-sub {
-  font-size: 13px;
-  color: #6b7280;
-  margin: 4px 0 0;
-}
-
-/* Form layout */
-#smart-over-under .smart-form {
-  display: grid;
-  gap: 14px;
-}
-
-#smart-over-under .field label {
-  font-size: 13px;
-  font-weight: 600;
-  color: #374151;
-}
-
-#smart-over-under select,
-#smart-over-under input[type="number"] {
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  height: 44px;
-  padding: 0 12px;
-  font-size: 14px;
+#smart-over-under .smart-form { display: grid; gap:14px; }
+#smart-over-under .row.two-cols { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+#smart-over-under .field label { font-weight:600; font-size:13px; color:#222; margin-bottom:4px; }
+#smart-over-under .field input, #smart-over-under .field select {
+  width:100%;
+  height:44px;
+  border-radius:8px;
+  border:1px solid #e5e7eb;
+  padding:0 12px;
+  font-size:14px;
+  background:#f9fafb;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
-
-#smart-over-under select:focus,
-#smart-over-under input[type="number"]:focus {
-  outline: none;
-  border-color: #00bbf0;
-  box-shadow: 0 0 0 3px rgba(0,187,240,0.15);
-}
-
-/* Over / Under row */
-#smart-over-under .two-cols {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+#smart-over-under .field input:focus, #smart-over-under .field select:focus {
+  outline:none;
+  border-color:#00bbf0;
+  box-shadow:0 0 0 3px rgba(0,187,240,0.15);
 }
 
 /* Toggles */
 #smart-over-under .toggle-container {
-  display: flex;
-  gap: 12px;
-  background: #f6f7f9;
-  padding: 10px;
-  border-radius: 10px;
+  display:flex;
+  gap:12px;
+  background:#f6f7f9;
+  padding:10px;
+  border-radius:10px;
 }
-
 #smart-over-under .small-toggle {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex: 1;
-  padding: 8px 10px;
-  background: #ffffff;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 14px;
-  box-shadow: 0 2px 6px rgba(2,6,23,0.06);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex:1;
+  padding:8px 10px;
+  background:#fff;
+  border-radius:8px;
+  font-weight:600;
+  font-size:14px;
+  box-shadow:0 2px 6px rgba(2,6,23,0.06);
 }
 
-/* Stake + buttons */
+/* Stake & Buttons */
 #smart-over-under .stake-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 12px;
-  padding-top: 10px;
-  border-top: 1px dashed #e5e7eb;
+  display:flex;
+  gap:12px;
+  align-items:flex-end;
+  padding-top:12px;
+  border-top:1px dashed #e5e7eb;
 }
-
-#smart-over-under .stake-field {
-  flex: 1;
+#smart-over-under .stake-field { flex:1; }
+#smart-over-under .smart-buttons {
+  display:flex;
+  gap:8px;
+  justify-content:flex-end;
 }
-
 #smart-over-under .smart-buttons button {
-  height: 44px;
-  padding: 0 20px;
-  border-radius: 10px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  box-shadow: 0 6px 16px rgba(2,6,23,0.12);
+  height:44px;
+  padding:0 20px;
+  border-radius:10px;
+  font-weight:700;
+  box-shadow:0 6px 16px rgba(2,6,23,0.12);
+  border:none;
+  cursor:pointer;
 }
-
-#smart-over-under #run-smart {
-  background: linear-gradient(135deg, #00bbf0, #0099cc);
-}
-
-#smart-over-under #stop-smart {
-  background: linear-gradient(135deg, #d32f2f, #b71c1c);
-}
+#smart-over-under #run-smart { background: linear-gradient(135deg,#00bbf0,#0099cc); color:#fff; }
+#smart-over-under #stop-smart { background: linear-gradient(135deg,#d32f2f,#b71c1c); color:#fff; }
 
 /* Results */
 #smart-over-under .smart-results {
-  font-size: 14px;
-  color: #111827;
+  font-size:14px;
+  color:#111827;
+  margin-top:12px;
 }
 
-
+/* Responsive adjustments */
+@media (max-width:768px) {
+  #smart-over-under { width:90%; max-width:calc(100% - 48px); padding:15px; }
+  #smart-over-under .two-cols { grid-template-columns:1fr; }
+}
+@media (max-width:480px) {
+  #smart-over-under { width:calc(100% - 48px); margin:8px 24px; padding:12px; }
+  #smart-over-under .toggle-container { flex-direction:column; gap:8px; }
+  #smart-over-under .small-toggle { justify-content:space-between; }
+  #smart-over-under .stake-row { flex-direction:column; align-items:stretch; }
+  #smart-over-under #stake { width:100%; }
+}
