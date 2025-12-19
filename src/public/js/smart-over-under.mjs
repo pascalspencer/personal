@@ -370,12 +370,12 @@ async function checkTick(symbol) {
 
   if (digit < Number(overDigit.value)) {
     tradeLock = true;
-    await executeTrade(symbol, "DIGITOVER", overDigit.value, tick);
+    await executeTrade(symbol, "DIGITUNDER", overDigit.value, tick);
   }
 
   if (digit > Number(underDigit.value)) {
     tradeLock = true;
-    await executeTrade(symbol, "DIGITUNDER", underDigit.value, tick);
+    await executeTrade(symbol, "DIGITOVER", underDigit.value, tick);
   }
 
   tradeLock = false;
