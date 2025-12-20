@@ -227,7 +227,6 @@ async function runSmart() {
   if (bulkToggle.checked) {
     await runBulkOnce(symbol);
     running = false;
-    runBtn.disabled = false
     return;
   }
 
@@ -235,7 +234,6 @@ async function runSmart() {
     // run sequential buys driven by ticks
     await runSingleSequential(symbol);
     running = false;
-    runBtn.disabled = false
     return;
   }
 
