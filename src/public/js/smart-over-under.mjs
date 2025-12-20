@@ -10,9 +10,6 @@ let overDigit, underDigit, tickCount, stakeInput;
 let singleToggle, bulkToggle, resultsBox;
 
 document.addEventListener("DOMContentLoaded", () => {
-  const runBtn = document.getElementById("run-smart");
-  const stopBtn = document.getElementById("stop-smart");
-
   // UI Injection
   document.body.insertAdjacentHTML("beforeend", `
   <div id="smart-over-under" style="display:none">
@@ -212,8 +209,6 @@ function popup(msg, details = null, timeout = 2000) {
 }
 
 async function runSmart() {
-  runBtn.disabled = true; // disable RUN
-  stopBtn.disabled = false; // ensure STOP is clickable
   if (running) return;
   running = true;
   ticksSeen = 0;
@@ -243,7 +238,6 @@ async function runSmart() {
   }
 
   running = false;
-  runBtn.disabled = false;
 }
 
 // Sequential buys driven by ticks: subscribe and trigger a buy on each incoming tick
@@ -637,12 +631,9 @@ async function executeTrade(symbol, type = "DIGITOVER", barrier = 0, liveQuote =
 function stopSmart() {
   running = false;
   tradeLock = false;
-  
   if (tickWs) {
     try { tickWs.close(); } catch (e) {}
     tickWs = null;
   }
   popup("Stopped");
-  runBtn.disabled = false;
-  stopBtn.disabled = true
 }
