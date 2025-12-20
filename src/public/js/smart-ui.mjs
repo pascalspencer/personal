@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // Create hamburger + panel dynamically
+  // Inject hamburger + side panel
   document.body.insertAdjacentHTML("afterbegin", `
     <div id="menu-btn">☰</div>
     <div id="side-panel">
@@ -18,8 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const closeBtn = document.getElementById("panel-close");
   const tabs = document.querySelectorAll(".tab-btn");
 
-  // Detect whether the menu/hamburger is positioned on the right side of the
-  // viewport and toggle a `body.menu-right` class so CSS can mirror offsets.
+  // Detect menu position (left/right) for responsive offsets
   function updateMenuSide() {
     const rect = menuBtn.getBoundingClientRect();
     if (rect.left > window.innerWidth / 2) {
@@ -31,30 +30,55 @@ document.addEventListener("DOMContentLoaded", () => {
   updateMenuSide();
   window.addEventListener('resize', updateMenuSide);
 
+  // Hamburger toggle
   menuBtn.onclick = () => {
     sidePanel.classList.add("open");
-    // hide hamburger while side panel is open
     menuBtn.style.display = 'none';
   };
   closeBtn.onclick = () => {
     sidePanel.classList.remove("open");
-    // restore hamburger when panel closed
     menuBtn.style.display = '';
   };
 
+  // Tab switching logic
   tabs.forEach(btn => {
-    btn.onclick = () => {
+    btn.onclick = async () => {
+      // Update active state
       tabs.forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
 
-      document.getElementById("auto-analysis").style.display =
-        btn.dataset.tab === "auto" ? "block" : "none";
+      const tab = btn.dataset.tab;
 
-      document.getElementById("smart-over-under").style.display =
-        btn.dataset.tab === "smart" ? "block" : "none";
+      // Hide both sections first
+      const autoAnalysis = document.getElementById("auto-analysis");
+      if (autoAnalysis) autoAnalysis.style.display = "none";
 
+      const oldSmart = document.getElementById("smart-over-under");
+      if (oldSmart) oldSmart.style.display = "none";
+
+      // Show correct tab
+      if (tab === "auto" && autoAnalysis) {
+        autoAnalysis.style.display = "block";
+      } else if (tab === "smart") {
+        // Load Smart Over/Under dynamically only once
+        let smartPanel = document.querySelector(".smart-panel");
+        if (!smartPanel) {
+          const response = await fetch("/smart-over-under.html");
+          const html = await response.text();
+
+          // Insert new Smart UI into body
+          document.body.insertAdjacentHTML("beforeend", html);
+          smartPanel = document.querySelector(".smart-panel");
+        }
+
+        if (smartPanel) {
+          smartPanel.style.display = "flex"; // visible
+          document.body.classList.add("smart-mode"); // for any CSS targeting
+        }
+      }
+
+      // Close side panel after tab selection
       sidePanel.classList.remove("open");
-      // restore hamburger after choosing a tab
       menuBtn.style.display = '';
     };
   });
