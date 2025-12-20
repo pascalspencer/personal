@@ -341,337 +341,108 @@ body.smart-mode > .trade-popup-overlay {
 }
 .trade-popup .close-btn:hover { opacity: 0.95; }
 
-/* Smart Over/Under UI styles — mirror Auto Analysis layout and spacing */
-#smart-over-under {
-  display: none;
-  box-sizing: border-box;
-  padding: 18px;
-  background: #ffffff;
-  border: 1px solid #f0f0f2;
-  border-radius: 12px;
-  max-width: 680px;
-  width: 100%;
-  margin: 12px auto;
-  gap: 12px;
-}
-
-/* visible class makes it show */
-#smart-over-under.visible { display: block; }
-
-/* when smart-mode is active, hide other top-level content but keep toggles/menu and allow side-panel */
-body.smart-mode > * { display: none; }
-body.smart-mode > #smart-over-under { display: block; }
-body.smart-mode > #menu-btn { display: block; }
-body.smart-mode > [id*="toggle"] { display: block; }
-body.smart-mode > .toggle { display: block; }
-
-/* ensure market/submarket (if top-level) are visible alongside smart UI */
-body.smart-mode > #market,
-body.smart-mode > #submarket { display: block; }
-
-/* keep side-panel in the flow but off-screen so transform transition works */
-/* Ensure the side-panel is present (not display:none) so transform transition works */
-body.smart-mode > #side-panel { display: block; visibility: hidden; transform: translateX(-100%); transition: transform 0.3s ease; }
-body.smart-mode > #side-panel.open { display: block; visibility: visible; transform: translateX(0); position: fixed; top: 0; left: 0; z-index: 10000; }
-
-/* layout inside smart UI */
-#smart-over-under { display: flex; flex-direction: column; }
-#smart-over-under .smart-card { display:block; }
-#smart-over-under .smart-header { margin-bottom: 8px; }
-#smart-over-under .smart-title { margin: 0; font-size: 20px; }
-#smart-over-under .smart-sub { margin: 4px 0 12px 0; color: #5a6170; font-size: 13px; }
-
-#smart-over-under .smart-form { display: grid; gap: 12px; }
-#smart-over-under .row { display: flex; gap: 12px; align-items: center; }
-#smart-over-under .two-cols { grid-template-columns: 1fr 1fr; display: grid; }
-#smart-over-under .field {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-}
-
-#smart-over-under .field input,
-#smart-over-under .field select {
-  width: 100%;
-}
-#smart-over-under label { font-weight:600; font-size:13px; color:#222; }
-#smart-over-under select, #smart-over-under input[type="number"] { height:44px; border:1px solid #e3e6ea; border-radius:8px; padding:0 10px; font-size:14px; }
-#smart-over-under .toggles { display:flex; gap:12px; align-items:center; }
-#smart-over-under .toggle { display:flex; align-items:center; gap:8px; font-size:14px; color:#333; }
-#smart-over-under .smart-buttons { display:flex; gap:8px; justify-content:flex-end; }
-
-/* Buttons */
-.btn { height:40px; padding: 0 14px; border-radius:8px; border:1px solid #d1d5db; background:#fff; cursor:pointer; font-weight:600; }
-.btn.primary { background:#0077c8; color:#fff; border-color:#0077c8; }
-.btn:disabled, .btn[aria-disabled="true"] { opacity:0.6; cursor:not-allowed; }
-
-/* Results */
-.smart-results { margin-top: 12px; min-height: 40px; border-top: 1px dashed #eef0f3; padding-top: 12px; color:#222; }
-
-@media (max-width: 768px) {
-  #smart-over-under { width: 90%; max-width: calc(100% - 48px); padding: 12px; }
-  #smart-over-under .two-cols { grid-template-columns: 1fr; }
-}
-
-/* Responsive: mirror Auto Analysis on medium and small screens */
-@media (max-width: 768px) {
-  #smart-over-under { width: 70%; max-width: calc(100% - 48px); padding: 15px; }
-}
-
-@media (max-width: 480px) {
-  #smart-over-under { width: calc(100% - 48px); max-width: calc(100% - 48px); margin: 8px 24px; padding: 10px; }
-}
-
-/* prevent hamburger overlap on very small screens by offsetting panel content */
-@media (max-width: 480px) {
-  /* push smart panel content right to leave space for fixed hamburger */
-  #smart-over-under { margin-left: 72px; padding-left: 12px; }
-  /* ensure the menu button remains above content */
-  #menu-btn { z-index: 10002; }
-}
-
-/* When the hamburger/menu is positioned on the right, mirror the left offset
-   so the smart panel doesn't butt up against the screen edge. */
-@media (max-width: 480px) {
-  body.menu-right #smart-over-under { margin-right: 72px; padding-right: 12px; margin-left: 8px; }
-  /* ensure the menu button remains above content when on right */
-  body.menu-right #menu-btn { z-index: 10002; right: 15px; left: auto; }
-}
-
-/* Clean toggle layout below price */
-#smart-over-under .toggle-container {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  padding-top: 10px;
-  border-top: 1px solid rgba(0,0,0,0.06);
-}
-
-#smart-over-under .small-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(0,0,0,0.02);
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-weight: 600;
-}
-
-#smart-over-under .small-toggle input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  margin-left: 6px;
-  accent-color: #00bbf0;
-}
-
-/* Make buttons match Auto Analysis styling and look crisp */
-#smart-over-under .smart-buttons { display: flex; gap: 8px; }
-#smart-over-under .smart-buttons button {
-  height: 42px;
-  padding: 0 16px;
-  border-radius: 6px;
-  border: none;
-  font-size: 15px;
-  font-weight: 600;
-  box-shadow: 0 2px 6px rgba(2,6,23,0.08);
-}
-
-#smart-over-under .smart-buttons #run-smart {
-  background: #00bbf0;
-  color: #fff;
-}
-
-#smart-over-under .smart-buttons #run-smart:hover { filter: brightness(0.95); }
-
-#smart-over-under .smart-buttons #stop-smart {
-  background: #d32f2f;
-  color: #fff;
-}
-
-@media (max-width: 480px) {
-  #smart-over-under .toggle-container { flex-direction: column; align-items: stretch; gap: 8px; border-top: none; }
-  #smart-over-under .small-toggle { justify-content: space-between; }
-  /* keep stake input fixed width like Auto Analysis even on small screens */
-  #smart-over-under .stake-row { flex-direction: row; align-items: center; gap: 8px; }
-  #smart-over-under .smart-buttons { justify-content: flex-end; }
-  #smart-over-under .smart-buttons button { width: auto; }
-}
-
-/* spacing adjustments to prevent elements touching */
-#tick-count { margin-bottom: 12px; }
-#smart-over-under .stake-row { margin-top: 12px; }
-
-/* stake row: put stake input and run/stop buttons on one line */
-#smart-over-under .stake-row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-#smart-over-under .stake-row label {
-  margin: 0;
-  font-weight: 600;
-}
-
-#smart-over-under #stake {
-  width: 120px;
-  height: 45px;
-  padding: 8px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-}
-
-#smart-over-under .smart-buttons button {
-  height: 45px;
-  padding: 0 18px;
-  border-radius: 5px;
-  border: none;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-#smart-over-under .smart-buttons #run-smart {
-  background: #00bbf0;
-  color: #fff;
-}
-
-#smart-over-under .smart-buttons #stop-smart {
-  background: #d32f2f;
-  color: #fff;
-}
-
-@media (max-width: 480px) {
-  #smart-over-under .stake-row { flex-direction: column; align-items: stretch; }
-  #smart-over-under #stake { width: 100%; }
-  #smart-over-under .smart-buttons { display: flex; gap: 8px; }
-}
+/* --- Smart Mode Styles --- */
 /* ===========================
-   SMART OVER / UNDER – POLISH
+   SMART OVER / UNDER (NEW UI)
+   Mirrors Auto Analysis
 =========================== */
 
-#smart-over-under {
-  background: linear-gradient(180deg, #ffffff, #fafbfc);
-}
-
-#smart-over-under .smart-card {
-  background: #ffffff;
-  border-radius: 14px;
+/* Panel shell */
+.smart-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   padding: 18px;
-  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.08);
+  background: linear-gradient(180deg, #0f172a, #020617);
+  animation: fadeInPanel 0.35s ease;
 }
 
-#smart-over-under .smart-header {
-  border-bottom: 1px solid #eef0f3;
-  margin-bottom: 14px;
-  padding-bottom: 10px;
+/* Header */
+.smart-panel .analysis-header h2 {
+  margin: 0 0 12px 0;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 600;
+  color: #eafff7;
 }
 
-#smart-over-under .smart-title {
-  font-size: 22px;
-  font-weight: 700;
-  margin: 0;
-}
-
-#smart-over-under .smart-sub {
-  font-size: 13px;
-  color: #6b7280;
-  margin: 4px 0 0;
-}
-
-/* Form layout */
-#smart-over-under .smart-form {
+/* Content layout */
+.smart-panel .analysis-content {
   display: grid;
   gap: 14px;
 }
 
-#smart-over-under .field label {
-  font-size: 13px;
-  font-weight: 600;
-  color: #374151;
-}
-
-#smart-over-under select,
-#smart-over-under input[type="number"] {
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+/* Inputs */
+.smart-panel input[type="number"] {
+  width: 100%;
   height: 44px;
+  background: #020617;
+  border: 1px solid #0f766e;
+  border-radius: 10px;
   padding: 0 12px;
   font-size: 14px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  color: #eafff7;
+  transition: border-color 0.25s, box-shadow 0.25s;
 }
 
-#smart-over-under select:focus,
-#smart-over-under input[type="number"]:focus {
+.smart-panel input::placeholder {
+  color: #64748b;
+}
+
+.smart-panel input:focus {
   outline: none;
-  border-color: #00bbf0;
-  box-shadow: 0 0 0 3px rgba(0,187,240,0.15);
+  border-color: #22c55e;
+  box-shadow: 0 0 14px rgba(34,197,94,0.45);
 }
 
-/* Over / Under row */
-#smart-over-under .two-cols {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-/* Toggles */
-#smart-over-under .toggle-container {
+/* Over / Under side-by-side */
+.smart-panel .input-row {
   display: flex;
   gap: 12px;
-  background: #f6f7f9;
-  padding: 10px;
-  border-radius: 10px;
 }
 
-#smart-over-under .small-toggle {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex: 1;
-  padding: 8px 10px;
-  background: #ffffff;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 14px;
-  box-shadow: 0 2px 6px rgba(2,6,23,0.06);
-}
-
-/* Stake + buttons */
-#smart-over-under .stake-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 12px;
-  padding-top: 10px;
-  border-top: 1px dashed #e5e7eb;
-}
-
-#smart-over-under .stake-field {
+.smart-panel .input-row.dual input {
   flex: 1;
 }
 
-#smart-over-under .smart-buttons button {
-  height: 44px;
-  padding: 0 20px;
-  border-radius: 10px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  box-shadow: 0 6px 16px rgba(2,6,23,0.12);
+/* Ticks below */
+.smart-panel .input-row.single {
+  justify-content: center;
 }
 
-#smart-over-under #run-smart {
-  background: linear-gradient(135deg, #00bbf0, #0099cc);
+.smart-panel .input-row.single input {
+  width: 60%;
 }
 
-#smart-over-under #stop-smart {
-  background: linear-gradient(135deg, #d32f2f, #b71c1c);
+/* Results box */
+.smart-panel .results-box {
+  min-height: 80px;
+  background: #020617;
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: inset 0 0 12px rgba(0,255,180,0.15);
+  color: #eafff7;
 }
 
-/* Results */
-#smart-over-under .smart-results {
-  font-size: 14px;
-  color: #111827;
+/* Animations (same feel as Auto Analysis) */
+@keyframes fadeInPanel {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
+/* Responsive */
+@media (max-width: 768px) {
+  .smart-panel {
+    padding: 14px;
+  }
 
+  .smart-panel .input-row.single input {
+    width: 100%;
+  }
+}

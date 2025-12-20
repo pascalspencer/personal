@@ -10,63 +10,6 @@ let overDigit, underDigit, tickCount, stakeInput;
 let singleToggle, bulkToggle, resultsBox;
 
 document.addEventListener("DOMContentLoaded", () => {
-  // UI Injection
-  document.body.insertAdjacentHTML("beforeend", `
-  <div id="smart-over-under" style="display:none">
-    <div class="smart-card">
-      <div class="smart-header">
-        <h2 class="smart-title">Smart Over / Under</h2>
-        <p class="smart-sub">Automated digit strategy</p>
-      </div>
-
-      <div class="smart-form">
-        <div class="row two-cols">
-          <div class="field">
-            <label for="over-digit">Over</label>
-            <select id="over-digit"></select>
-          </div>
-
-          <div class="field">
-            <label for="under-digit">Under</label>
-            <select id="under-digit"></select>
-          </div>
-        </div>
-
-        <div class="field">
-          <label for="tick-count">Number of ticks</label>
-          <input type="number" id="tick-count" min="1" value="5">
-        </div>
-
-        <div class="toggle-container">
-          <label class="small-toggle">
-            <span>Single</span>
-            <input type="checkbox" id="single-toggle" checked>
-          </label>
-          <label class="small-toggle">
-            <span>Bulk</span>
-            <input type="checkbox" id="bulk-toggle">
-          </label>
-        </div>
-
-        <div class="stake-row">
-          <div class="field stake-field">
-            <label for="stake">(Minimum 0.35)</label>
-            <input type="number" id="stake" min="0.35" step="0.01" value="0.35">
-          </div>
-
-          <div class="smart-buttons">
-            <button id="run-smart">RUN</button>
-            <button id="stop-smart">STOP</button>
-          </div>
-        </div>
-
-        <div id="smart-results" class="smart-results"></div>
-      </div>
-    </div>
-  </div>
-`);
-
-
   overDigit = document.getElementById("over-digit");
   underDigit = document.getElementById("under-digit");
   tickCount = document.getElementById("tick-count");
