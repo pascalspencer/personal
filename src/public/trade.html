@@ -68,7 +68,7 @@
   </style>
 </head>
 <body>
-  <div id="auto-analysis"></div>
+  <div id="panel-container"></div>
 
   <form id="trade-form" aria-labelledby="form-heading">
     <h1 id="form-heading">Zodiac Algo-trade</h1>
@@ -157,6 +157,25 @@
   <script type="module" src="/js/formData.mjs"></script>
   <script type="module" src="/js/smart-ui.mjs"></script>
   <script type="module" src="/js/smart-over-under.mjs"></script>
+
+  <script>
+    const panelContainer = document.getElementById("panel-container");
+
+    function loadPanel(src) {
+      panelContainer.innerHTML = `
+        <iframe 
+          src="${src}" 
+          class="panel-frame" 
+          frameborder="0">
+        </iframe>
+      `;
+    }
+
+    document.getElementById("smart-tab").addEventListener("click", () => {
+      loadPanel("/smart-over-under.html");
+    });
+  </script>
+
 
   <script type="module">
     // Auto-populate Market → Submarket Dropdowns
