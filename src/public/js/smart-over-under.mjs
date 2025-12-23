@@ -81,14 +81,25 @@ document.addEventListener("DOMContentLoaded", () => {
     underDigit.innerHTML += `<option value="${i}">${i}</option>`;
   }
 
-  const syncToggles = () => {
-    bulkToggle.disabled = singleToggle.checked;
-    singleToggle.disabled = bulkToggle.checked;
-    if (singleToggle.checked) bulkToggle.checked = false;
-    if (bulkToggle.checked) singleToggle.checked = false;
-  };
-  singleToggle.onchange = bulkToggle.onchange = syncToggles;
-  syncToggles();
+  function updateToggles() {
+    if (singleToggle.checked) {
+      bulkToggle.checked = false;
+      bulkToggle.disabled = true;
+    } else {
+      bulkToggle.disabled = false;
+    }
+
+    if (bulkToggle.checked) {
+      singleToggle.checked = false;
+      singleToggle.disabled = true;
+    } else {
+      singleToggle.disabled = false;
+    }
+  }
+
+  singleToggle.addEventListener('change', updateToggles);
+  bulkToggle.addEventListener('change', updateToggles);
+  updateToggles();
 
   const marketEl = document.getElementById("market");
   const submarketEl = document.getElementById("submarket");
@@ -150,8 +161,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.addEventListener('beforeunload', () => clearInterval(visibilityPoll));
 
-  
-
   document.getElementById("run-smart").onclick = runSmart;
   document.getElementById("stop-smart").onclick = stopSmart;
 });
@@ -161,25 +170,38 @@ document.addEventListener("DOMContentLoaded", () => {
 /* --------------------------------------------------
    POPUP
 -------------------------------------------------- */
-function popup(title, html, timeout = 3000) {
-  const overlay = document.createElement("div");
-  overlay.className = "trade-popup-overlay";
+function popup(msg, details = null, timeout = 2000) {
+  try {
+    const overlay = document.createElement('div');
+    overlay.className = 'trade-popup-overlay';
 
-  const box = document.createElement("div");
-  box.className = "trade-popup";
+    const popup = document.createElement('div');
+    popup.className = 'trade-popup';
 
-  box.innerHTML = `<h3>${title}</h3>${html ? `<p>${html}</p>` : ""}`;
+    const title = document.createElement('h3');
+    title.textContent = msg;
+    popup.appendChild(title);
 
-  const close = document.createElement("a");
-  close.textContent = "Close";
-  close.className = "close-btn";
-  close.onclick = e => { e.preventDefault(); overlay.remove(); };
+    if (details) {
+      const p = document.createElement('p');
+      p.innerHTML = details;
+      popup.appendChild(p);
+    }
 
-  box.appendChild(close);
-  overlay.appendChild(box);
-  document.body.appendChild(overlay);
+    const closeBtn = document.createElement('a');
+    closeBtn.className = 'close-btn';
+    closeBtn.href = '#';
+    closeBtn.textContent = 'Close';
+    closeBtn.addEventListener('click', (ev) => { ev.preventDefault(); try { overlay.remove(); } catch (e) {} });
+    popup.appendChild(closeBtn);
 
-  if (timeout) setTimeout(() => overlay.remove(), timeout);
+    overlay.appendChild(popup);
+    try { document.body.appendChild(overlay); } catch (e) { console.warn('Could not show popup:', e); }
+
+    if (timeout > 0) setTimeout(() => { try { overlay.remove(); } catch (e) {} }, timeout);
+  } catch (e) {
+    console.warn('Popup render failed:', e);
+  }
 }
 
 /* --------------------------------------------------
@@ -461,6 +483,9 @@ async function executeTrade(symbol, type, barrier, quote) {
 function stopSmart() {
   running = false;
   tradeLock = false;
-  if (tickWs) tickWs.close();
+  if (tickWs) {
+    try { tickWs.close(); } catch (e) {}
+    tickWs = null;
+  }
   popup("Stopped");
 }
