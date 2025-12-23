@@ -90,9 +90,73 @@ document.addEventListener("DOMContentLoaded", () => {
   singleToggle.onchange = bulkToggle.onchange = syncToggles;
   syncToggles();
 
+  const marketEl = document.getElementById("market");
+  const submarketEl = document.getElementById("submarket");
+  const originalPos = {
+    market: marketEl ? { parent: marketEl.parentNode, next: marketEl.nextSibling } : null,
+    submarket: submarketEl ? { parent: submarketEl.parentNode, next: submarketEl.nextSibling } : null,
+  };
+
+  const smartContainer = document.getElementById("smart-over-under");
+  let smartHeadingEl = null;
+  function showSmartMode() {
+    document.body.classList.add('smart-mode');
+
+    // ensure market comes before submarket inside smart container; avoid
+    // repeated moves by checking current parent
+    if (marketEl && marketEl.parentNode !== smartContainer) {
+      smartContainer.insertBefore(marketEl, smartContainer.firstChild);
+    }
+    if (submarketEl && submarketEl.parentNode !== smartContainer) {
+      smartContainer.insertBefore(submarketEl, marketEl && marketEl.parentNode === smartContainer ? marketEl.nextSibling : smartContainer.firstChild);
+    }
+
+    // ensure Zodiac heading is present in smart UI (copy original if available)
+    if (!smartHeadingEl) {
+      const originalHeading = document.getElementById('form-heading');
+      smartHeadingEl = document.createElement('h1');
+      smartHeadingEl.textContent = (originalHeading && originalHeading.textContent.trim()) || 'Zodiac Algo-trade';
+      smartHeadingEl.style.margin = '0 0 8px 0';
+    }
+    if (smartHeadingEl.parentNode !== smartContainer) smartContainer.insertBefore(smartHeadingEl, smartContainer.firstChild);
+
+    smartContainer.classList.add('visible');
+  }
+
+  function hideSmartMode() {
+    document.body.classList.remove('smart-mode');
+
+    // move market/submarket back to original positions
+    if (originalPos.market && marketEl) {
+      originalPos.market.parent.insertBefore(marketEl, originalPos.market.next);
+    }
+    if (originalPos.submarket && submarketEl) {
+      originalPos.submarket.parent.insertBefore(submarketEl, originalPos.submarket.next);
+    }
+
+    // remove smart heading from panel
+    if (smartHeadingEl && smartHeadingEl.parentNode === smartContainer) smartHeadingEl.remove();
+
+    smartContainer.classList.remove('visible');
+  }
+
+  let lastVisible = window.getComputedStyle(smartContainer).display !== 'none';
+  const visibilityPoll = setInterval(() => {
+    const visible = window.getComputedStyle(smartContainer).display !== 'none';
+    if (visible === lastVisible) return;
+    lastVisible = visible;
+    if (visible) showSmartMode(); else hideSmartMode();
+  }, 250);
+
+  window.addEventListener('beforeunload', () => clearInterval(visibilityPoll));
+
+  
+
   document.getElementById("run-smart").onclick = runSmart;
   document.getElementById("stop-smart").onclick = stopSmart;
 });
+
+
 
 /* --------------------------------------------------
    POPUP
