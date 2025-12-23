@@ -405,78 +405,90 @@ async function checkTick(symbol) {
   tradeLock = false;
 }
 
-async function executeTrade(symbol, type = "DIGITOVER", barrier = 0, liveQuote = null) {
-  // helpers for numeric parsing and balance fetch (used to compute final profit)
-  const parseNumeric = (v) => {
-    if (v === null || typeof v === 'undefined') return null;
-    if (typeof v === 'number') return v;
-    const n = Number(v);
-    return Number.isNaN(n) ? null : n;
-  };
-  const firstNumeric = (arr) => {
-    for (const v of arr) {
-      const p = parseNumeric(v);
-      if (p !== null) return p;
+async function fetchProfitTable(limit = 10, timeoutMs = 3000) {
+  return new Promise((resolve) => {
+    let ws;
+    let resolved = false;
+
+    const timer = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        try { ws?.close(); } catch {}
+        resolve([]);
+      }
+    }, timeoutMs);
+
+    try {
+      ws = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=61696");
+    } catch (e) {
+      clearTimeout(timer);
+      return resolve([]);
     }
-    return null;
-  };
 
-  async function fetchBalanceOnce(timeoutMs = 3000) {
-    return new Promise((resolve) => {
-      let resolved = false;
-      let ws;
-      const timer = setTimeout(() => {
-        try { if (ws) ws.close(); } catch (e) {}
-        if (!resolved) { resolved = true; resolve(null); }
-      }, timeoutMs);
-
-      try {
-        ws = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=61696`);
-      } catch (e) {
+    ws.onopen = () => {
+      const token = getCurrentToken();
+      if (!token) {
         clearTimeout(timer);
-        return resolve(null);
+        resolved = true;
+        ws.close();
+        return resolve([]);
       }
 
-      ws.onopen = () => {
-        const token = getCurrentToken();
-        if (token) {
-          try { ws.send(JSON.stringify({ authorize: token })); } catch (e) {}
-        }
-        try { ws.send(JSON.stringify({ balance: 1 })); } catch (e) {}
-      };
+      ws.send(JSON.stringify({ authorize: token }));
+    };
 
-      ws.onmessage = (ev) => {
-        if (resolved) return;
-        let msg;
-        try { msg = JSON.parse(ev.data); } catch (e) { return; }
-        if (msg && (msg.balance !== undefined || msg.account_balance !== undefined)) {
-          clearTimeout(timer);
-          try { ws.close(); } catch (e) {}
-          resolved = true;
-          resolve(msg);
-        }
-      };
+    ws.onmessage = (e) => {
+      let msg;
+      try {
+        msg = JSON.parse(e.data);
+      } catch {
+        return;
+      }
 
-      ws.onerror = () => {
-        if (!resolved) {
-          clearTimeout(timer);
-          try { ws.close(); } catch (e) {}
-          resolved = true;
-          resolve(null);
-        }
-      };
-    });
-  }
+      /* after authorization → request profit table */
+      if (msg.msg_type === "authorize") {
+        ws.send(JSON.stringify({
+          profit_table: 1,
+          limit,
+          sort: "DESC"
+        }));
+        return;
+      }
 
-  // capture starting balance before buy to compute true delta
-  let startingBalance = null;
-  try {
-    const balBefore = await fetchBalanceOnce(2500);
-    if (balBefore) startingBalance = firstNumeric([balBefore.balance?.balance, balBefore.account_balance, balBefore.balance_after, balBefore.buy?.balance]);
-  } catch (e) {
-    startingBalance = null;
-  }
+      /* profit table received */
+      if (msg.msg_type === "profit_table") {
+        clearTimeout(timer);
+        try { ws.close(); } catch {}
+        resolved = true;
 
+        const rows = (msg.profit_table?.transactions || []).map(tx => ({
+          buy_id: tx.transaction_ids?.buy,
+          sell_id: tx.transaction_ids?.sell,
+          buy_price: Number(tx.buy_price),
+          sell_price: Number(tx.sell_price),
+          profit: Number(tx.profit),
+          balance_after: Number(tx.balance_after),
+          contract_id: tx.contract_id,
+          shortcode: tx.shortcode,
+          longcode: tx.longcode
+        }));
+
+        resolve(rows);
+      }
+    };
+
+    ws.onerror = () => {
+      clearTimeout(timer);
+      if (!resolved) {
+        resolved = true;
+        resolve([]);
+      }
+    };
+  });
+}
+
+
+async function executeTrade(symbol, type = "DIGITOVER", barrier = 0, liveQuote = null) {
   const resp = await buyContract(
     symbol,
     type,
@@ -486,145 +498,63 @@ async function executeTrade(symbol, type = "DIGITOVER", barrier = 0, liveQuote =
     liveQuote,
     true
   );
-  // Build unified popup details similar to buyContract.mjs logic
+
   if (resp?.error) {
-    const details = (resp.error && resp.error.message) ? resp.error.message : 'Trade failed';
-    popup('Trade failed', details, 6000);
+    popup("Trade failed", resp.error.message || "Trade failed", 6000);
     return resp;
   }
 
-  try {
-    // helpers mirrored from buyContract.mjs for consistent parsing
-    const parseNumeric = (v) => {
-      if (v === null || typeof v === 'undefined') return null;
-      if (typeof v === 'number') return v;
-      const n = Number(v);
-      return Number.isNaN(n) ? null : n;
-    };
-    
+  // Extract buy transaction id
+  const buyTxId =
+    resp?.buy?.transaction_id ||
+    resp?.transaction_id ||
+    resp?.buy?.id;
 
-    // Prefer metadata computed inside buyContract where possible (ensures same delays/reads)
-    const meta = resp && resp._meta ? resp._meta : null;
-    if (meta) {
-      const stakeAmt = Number(meta.stakeAmount || stakeInput.value || 0).toFixed(2);
-      const buyPrice = Number(meta.buyPrice || 0).toFixed(2);
-      const payout = Number(meta.payout || 0).toFixed(2);
-      let profit = Number(typeof meta.profit !== 'undefined' ? meta.profit : 0);
-
-      // If buyContract didn't supply a final endingBalance, try to fetch one now
-      let endingBalanceLocal = (meta.endingBalance !== null && typeof meta.endingBalance !== 'undefined') ? meta.endingBalance : null;
-      if (endingBalanceLocal === null) {
-        // attempt two delayed balance reads to allow backend to settle
-        await new Promise(r => setTimeout(r, 1000));
-        const b1 = await fetchBalanceOnce(2500);
-        if (b1) endingBalanceLocal = firstNumeric([b1.balance?.balance, b1.account_balance, b1.balance_after, b1.buy?.balance]);
-        if (endingBalanceLocal === null) {
-          await new Promise(r => setTimeout(r, 1000));
-          const b2 = await fetchBalanceOnce(2500);
-          if (b2) endingBalanceLocal = firstNumeric([b2.balance?.balance, b2.account_balance, b2.balance_after, b2.buy?.balance]);
-        }
-      }
-
-      if (endingBalanceLocal !== null) {
-        const refStart = (meta.startingBalance !== null && typeof meta.startingBalance !== 'undefined') ? meta.startingBalance : startingBalance;
-        if (refStart !== null) profit = +(endingBalanceLocal - refStart).toFixed(2);
-      }
-
-      const profitStr = Number(profit).toFixed(2);
-      const bal = (endingBalanceLocal !== null) ? `<br>Account balance: $${Number(endingBalanceLocal).toFixed(2)}` : ((meta.endingBalance !== null && typeof meta.endingBalance !== 'undefined') ? `<br>Account balance: $${Number(meta.endingBalance).toFixed(2)}` : '');
-
-      let resultHtml = '';
-      if (Number(profitStr) > 0) {
-        resultHtml = `Result: <span class="profit">+ $${Number(profitStr).toFixed(2)}</span>`;
-      } else if (Number(profitStr) < 0) {
-        const lossDisplay = (meta.lossToDisplay && Number(meta.lossToDisplay) > 0) ? Number(meta.lossToDisplay) : Math.abs(Number(profitStr));
-        resultHtml = `Result: <span class="loss">- $${Number(lossDisplay).toFixed(2)}</span>`;
-      } else {
-        resultHtml = `Result: <span class="amount">$0.00</span>`;
-      }
-
-      const details = `Type: ${type}<br>Stake: $${stakeAmt}${barrier ? `<br>Barrier: ${barrier}` : ''}<br>Buy price: $${buyPrice}<br>Payout: $${payout}<br>${resultHtml}${bal}`;
-      popup('Trade Result', details, 8000);
-    } else {
-      // fallback: reproduce buyContract's balance/profit heuristics locally
-      const buyInfo = resp.buy || resp || {};
-      const stakeAmt = Number(stakeInput.value || 0) || 0;
-      const buyPrice = Number(buyInfo.buy_price ?? buyInfo.price ?? buyInfo.ask_price ?? 0) || 0;
-      const payout = Number(buyInfo.payout ?? buyInfo.payout_amount ?? buyInfo.payoutValue ?? 0) || 0;
-
-      // attempt to get starting balance from response fields if we didn't capture it before buy
-      if (startingBalance === null) {
-        startingBalance = firstNumeric([
-          buyInfo.balance_before,
-          resp.balance_before,
-          resp.buy?.balance_before,
-          resp.buy?.balance,
-          resp.balance
-        ]);
-      }
-
-      // ending balance: try response fields first; if not present, try fetching balance with small delays
-      let endingBalance = firstNumeric([
-        resp.buy?.balance_after,
-        resp.balance,
-        resp.account_balance,
-        resp.buy?.account_balance,
-      ]);
-
-      if (endingBalance === null) {
-        // wait a bit and try to fetch balance from WS (one or two attempts)
-        await new Promise(r => setTimeout(r, 1000));
-        const bal1 = await fetchBalanceOnce(2500);
-        if (bal1) endingBalance = firstNumeric([bal1.balance?.balance, bal1.account_balance, bal1.balance_after, bal1.buy?.balance]);
-
-        if (endingBalance === null) {
-          // one more delayed attempt (mirrors buyContract extra attempt)
-          await new Promise(r => setTimeout(r, 1000));
-          const bal2 = await fetchBalanceOnce(2500);
-          if (bal2) endingBalance = firstNumeric([bal2.balance?.balance, bal2.account_balance, bal2.balance_after, bal2.buy?.balance]);
-        }
-      }
-
-      let profit = null;
-      if (startingBalance !== null && endingBalance !== null) {
-        profit = endingBalance - startingBalance;
-      } else if (endingBalance !== null && startingBalance === null) {
-        // best-effort: use payout - stake when balance delta not available
-        profit = payout - stakeAmt;
-      } else if (!Number.isNaN(payout)) {
-        profit = payout - stakeAmt;
-      } else {
-        profit = 0;
-      }
-      profit = +Number(profit || 0).toFixed(2);
-
-      // Determine loss display similar to buyContract
-      let lossToDisplay = null;
-      const referenceBalance = (startingBalance !== null) ? startingBalance : null;
-      if (referenceBalance !== null && endingBalance !== null && endingBalance + 1e-9 < referenceBalance) {
-        lossToDisplay = Number(stakeAmt);
-        profit = -Math.abs(+(referenceBalance - endingBalance).toFixed(2));
-      }
-
-      let resultHtml = '';
-      if (profit > 0) {
-        resultHtml = `Result: <span class="profit">+ $${profit.toFixed(2)}</span>`;
-      } else if (lossToDisplay > 0 || profit < 0) {
-        const displayLoss = (lossToDisplay && Number(lossToDisplay) > 0) ? Number(lossToDisplay) : Math.abs(profit);
-        resultHtml = `Result: <span class="loss">- $${Number(displayLoss).toFixed(2)}</span>`;
-      } else {
-        resultHtml = `Result: <span class="amount">$0.00</span>`;
-      }
-
-      const bal = endingBalance !== null ? `<br>Account balance: $${Number(endingBalance).toFixed(2)}` : '';
-
-      const details = `Type: ${type}<br>Stake: $${Number(stakeAmt).toFixed(2)}${barrier ? `<br>Barrier: ${barrier}` : ''}<br>Buy price: $${Number(buyPrice).toFixed(2)}<br>Payout: $${Number(payout).toFixed(2)}<br>${resultHtml}${bal}`;
-      popup('Trade Result', details, 8000);
-    }
-  } catch (e) {
-    popup('Trade Result', `Type: ${type}<br>Stake: $${Number(stakeInput.value || 0).toFixed(2)}`, 5000);
+  if (!buyTxId) {
+    popup("Trade placed", "Awaiting settlement…", 5000);
+    return resp;
   }
 
+  // Allow Deriv backend to settle the contract
+  await new Promise(r => setTimeout(r, 1200));
+
+  // Fetch profit table and locate this trade
+  const rows = await fetchProfitTable(10);
+  const row = rows.find(
+    r => String(r.transaction_ids?.buy) === String(buyTxId)
+  );
+
+  if (!row) {
+    popup("Trade placed", "Awaiting settlement…", 2000);
+    return resp;
+  }
+
+  const profit = Number(row.profit || 0);
+  const stake = Number(row.buy_price || stakeInput.value || 0);
+  const buyPrice = Number(row.buy_price || 0);
+  const sellPrice = Number(row.sell_price || 0);
+  const balanceAfter = Number(row.balance_after || 0);
+
+  let resultHtml = "";
+  if (profit > 0) {
+    resultHtml = `<span class="profit">+ $${profit.toFixed(2)}</span>`;
+  } else if (profit < 0) {
+    resultHtml = `<span class="loss">- $${Math.abs(profit).toFixed(2)}</span>`;
+  } else {
+    resultHtml = `<span class="amount">$0.00</span>`;
+  }
+
+  const details = `
+    Type: ${type}
+    <br>Stake: $${stake.toFixed(2)}
+    ${barrier ? `<br>Barrier: ${barrier}` : ""}
+    <br>Buy price: $${buyPrice.toFixed(2)}
+    <br>Sell price: $${sellPrice.toFixed(2)}
+    <br>Result: ${resultHtml}
+    <br>Account balance: $${balanceAfter.toFixed(2)}
+  `;
+
+  popup("Trade Result", details, 8000);
   return resp;
 }
 
