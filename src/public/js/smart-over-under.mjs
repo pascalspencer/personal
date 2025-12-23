@@ -1,5 +1,5 @@
 import { buyContract } from "./buyContract.mjs";
-import { getCurrentToken } from "./popupMessages.mjs";
+import { getCurrentToken } from './popupMessages.mjs';
 
 let running = false;
 let ticksSeen = 0;
@@ -9,10 +9,8 @@ let tickWs = null;
 let overDigit, underDigit, tickCount, stakeInput;
 let singleToggle, bulkToggle, resultsBox;
 
-/* --------------------------------------------------
-   DOM READY + UI
--------------------------------------------------- */
 document.addEventListener("DOMContentLoaded", () => {
+  // UI Injection
   document.body.insertAdjacentHTML("beforeend", `
   <div id="smart-over-under" style="display:none">
     <div class="smart-card">
@@ -68,6 +66,7 @@ document.addEventListener("DOMContentLoaded", () => {
   </div>
 `);
 
+
   overDigit = document.getElementById("over-digit");
   underDigit = document.getElementById("under-digit");
   tickCount = document.getElementById("tick-count");
@@ -80,7 +79,8 @@ document.addEventListener("DOMContentLoaded", () => {
     overDigit.innerHTML += `<option value="${i}">${i}</option>`;
     underDigit.innerHTML += `<option value="${i}">${i}</option>`;
   }
-
+  // Make single and bulk toggles mutually exclusive: when one is checked,
+  // disable the other; when unchecked, re-enable the counterpart.
   function updateToggles() {
     if (singleToggle.checked) {
       bulkToggle.checked = false;
@@ -99,8 +99,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   singleToggle.addEventListener('change', updateToggles);
   bulkToggle.addEventListener('change', updateToggles);
+  // ensure initial state
   updateToggles();
 
+  // Preserve references to original market/submarket parents so we can
+  // restore them when switching back to Auto Analysis.
   const marketEl = document.getElementById("market");
   const submarketEl = document.getElementById("submarket");
   const originalPos = {
@@ -110,6 +113,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const smartContainer = document.getElementById("smart-over-under");
   let smartHeadingEl = null;
+
+  // When smart UI is shown, keep only market and submarket from the
+  // original interface and rely on CSS (trade.css) for hiding/spacing.
   function showSmartMode() {
     document.body.classList.add('smart-mode');
 
@@ -151,6 +157,9 @@ document.addEventListener("DOMContentLoaded", () => {
     smartContainer.classList.remove('visible');
   }
 
+  // Lightweight visibility polling to react when `smart-ui.mjs` shows/hides
+  // the smart panel. Polling avoids heavy MutationObserver activity that
+  // was causing repeated DOM reflows and freezes.
   let lastVisible = window.getComputedStyle(smartContainer).display !== 'none';
   const visibilityPoll = setInterval(() => {
     const visible = window.getComputedStyle(smartContainer).display !== 'none';
@@ -165,11 +174,6 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("stop-smart").onclick = stopSmart;
 });
 
-
-
-/* --------------------------------------------------
-   POPUP
--------------------------------------------------- */
 function popup(msg, details = null, timeout = 2000) {
   try {
     const overlay = document.createElement('div');
@@ -204,9 +208,6 @@ function popup(msg, details = null, timeout = 2000) {
   }
 }
 
-/* --------------------------------------------------
-   RUNNER
--------------------------------------------------- */
 async function runSmart() {
   if (running) return;
   running = true;
@@ -239,68 +240,65 @@ async function runSmart() {
   running = false;
 }
 
-/* --------------------------------------------------
-   TICK LOGIC
--------------------------------------------------- */
+// Sequential buys driven by ticks: subscribe and trigger a buy on each incoming tick
 async function runSingleSequential(symbol) {
   ticksSeen = 0;
-
   return new Promise((resolve) => {
-    tickWs = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=61696");
+    try {
+      tickWs = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=61696");
+    } catch (err) {
+      resolve();
+      return;
+    }
 
     tickWs.onopen = () => {
-      tickWs.send(JSON.stringify({ ticks: symbol, subscribe: 1 }));
+      try { tickWs.send(JSON.stringify({ ticks: symbol, subscribe: 1 })); } catch (e) {}
     };
 
     tickWs.onmessage = async (e) => {
-      if (!running || ticksSeen >= Number(tickCount.value)) {
-        tickWs.close();
+      if (!running) {
+        try { tickWs.close(); } catch (e) {}
         resolve();
         return;
       }
 
-      if (tradeLock) return;
-
       const msg = JSON.parse(e.data);
       if (!msg.tick) return;
 
+      // determine last digit and decide whether to open a trade
       const quote = msg.tick.quote;
       const digit = Number(String(quote).slice(-1));
 
-      let tradeType = null;
-      let barrier = null;
+      // if a trade is already in progress, skip this tick
+      if (tradeLock) return;
 
-      // ✅ CORRECT DIGIT LOGIC
-      if (digit > Number(overDigit.value)) {
-        tradeType = "DIGITOVER";
-        barrier = overDigit.value;
-      } else if (digit < Number(underDigit.value)) {
-        tradeType = "DIGITUNDER";
-        barrier = underDigit.value;
+      if (digit < Number(overDigit.value)) {
+        tradeLock = true;
+        await executeTrade(symbol, "DIGITOVER", overDigit.value, quote);
+        tradeLock = false;
+        ticksSeen++;
+      } else if (digit > Number(underDigit.value)) {
+        tradeLock = true;
+        await executeTrade(symbol, "DIGITUNDER", underDigit.value, quote);
+        tradeLock = false;
+        ticksSeen++;
       }
 
-      if (!tradeType) return; // ignore non-qualifying ticks
-
-      tradeLock = true;
-      ticksSeen++;
-
-      await executeTrade(symbol, tradeType, barrier, quote);
-
-      tradeLock = false;
-
-      if (ticksSeen >= Number(tickCount.value)) {
-        tickWs.close();
+      if (ticksSeen >= Number(tickCount.value) || !running) {
+        try { tickWs.close(); } catch (e) {}
         resolve();
       }
     };
 
     tickWs.onerror = () => {
-      tickWs.close();
+      try { tickWs.close(); } catch (e) {}
       resolve();
     };
   });
 }
 
+// Bulk mode: wait for the first tick that matches strategy, then place
+// `tickCount` buys concurrently (all at the same time).
 async function runBulkOnce(symbol) {
   return new Promise((resolve) => {
     ticksSeen = 0;
@@ -407,82 +405,229 @@ async function checkTick(symbol) {
   tradeLock = false;
 }
 
-/* --------------------------------------------------
-   PROFIT TABLE FETCH
--------------------------------------------------- */
-async function fetchProfitTable(limit = 10) {
-  return new Promise(resolve => {
-    const ws = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=61696");
+async function executeTrade(symbol, type = "DIGITOVER", barrier = 0, liveQuote = null) {
+  // helpers for numeric parsing and balance fetch (used to compute final profit)
+  const parseNumeric = (v) => {
+    if (v === null || typeof v === 'undefined') return null;
+    if (typeof v === 'number') return v;
+    const n = Number(v);
+    return Number.isNaN(n) ? null : n;
+  };
+  const firstNumeric = (arr) => {
+    for (const v of arr) {
+      const p = parseNumeric(v);
+      if (p !== null) return p;
+    }
+    return null;
+  };
 
-    ws.onopen = () => {
-      ws.send(JSON.stringify({ authorize: getCurrentToken() }));
-      ws.send(JSON.stringify({ profit_table: 1, limit, sort: "DESC" }));
-    };
+  async function fetchBalanceOnce(timeoutMs = 3000) {
+    return new Promise((resolve) => {
+      let resolved = false;
+      let ws;
+      const timer = setTimeout(() => {
+        try { if (ws) ws.close(); } catch (e) {}
+        if (!resolved) { resolved = true; resolve(null); }
+      }, timeoutMs);
 
-    ws.onmessage = e => {
-      const msg = JSON.parse(e.data);
-      if (msg.profit_table) {
-        ws.close();
-        resolve(msg.profit_table.transactions || []);
+      try {
+        ws = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=61696`);
+      } catch (e) {
+        clearTimeout(timer);
+        return resolve(null);
       }
-    };
 
-    ws.onerror = () => resolve([]);
-  });
-}
+      ws.onopen = () => {
+        const token = getCurrentToken();
+        if (token) {
+          try { ws.send(JSON.stringify({ authorize: token })); } catch (e) {}
+        }
+        try { ws.send(JSON.stringify({ balance: 1 })); } catch (e) {}
+      };
 
-/* --------------------------------------------------
-   EXECUTE TRADE (FINAL AUTHORITY)
--------------------------------------------------- */
-async function executeTrade(symbol, type, barrier, quote) {
+      ws.onmessage = (ev) => {
+        if (resolved) return;
+        let msg;
+        try { msg = JSON.parse(ev.data); } catch (e) { return; }
+        if (msg && (msg.balance !== undefined || msg.account_balance !== undefined)) {
+          clearTimeout(timer);
+          try { ws.close(); } catch (e) {}
+          resolved = true;
+          resolve(msg);
+        }
+      };
+
+      ws.onerror = () => {
+        if (!resolved) {
+          clearTimeout(timer);
+          try { ws.close(); } catch (e) {}
+          resolved = true;
+          resolve(null);
+        }
+      };
+    });
+  }
+
+  // capture starting balance before buy to compute true delta
+  let startingBalance = null;
+  try {
+    const balBefore = await fetchBalanceOnce(2500);
+    if (balBefore) startingBalance = firstNumeric([balBefore.balance?.balance, balBefore.account_balance, balBefore.balance_after, balBefore.buy?.balance]);
+  } catch (e) {
+    startingBalance = null;
+  }
+
   const resp = await buyContract(
     symbol,
     type,
     1,
     stakeInput.value,
     barrier,
-    quote,
+    liveQuote,
     true
   );
-
+  // Build unified popup details similar to buyContract.mjs logic
   if (resp?.error) {
-    popup("Trade failed", resp.error.message, 6000);
-    return;
+    const details = (resp.error && resp.error.message) ? resp.error.message : 'Trade failed';
+    popup('Trade failed', details, 6000);
+    return resp;
   }
 
-  const buyTxId =
-    resp?.buy?.transaction_id ||
-    resp?.transaction_id ||
-    resp?.buy?.id;
+  try {
+    // helpers mirrored from buyContract.mjs for consistent parsing
+    const parseNumeric = (v) => {
+      if (v === null || typeof v === 'undefined') return null;
+      if (typeof v === 'number') return v;
+      const n = Number(v);
+      return Number.isNaN(n) ? null : n;
+    };
+    
 
-  await new Promise(r => setTimeout(r, 1200));
+    // Prefer metadata computed inside buyContract where possible (ensures same delays/reads)
+    const meta = resp && resp._meta ? resp._meta : null;
+    if (meta) {
+      const stakeAmt = Number(meta.stakeAmount || stakeInput.value || 0).toFixed(2);
+      const buyPrice = Number(meta.buyPrice || 0).toFixed(2);
+      const payout = Number(meta.payout || 0).toFixed(2);
+      let profit = Number(typeof meta.profit !== 'undefined' ? meta.profit : 0);
 
-  const rows = await fetchProfitTable(10);
-  const row = rows.find(r => String(r.transaction_ids?.buy) === String(buyTxId));
+      // If buyContract didn't supply a final endingBalance, try to fetch one now
+      let endingBalanceLocal = (meta.endingBalance !== null && typeof meta.endingBalance !== 'undefined') ? meta.endingBalance : null;
+      if (endingBalanceLocal === null) {
+        // attempt two delayed balance reads to allow backend to settle
+        await new Promise(r => setTimeout(r, 1000));
+        const b1 = await fetchBalanceOnce(2500);
+        if (b1) endingBalanceLocal = firstNumeric([b1.balance?.balance, b1.account_balance, b1.balance_after, b1.buy?.balance]);
+        if (endingBalanceLocal === null) {
+          await new Promise(r => setTimeout(r, 1000));
+          const b2 = await fetchBalanceOnce(2500);
+          if (b2) endingBalanceLocal = firstNumeric([b2.balance?.balance, b2.account_balance, b2.balance_after, b2.buy?.balance]);
+        }
+      }
 
-  if (!row) {
-    popup("Trade Result", "Trade placed, awaiting settlement...", 5000);
-    return;
+      if (endingBalanceLocal !== null) {
+        const refStart = (meta.startingBalance !== null && typeof meta.startingBalance !== 'undefined') ? meta.startingBalance : startingBalance;
+        if (refStart !== null) profit = +(endingBalanceLocal - refStart).toFixed(2);
+      }
+
+      const profitStr = Number(profit).toFixed(2);
+      const bal = (endingBalanceLocal !== null) ? `<br>Account balance: $${Number(endingBalanceLocal).toFixed(2)}` : ((meta.endingBalance !== null && typeof meta.endingBalance !== 'undefined') ? `<br>Account balance: $${Number(meta.endingBalance).toFixed(2)}` : '');
+
+      let resultHtml = '';
+      if (Number(profitStr) > 0) {
+        resultHtml = `Result: <span class="profit">+ $${Number(profitStr).toFixed(2)}</span>`;
+      } else if (Number(profitStr) < 0) {
+        const lossDisplay = (meta.lossToDisplay && Number(meta.lossToDisplay) > 0) ? Number(meta.lossToDisplay) : Math.abs(Number(profitStr));
+        resultHtml = `Result: <span class="loss">- $${Number(lossDisplay).toFixed(2)}</span>`;
+      } else {
+        resultHtml = `Result: <span class="amount">$0.00</span>`;
+      }
+
+      const details = `Type: ${type}<br>Stake: $${stakeAmt}${barrier ? `<br>Barrier: ${barrier}` : ''}<br>Buy price: $${buyPrice}<br>Payout: $${payout}<br>${resultHtml}${bal}`;
+      popup('Trade Result', details, 8000);
+    } else {
+      // fallback: reproduce buyContract's balance/profit heuristics locally
+      const buyInfo = resp.buy || resp || {};
+      const stakeAmt = Number(stakeInput.value || 0) || 0;
+      const buyPrice = Number(buyInfo.buy_price ?? buyInfo.price ?? buyInfo.ask_price ?? 0) || 0;
+      const payout = Number(buyInfo.payout ?? buyInfo.payout_amount ?? buyInfo.payoutValue ?? 0) || 0;
+
+      // attempt to get starting balance from response fields if we didn't capture it before buy
+      if (startingBalance === null) {
+        startingBalance = firstNumeric([
+          buyInfo.balance_before,
+          resp.balance_before,
+          resp.buy?.balance_before,
+          resp.buy?.balance,
+          resp.balance
+        ]);
+      }
+
+      // ending balance: try response fields first; if not present, try fetching balance with small delays
+      let endingBalance = firstNumeric([
+        resp.buy?.balance_after,
+        resp.balance,
+        resp.account_balance,
+        resp.buy?.account_balance,
+      ]);
+
+      if (endingBalance === null) {
+        // wait a bit and try to fetch balance from WS (one or two attempts)
+        await new Promise(r => setTimeout(r, 1000));
+        const bal1 = await fetchBalanceOnce(2500);
+        if (bal1) endingBalance = firstNumeric([bal1.balance?.balance, bal1.account_balance, bal1.balance_after, bal1.buy?.balance]);
+
+        if (endingBalance === null) {
+          // one more delayed attempt (mirrors buyContract extra attempt)
+          await new Promise(r => setTimeout(r, 1000));
+          const bal2 = await fetchBalanceOnce(2500);
+          if (bal2) endingBalance = firstNumeric([bal2.balance?.balance, bal2.account_balance, bal2.balance_after, bal2.buy?.balance]);
+        }
+      }
+
+      let profit = null;
+      if (startingBalance !== null && endingBalance !== null) {
+        profit = endingBalance - startingBalance;
+      } else if (endingBalance !== null && startingBalance === null) {
+        // best-effort: use payout - stake when balance delta not available
+        profit = payout - stakeAmt;
+      } else if (!Number.isNaN(payout)) {
+        profit = payout - stakeAmt;
+      } else {
+        profit = 0;
+      }
+      profit = +Number(profit || 0).toFixed(2);
+
+      // Determine loss display similar to buyContract
+      let lossToDisplay = null;
+      const referenceBalance = (startingBalance !== null) ? startingBalance : null;
+      if (referenceBalance !== null && endingBalance !== null && endingBalance + 1e-9 < referenceBalance) {
+        lossToDisplay = Number(stakeAmt);
+        profit = -Math.abs(+(referenceBalance - endingBalance).toFixed(2));
+      }
+
+      let resultHtml = '';
+      if (profit > 0) {
+        resultHtml = `Result: <span class="profit">+ $${profit.toFixed(2)}</span>`;
+      } else if (lossToDisplay > 0 || profit < 0) {
+        const displayLoss = (lossToDisplay && Number(lossToDisplay) > 0) ? Number(lossToDisplay) : Math.abs(profit);
+        resultHtml = `Result: <span class="loss">- $${Number(displayLoss).toFixed(2)}</span>`;
+      } else {
+        resultHtml = `Result: <span class="amount">$0.00</span>`;
+      }
+
+      const bal = endingBalance !== null ? `<br>Account balance: $${Number(endingBalance).toFixed(2)}` : '';
+
+      const details = `Type: ${type}<br>Stake: $${Number(stakeAmt).toFixed(2)}${barrier ? `<br>Barrier: ${barrier}` : ''}<br>Buy price: $${Number(buyPrice).toFixed(2)}<br>Payout: $${Number(payout).toFixed(2)}<br>${resultHtml}${bal}`;
+      popup('Trade Result', details, 8000);
+    }
+  } catch (e) {
+    popup('Trade Result', `Type: ${type}<br>Stake: $${Number(stakeInput.value || 0).toFixed(2)}`, 5000);
   }
 
-  const profit = Number(row.profit);
-  const html = `
-    Type: ${type}
-    <br>Stake: $${Number(stakeInput.value).toFixed(2)}
-    <br>Buy price: $${Number(row.buy_price).toFixed(2)}
-    <br>Sell price: $${Number(row.sell_price).toFixed(2)}
-    <br>Result: <span class="${profit >= 0 ? "profit" : "loss"}">
-      ${profit >= 0 ? "+" : "-"} $${Math.abs(profit).toFixed(2)}
-    </span>
-    <br>Account balance: $${Number(row.balance_after).toFixed(2)}
-  `;
-
-  popup("Trade Result", html, 8000);
+  return resp;
 }
 
-/* --------------------------------------------------
-   STOP
--------------------------------------------------- */
 function stopSmart() {
   running = false;
   tradeLock = false;
