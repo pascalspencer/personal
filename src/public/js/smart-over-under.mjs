@@ -244,55 +244,58 @@ async function runSmart() {
 -------------------------------------------------- */
 async function runSingleSequential(symbol) {
   ticksSeen = 0;
+
   return new Promise((resolve) => {
-    try {
-      tickWs = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=61696");
-    } catch (err) {
-      resolve();
-      return;
-    }
+    tickWs = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=61696");
 
     tickWs.onopen = () => {
-      try { tickWs.send(JSON.stringify({ ticks: symbol, subscribe: 1 })); } catch (e) {}
+      tickWs.send(JSON.stringify({ ticks: symbol, subscribe: 1 }));
     };
 
     tickWs.onmessage = async (e) => {
-      if (!running) {
-        try { tickWs.close(); } catch (e) {}
+      if (!running || ticksSeen >= Number(tickCount.value)) {
+        tickWs.close();
         resolve();
         return;
       }
 
+      if (tradeLock) return;
+
       const msg = JSON.parse(e.data);
       if (!msg.tick) return;
 
-      // determine last digit and decide whether to open a trade
       const quote = msg.tick.quote;
       const digit = Number(String(quote).slice(-1));
 
-      // if a trade is already in progress, skip this tick
-      if (tradeLock) return;
+      let tradeType = null;
+      let barrier = null;
 
-      if (digit < Number(overDigit.value)) {
-        tradeLock = true;
-        await executeTrade(symbol, "DIGITOVER", overDigit.value, quote);
-        tradeLock = false;
-        ticksSeen++;
-      } else if (digit > Number(underDigit.value)) {
-        tradeLock = true;
-        await executeTrade(symbol, "DIGITUNDER", underDigit.value, quote);
-        tradeLock = false;
-        ticksSeen++;
+      // ✅ CORRECT DIGIT LOGIC
+      if (digit > Number(overDigit.value)) {
+        tradeType = "DIGITOVER";
+        barrier = overDigit.value;
+      } else if (digit < Number(underDigit.value)) {
+        tradeType = "DIGITUNDER";
+        barrier = underDigit.value;
       }
 
-      if (ticksSeen >= Number(tickCount.value) || !running) {
-        try { tickWs.close(); } catch (e) {}
+      if (!tradeType) return; // ignore non-qualifying ticks
+
+      tradeLock = true;
+      ticksSeen++;
+
+      await executeTrade(symbol, tradeType, barrier, quote);
+
+      tradeLock = false;
+
+      if (ticksSeen >= Number(tickCount.value)) {
+        tickWs.close();
         resolve();
       }
     };
 
     tickWs.onerror = () => {
-      try { tickWs.close(); } catch (e) {}
+      tickWs.close();
       resolve();
     };
   });
