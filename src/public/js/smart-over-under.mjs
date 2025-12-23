@@ -607,7 +607,7 @@ async function executeTrade(symbol, type = "DIGITOVER", barrier = 0, liveQuote =
 
       const bal = endingBalance !== null ? `<br>Account balance: $${Number(endingBalance).toFixed(2)}` : '';
 
-      const details = `Type: ${type}<br>Stake: $${Number(stakeAmt).toFixed(2)}${barrier ? `<br>Barrier: ${barrier}` : ''}<br>Buy price: $${Number(buyPrice).toFixed(2)}<br>Payout: $${Number(payout).toFixed(2)}<br>${resultHtml}${bal}`;
+      const details = `Type: ${type}<br>Stake: $${Number(stakeAmt).toFixed(2)}${barrier ? `<br>Digit: ${barrier}` : ''}<br>Buy price: $${Number(buyPrice).toFixed(2)}`;
       popup('Trade Result', details, 8000);
     }
   } catch (e) {
