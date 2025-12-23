@@ -188,8 +188,9 @@ function popup(title, html, timeout = 3000) {
 async function runSmart() {
   if (running) return;
   running = true;
-  tradeLock = false;
   ticksSeen = 0;
+  tradeLock = false;
+  resultsBox.innerHTML = "";
 
   popup("Checking Entry...");
 
@@ -201,7 +202,18 @@ async function runSmart() {
     return;
   }
 
-  await runSingleSequential(symbol);
+  if (singleToggle.checked) {
+    // run sequential buys driven by ticks
+    await runSingleSequential(symbol);
+    running = false;
+    return;
+  }
+
+  while (running && ticksSeen < tickCount.value) {
+    await checkTick(symbol);
+    ticksSeen++;
+  }
+
   running = false;
 }
 
