@@ -209,40 +209,165 @@ async function runSmart() {
    TICK LOGIC
 -------------------------------------------------- */
 async function runSingleSequential(symbol) {
-  return new Promise(resolve => {
-    tickWs = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=61696");
+  ticksSeen = 0;
+  return new Promise((resolve) => {
+    try {
+      tickWs = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=61696");
+    } catch (err) {
+      resolve();
+      return;
+    }
 
-    tickWs.onopen = () =>
-      tickWs.send(JSON.stringify({ ticks: symbol, subscribe: 1 }));
+    tickWs.onopen = () => {
+      try { tickWs.send(JSON.stringify({ ticks: symbol, subscribe: 1 })); } catch (e) {}
+    };
 
-    tickWs.onmessage = async e => {
-      if (!running || tradeLock) return;
+    tickWs.onmessage = async (e) => {
+      if (!running) {
+        try { tickWs.close(); } catch (e) {}
+        resolve();
+        return;
+      }
 
-      const tick = JSON.parse(e.data)?.tick;
-      if (!tick) return;
+      const msg = JSON.parse(e.data);
+      if (!msg.tick) return;
 
-      const digit = Number(String(tick.quote).slice(-1));
+      // determine last digit and decide whether to open a trade
+      const quote = msg.tick.quote;
+      const digit = Number(String(quote).slice(-1));
+
+      // if a trade is already in progress, skip this tick
+      if (tradeLock) return;
 
       if (digit < Number(overDigit.value)) {
         tradeLock = true;
-        await executeTrade(symbol, "DIGITOVER", overDigit.value, tick.quote);
+        await executeTrade(symbol, "DIGITOVER", overDigit.value, quote);
         tradeLock = false;
         ticksSeen++;
       } else if (digit > Number(underDigit.value)) {
         tradeLock = true;
-        await executeTrade(symbol, "DIGITUNDER", underDigit.value, tick.quote);
+        await executeTrade(symbol, "DIGITUNDER", underDigit.value, quote);
         tradeLock = false;
         ticksSeen++;
       }
 
-      if (ticksSeen >= Number(tickCount.value)) {
-        tickWs.close();
+      if (ticksSeen >= Number(tickCount.value) || !running) {
+        try { tickWs.close(); } catch (e) {}
         resolve();
       }
     };
 
-    tickWs.onerror = () => resolve();
+    tickWs.onerror = () => {
+      try { tickWs.close(); } catch (e) {}
+      resolve();
+    };
   });
+}
+
+async function runBulkOnce(symbol) {
+  return new Promise((resolve) => {
+    ticksSeen = 0;
+    try {
+      tickWs = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=61696");
+    } catch (err) {
+      resolve();
+      return;
+    }
+
+    tickWs.onopen = () => {
+      try { tickWs.send(JSON.stringify({ ticks: symbol, subscribe: 1 })); } catch (e) {}
+    };
+
+    tickWs.onmessage = async (e) => {
+      if (!running) {
+        try { tickWs.close(); } catch (e) {}
+        resolve();
+        return;
+      }
+
+      const msg = JSON.parse(e.data);
+      if (!msg.tick) return;
+
+      const quote = msg.tick.quote;
+      const digit = Number(String(quote).slice(-1));
+
+      if (tradeLock) return;
+
+      // Determine whether to open DIGITOVER or DIGITUNDER based on tick
+      let tradeType = null;
+      let barrier = 0;
+      if (digit < Number(overDigit.value)) {
+        tradeType = "DIGITOVER";
+        barrier = overDigit.value;
+      } else if (digit > Number(underDigit.value)) {
+        tradeType = "DIGITUNDER";
+        barrier = underDigit.value;
+      }
+
+      if (!tradeType) return; // no trigger on this tick
+
+      // execute N buys concurrently using the known tick quote to avoid
+      // duplicate subscriptions inside buyContract
+      tradeLock = true;
+      const n = Math.max(1, Number(tickCount.value) || 1);
+      const stake = stakeInput.value;
+      const buys = Array.from({ length: n }, () => buyContract(symbol, tradeType, 1, stake, barrier, quote, true));
+
+      let results = [];
+      try {
+        results = await Promise.allSettled(buys);
+      } catch (e) {
+        // shouldn't happen since we use allSettled, but guard anyway
+      }
+
+      let success = 0, failed = 0;
+      results.forEach(r => {
+        if (r.status === 'fulfilled' && !(r.value && r.value.error)) success++; else failed++;
+      });
+
+      const details = `Executed ${n} buys: <strong>${success} succeeded</strong>, <strong>${failed} failed</strong>`;
+      popup('Bulk trade executed', details, 6000);
+      tradeLock = false;
+
+      try { tickWs.close(); } catch (e) {}
+      resolve();
+    };
+
+    tickWs.onerror = () => {
+      try { tickWs.close(); } catch (e) {}
+      resolve();
+    };
+  });
+}
+
+async function checkTick(symbol) {
+  if (tradeLock) return;
+
+  const tick = await new Promise(resolve => {
+    const ws = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=61696");
+    ws.onopen = () => ws.send(JSON.stringify({ ticks: symbol, subscribe: 1 }));
+    ws.onmessage = e => {
+      const msg = JSON.parse(e.data);
+      if (msg.tick) {
+        ws.close();
+        resolve(msg.tick.quote);
+      }
+    };
+  });
+
+  const digit = Number(String(tick).slice(-1));
+
+  if (digit < Number(overDigit.value)) {
+    tradeLock = true;
+    await executeTrade(symbol, "DIGITOVER", overDigit.value, tick);
+  }
+
+  if (digit > Number(underDigit.value)) {
+    tradeLock = true;
+    await executeTrade(symbol, "DIGITUNDER", underDigit.value, tick);
+  }
+
+  tradeLock = false;
 }
 
 /* --------------------------------------------------
