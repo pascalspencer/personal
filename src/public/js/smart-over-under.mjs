@@ -448,9 +448,11 @@ async function fetchProfitTable(limit = 10, timeoutMs = 3000) {
       /* after authorization → request profit table */
       if (msg.msg_type === "authorize") {
         ws.send(JSON.stringify({
-          profit_table: 1,
-          limit,
-          sort: "DESC"
+          "profit_table": 1,
+          "description": 1,
+          "limit": 25,
+          "offset": 25,
+          "sort": "ASC"
         }));
         return;
       }
@@ -511,7 +513,7 @@ async function executeTrade(symbol, type = "DIGITOVER", barrier = 0, liveQuote =
     resp?.buy?.id;
 
   if (!buyTxId) {
-    popup("Trade placed", "Awaiting settlement…", 5000);
+    popup("Trade placed", "Awaiting settlement buyID…");
     return resp;
   }
 
@@ -525,7 +527,7 @@ async function executeTrade(symbol, type = "DIGITOVER", barrier = 0, liveQuote =
   );
 
   if (!row) {
-    popup("Trade placed", "Awaiting settlement…", 2000);
+    popup("Trade placed", "Awaiting settlement row…");
     return resp;
   }
 
