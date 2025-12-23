@@ -471,7 +471,7 @@ async function executeTrade(symbol, type = "DIGITOVER", barrier = 0, liveQuote =
   // capture starting balance before buy to compute true delta
   let startingBalance = null;
   try {
-    const balBefore = await fetchBalanceOnce(2500);
+    const balBefore = await fetchBalanceOnce(500);
     if (balBefore) startingBalance = firstNumeric([balBefore.balance?.balance, balBefore.account_balance, balBefore.balance_after, balBefore.buy?.balance]);
   } catch (e) {
     startingBalance = null;
@@ -513,18 +513,7 @@ async function executeTrade(symbol, type = "DIGITOVER", barrier = 0, liveQuote =
 
       // If buyContract didn't supply a final endingBalance, try to fetch one now
       let endingBalanceLocal = (meta.endingBalance !== null && typeof meta.endingBalance !== 'undefined') ? meta.endingBalance : null;
-      if (endingBalanceLocal === null) {
-        // attempt two delayed balance reads to allow backend to settle
-        await new Promise(r => setTimeout(r, 1000));
-        const b1 = await fetchBalanceOnce(2500);
-        if (b1) endingBalanceLocal = firstNumeric([b1.balance?.balance, b1.account_balance, b1.balance_after, b1.buy?.balance]);
-        if (endingBalanceLocal === null) {
-          await new Promise(r => setTimeout(r, 1000));
-          const b2 = await fetchBalanceOnce(2500);
-          if (b2) endingBalanceLocal = firstNumeric([b2.balance?.balance, b2.account_balance, b2.balance_after, b2.buy?.balance]);
-        }
-      }
-
+      
       if (endingBalanceLocal !== null) {
         const refStart = (meta.startingBalance !== null && typeof meta.startingBalance !== 'undefined') ? meta.startingBalance : startingBalance;
         if (refStart !== null) profit = +(endingBalanceLocal - refStart).toFixed(2);
