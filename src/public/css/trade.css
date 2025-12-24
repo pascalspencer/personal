@@ -867,6 +867,25 @@ body.smart-mode > #side-panel.open { display: block; visibility: visible; transf
   color: white;
 }
 
+.tick-item.new-tick {
+  animation: pulse 0.5s ease-in-out;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(0, 187, 240, 0.7);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 10px rgba(0, 187, 240, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(0, 187, 240, 0);
+  }
+}
+
 .tick-count-display {
   text-align: center;
   font-weight: 600;

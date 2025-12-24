@@ -43,19 +43,44 @@ document.addEventListener("DOMContentLoaded", () => {
     menuBtn.style.display = '';
   };
 
-  tabs.forEach(btn => {
+tabs.forEach(btn => {
     btn.onclick = () => {
       tabs.forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
 
-      document.getElementById("auto-analysis").style.display =
-        btn.dataset.tab === "auto" ? "block" : "none";
+      // Hide all panels first
+      document.getElementById("auto-analysis").style.display = "none";
+      document.getElementById("smart-over-under").style.display = "none";
+      document.getElementById("even-odd-panel").style.display = "none";
 
-document.getElementById("smart-over-under").style.display =
-        btn.dataset.tab === "smart" ? "block" : "none";
-
-      document.getElementById("even-odd-panel").style.display =
-        btn.dataset.tab === "even-odd" ? "block" : "none";
+      if (btn.dataset.tab === "auto") {
+        document.getElementById("auto-analysis").style.display = "block";
+        // Auto Analysis gets all form elements
+        document.querySelectorAll("form > *").forEach(el => {
+          if (el.id !== "market" && el.id !== "submarket") {
+            el.style.display = "";
+          }
+        });
+      } else if (btn.dataset.tab === "smart") {
+        document.getElementById("smart-over-under").style.display = "block";
+        // Smart Over/Under gets all form elements
+        document.querySelectorAll("form > *").forEach(el => {
+          if (el.id !== "market" && el.id !== "submarket") {
+            el.style.display = "";
+          }
+        });
+      } else if (btn.dataset.tab === "even-odd") {
+        document.getElementById("even-odd-panel").style.display = "block";
+        // Even/Odd only gets market and submarket, hide everything else
+        const formElements = document.querySelectorAll("#trade-form > *");
+        formElements.forEach(el => {
+          if (el.id === "market" || el.id === "submarket") {
+            el.style.display = "";
+          } else {
+            el.style.display = "none";
+          }
+        });
+      }
 
       sidePanel.classList.remove("open");
       // restore hamburger after choosing a tab

@@ -17,19 +17,19 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
 
         <div class="smart-form">
-          <div class="field">
-            <label for="tick-count-eo">Number of ticks</label>
-            <input type="number" id="tick-count-eo" min="1" max="50" value="50">
-          </div>
-
           <div class="tick-display">
-            <div class="tick-header">Last 50 Ticks</div>
+            <div class="tick-header">Live Tick Stream (Last 50)</div>
             <div class="tick-grid" id="tick-grid-eo">
               <!-- Ticks will be populated here -->
             </div>
             <div class="tick-count-display">
               Total Ticks: <span id="total-ticks-eo">0</span>
             </div>
+          </div>
+
+          <div class="field">
+            <label for="tick-count-eo">Number of trades</label>
+            <input type="number" id="tick-count-eo" min="1" value="5">
           </div>
 
           <div class="stake-row">
@@ -56,8 +56,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Event listeners
   document.getElementById("run-even-odd").onclick = runEvenOdd;
 
-  // Initialize tick display
+  // Initialize tick display and start streaming
   updateTickDisplay();
+  startTickStream();
 });
 
 function updateTickDisplay() {
@@ -78,10 +79,74 @@ function updateTickDisplay() {
       tickEl.classList.add('odd');
     }
     
+    // Add animation for new ticks
+    if (index === displayTicks.length - 1 && tickHistory.length > 50) {
+      tickEl.classList.add('new-tick');
+    }
+    
     tickGrid.appendChild(tickEl);
   });
   
   totalTicksDisplay.textContent = tickHistory.length;
+}
+
+function startTickStream() {
+  const symbol = document.getElementById("submarket")?.value || "R_100";
+  
+  try {
+    tickWs = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=61696");
+  } catch (err) {
+    console.error("Failed to create WebSocket:", err);
+    return;
+  }
+
+  tickWs.onopen = () => {
+    try { 
+      tickWs.send(JSON.stringify({ ticks: symbol, subscribe: 1 })); 
+    } catch (e) {
+      console.error("Failed to send subscription:", e);
+    }
+  };
+
+  tickWs.onmessage = (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.tick) {
+        const quote = msg.tick.quote;
+        const digit = Number(String(quote).slice(-1));
+        tickHistory.push(digit);
+        
+        // Keep only last 100 in memory to prevent memory issues
+        if (tickHistory.length > 100) {
+          tickHistory = tickHistory.slice(-100);
+        }
+        
+        updateTickDisplay();
+      }
+    } catch (error) {
+      console.error("Error processing tick message:", error);
+    }
+  };
+
+  tickWs.onerror = (error) => {
+    console.error("WebSocket error:", error);
+    // Try to reconnect after 3 seconds
+    setTimeout(() => {
+      if (!tickWs || tickWs.readyState === WebSocket.CLOSED) {
+        startTickStream();
+      }
+    }, 3000);
+  };
+
+  tickWs.onclose = () => {
+    console.log("WebSocket closed, attempting to reconnect...");
+    // Try to reconnect after 3 seconds
+    setTimeout(() => {
+      if (!tickWs || tickWs.readyState === WebSocket.CLOSED) {
+        startTickStream();
+      }
+    }, 3000);
+  };
 }
 
 async function runEvenOdd() {
@@ -91,17 +156,18 @@ async function runEvenOdd() {
   }
 
   const symbol = document.getElementById("submarket")?.value || "R_100";
-  const numTrades = parseInt(tickCountInput.value) || 50;
+  const numTrades = parseInt(tickCountInput.value) || 5;
   const stake = stakeInput.value;
 
+  // Check if we have enough ticks to analyze
   if (tickHistory.length < 5) {
     resultsDisplay.innerHTML = "Collecting ticks... Need at least 5 ticks to analyze";
-    await collectTicks(symbol, 50);
+    return;
   }
 
   running = true;
   document.getElementById("run-even-odd").textContent = "STOP";
-  resultsDisplay.innerHTML = "Analyzing last 5 ticks...";
+  resultsDisplay.innerHTML = "Analyzing last 5 ticks for pattern...";
 
   // Check last 5 ticks for consecutive even or odd
   const last5Ticks = tickHistory.slice(-5);
@@ -109,7 +175,7 @@ async function runEvenOdd() {
   const allOdd = last5Ticks.every(tick => tick % 2 !== 0);
 
   if (!allEven && !allOdd) {
-    resultsDisplay.innerHTML = "No consecutive pattern found in last 5 ticks";
+    resultsDisplay.innerHTML = "No consecutive pattern found in last 5 ticks<br>Waiting for pattern...";
     running = false;
     document.getElementById("run-even-odd").textContent = "RUN";
     return;
@@ -120,7 +186,7 @@ async function runEvenOdd() {
   
   resultsDisplay.innerHTML = `Found 5 consecutive ${pattern} ticks<br>Placing ${numTrades} ${tradeType} trades...`;
 
-  // Place trades
+  // Place trades - similar to smart over/under logic
   const trades = [];
   for (let i = 0; i < numTrades; i++) {
     try {
@@ -132,7 +198,7 @@ async function runEvenOdd() {
       const failed = trades.filter(t => t.error).length;
       resultsDisplay.innerHTML = `Placing ${tradeType} trades...<br>Completed: ${success + failed}/${numTrades}<br>Success: ${success}, Failed: ${failed}`;
       
-      // Small delay between trades
+      // Small delay between trades to avoid rate limiting
       await new Promise(resolve => setTimeout(resolve, 500));
     } catch (error) {
       console.error('Trade failed:', error);
@@ -160,56 +226,9 @@ async function runEvenOdd() {
 
 function stopEvenOdd() {
   running = false;
-  if (tickWs) {
-    try { tickWs.close(); } catch (e) {}
-    tickWs = null;
-  }
+  // Don't close the WebSocket here as we want to keep streaming ticks
   document.getElementById("run-even-odd").textContent = "RUN";
   popup("Even/Odd Stopped");
-}
-
-async function collectTicks(symbol, count = 50) {
-  return new Promise((resolve) => {
-    let collected = 0;
-    
-    try {
-      tickWs = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=61696");
-    } catch (err) {
-      resolve();
-      return;
-    }
-
-    tickWs.onopen = () => {
-      try { tickWs.send(JSON.stringify({ ticks: symbol, subscribe: 1 })); } catch (e) {}
-    };
-
-    tickWs.onmessage = (e) => {
-      if (!running && collected >= count) {
-        try { tickWs.close(); } catch (e) {}
-        resolve();
-        return;
-      }
-
-      const msg = JSON.parse(e.data);
-      if (msg.tick) {
-        const quote = msg.tick.quote;
-        const digit = Number(String(quote).slice(-1));
-        tickHistory.push(digit);
-        collected++;
-        updateTickDisplay();
-
-        if (collected >= count) {
-          try { tickWs.close(); } catch (e) {}
-          resolve();
-        }
-      }
-    };
-
-    tickWs.onerror = () => {
-      try { tickWs.close(); } catch (e) {}
-      resolve();
-    };
-  });
 }
 
 function popup(msg, details = null, timeout = 2000) {
