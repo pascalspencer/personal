@@ -9,6 +9,8 @@ let tickWs = null;
 let overDigit, underDigit, tickCount, stakeInput;
 let singleToggle, bulkToggle, resultsBox;
 
+
+
 document.addEventListener("DOMContentLoaded", () => {
   // UI Injection
   document.body.insertAdjacentHTML("beforeend", `
@@ -60,7 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         </div>
 
-        <div id="smart-results" class="smart-results"></div>
+<div id="smart-results" class="smart-results"></div>
       </div>
     </div>
   </div>
@@ -71,9 +73,11 @@ document.addEventListener("DOMContentLoaded", () => {
   underDigit = document.getElementById("under-digit");
   tickCount = document.getElementById("tick-count");
   stakeInput = document.getElementById("stake");
-  singleToggle = document.getElementById("single-toggle");
+singleToggle = document.getElementById("single-toggle");
   bulkToggle = document.getElementById("bulk-toggle");
   resultsBox = document.getElementById("smart-results");
+
+  
 
   for (let i = 0; i <= 9; i++) {
     overDigit.innerHTML += `<option value="${i}">${i}</option>`;
@@ -99,7 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   singleToggle.addEventListener('change', updateToggles);
   bulkToggle.addEventListener('change', updateToggles);
-  // ensure initial state
+// ensure initial state
   updateToggles();
 
   // Preserve references to original market/submarket parents so we can
@@ -625,4 +629,158 @@ function stopSmart() {
     tickWs = null;
   }
   popup("Stopped");
+}
+
+
+
+function updateTickDisplay() {
+  tickGridEO.innerHTML = '';
+  
+  // Display last 50 ticks (or fewer if we don't have that many yet)
+  const displayTicks = tickHistory.slice(-50);
+  
+  displayTicks.forEach((tick, index) => {
+    const tickEl = document.createElement('div');
+    tickEl.className = 'tick-item';
+    tickEl.textContent = tick;
+    
+    // Color based on even/odd
+    if (tick % 2 === 0) {
+      tickEl.classList.add('even');
+    } else {
+      tickEl.classList.add('odd');
+    }
+    
+    tickGridEO.appendChild(tickEl);
+  });
+  
+  totalTicksEO.textContent = tickHistory.length;
+}
+
+async function runEvenOdd() {
+  if (runningEO) {
+    stopEvenOdd();
+    return;
+  }
+
+  const symbol = document.getElementById("submarket")?.value || "R_100";
+  const numTrades = parseInt(tickCountEO.value) || 50;
+  const stake = stakeInputEO.value;
+
+  if (tickHistory.length < 5) {
+    popup("Collecting ticks...", "Need at least 5 ticks to analyze", 2000);
+    await collectTicks(symbol, 50);
+  }
+
+  runningEO = true;
+  document.getElementById("run-even-odd").textContent = "STOP";
+  evenOddResults.innerHTML = "Analyzing last 5 ticks...";
+
+  // Check last 5 ticks for consecutive even or odd
+  const last5Ticks = tickHistory.slice(-5);
+  const allEven = last5Ticks.every(tick => tick % 2 === 0);
+  const allOdd = last5Ticks.every(tick => tick % 2 !== 0);
+
+  if (!allEven && !allOdd) {
+    evenOddResults.innerHTML = "No consecutive pattern found in last 5 ticks";
+    runningEO = false;
+    document.getElementById("run-even-odd").textContent = "RUN";
+    return;
+  }
+
+  const tradeType = allEven ? "DIGITODD" : "DIGITEVEN";
+  const pattern = allEven ? "Even" : "Odd";
+  
+  evenOddResults.innerHTML = `Found 5 consecutive ${pattern} ticks<br>Placing ${numTrades} ${tradeType} trades...`;
+
+  // Place the trades
+  const trades = [];
+  for (let i = 0; i < numTrades; i++) {
+    try {
+      const result = await buyContract(symbol, tradeType, 1, stake, null, null, true);
+      trades.push(result);
+      
+      // Update results display
+      const success = trades.filter(t => !t.error).length;
+      const failed = trades.filter(t => t.error).length;
+      evenOddResults.innerHTML = `Placing ${tradeType} trades...<br>Completed: ${success + failed}/${numTrades}<br>Success: ${success}, Failed: ${failed}`;
+      
+      // Small delay between trades
+      await new Promise(resolve => setTimeout(resolve, 500));
+    } catch (error) {
+      console.error('Trade failed:', error);
+      trades.push({ error: error.message });
+    }
+  }
+
+  // Final results
+  const success = trades.filter(t => !t.error).length;
+  const failed = trades.filter(t => t.error).length;
+  
+  evenOddResults.innerHTML = `
+    <strong>Execution Complete</strong><br>
+    Pattern: ${pattern} (5 consecutive)<br>
+    Trades: ${tradeType}<br>
+    Total: ${numTrades}<br>
+    Success: ${success}, Failed: ${failed}
+  `;
+
+  popup(`Even/Odd Complete`, `Placed ${numTrades} ${tradeType} trades<br>Success: ${success}, Failed: ${failed}`, 5000);
+
+  runningEO = false;
+  document.getElementById("run-even-odd").textContent = "RUN";
+}
+
+function stopEvenOdd() {
+  runningEO = false;
+  if (tickWsEO) {
+    try { tickWsEO.close(); } catch (e) {}
+    tickWsEO = null;
+  }
+  document.getElementById("run-even-odd").textContent = "RUN";
+  popup("Even/Odd Stopped");
+}
+
+async function collectTicks(symbol, count = 50) {
+  return new Promise((resolve) => {
+    let collected = 0;
+    
+    try {
+      tickWsEO = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=61696");
+    } catch (err) {
+      resolve();
+      return;
+    }
+
+    tickWsEO.onopen = () => {
+      try { tickWsEO.send(JSON.stringify({ ticks: symbol, subscribe: 1 })); } catch (e) {}
+    };
+
+    tickWsEO.onmessage = (e) => {
+      if (!runningEO && collected >= count) {
+        try { tickWsEO.close(); } catch (e) {}
+        resolve();
+        return;
+      }
+
+      const msg = JSON.parse(e.data);
+      if (msg.tick) {
+        const quote = msg.tick.quote;
+        const digit = Number(String(quote).slice(-1));
+        tickHistory.push(digit);
+        collected++;
+        updateTickDisplay();
+
+        if (collected >= count) {
+          try { tickWsEO.close(); } catch (e) {}
+          resolve();
+        }
+      }
+    };
+
+    tickWsEO.onerror = () => {
+      try { tickWsEO.close(); } catch (e) {}
+      resolve();
+    };
+  });
 }

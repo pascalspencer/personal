@@ -6,9 +6,10 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="panel-header">
         <span id="panel-close">✕</span>
       </div>
-      <div class="panel-tabs">
+<div class="panel-tabs">
         <button class="tab-btn active" data-tab="auto">Auto Analysis</button>
         <button class="tab-btn" data-tab="smart">Smart Over/Under</button>
+        <button class="tab-btn" data-tab="even-odd">Even/Odd Switch</button>
       </div>
     </div>
   `);
@@ -50,8 +51,11 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("auto-analysis").style.display =
         btn.dataset.tab === "auto" ? "block" : "none";
 
-      document.getElementById("smart-over-under").style.display =
+document.getElementById("smart-over-under").style.display =
         btn.dataset.tab === "smart" ? "block" : "none";
+
+      document.getElementById("even-odd-panel").style.display =
+        btn.dataset.tab === "even-odd" ? "block" : "none";
 
       sidePanel.classList.remove("open");
       // restore hamburger after choosing a tab

@@ -774,4 +774,157 @@ body.smart-mode > #side-panel.open { display: block; visibility: visible; transf
   color: #111827;
 }
 
+/* Tab Styles */
+.smart-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 0.75rem 0.5rem;
+  background: rgba(0, 187, 240, 0.1);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  color: var(--text-dark);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.tab-btn:hover {
+  background: rgba(0, 187, 240, 0.2);
+}
+
+.tab-btn.active {
+  background: var(--primary-color);
+  color: var(--text-light);
+  border-color: var(--primary-color);
+}
+
+/* Panel Tabs - for side panel */
+#side-panel .tab-btn {
+  padding: 1rem 0.5rem;
+  font-size: 0.9rem;
+  width: 100%;
+  margin-bottom: 0.5rem;
+  text-align: center;
+  border-radius: 6px;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* Even/Odd Tick Display */
+.tick-display {
+  background: var(--bg-gray);
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.tick-header {
+  font-weight: 600;
+  margin-bottom: 1rem;
+  text-align: center;
+  color: var(--text-dark);
+}
+
+.tick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  min-height: 120px;
+}
+
+.tick-item {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: var(--transition);
+}
+
+.tick-item.even {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+.tick-item.odd {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+}
+
+.tick-count-display {
+  text-align: center;
+  font-weight: 600;
+  color: var(--text-dark);
+  padding: 0.75rem;
+  background: rgba(0, 187, 240, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 187, 240, 0.2);
+}
+
+.run-btn {
+  height: 48px;
+  padding: 0 2rem;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  color: var(--text-light);
+  border: none;
+  border-radius: var(--border-radius);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: var(--shadow-md);
+  margin-right: 1rem;
+}
+
+.run-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.run-btn:active {
+  transform: translateY(0);
+}
+
+/* Responsive adjustments for tick grid */
+@media (max-width: 768px) {
+  .tick-grid {
+    grid-template-columns: repeat(auto-fill, minmax(35px, 1fr));
+    gap: 0.25rem;
+  }
+  
+  .tick-item {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .tick-grid {
+    grid-template-columns: repeat(auto-fill, minmax(30px, 1fr));
+  }
+  
+  .tick-item {
+    font-size: 0.7rem;
+  }
+  
+  .smart-tabs {
+    flex-direction: column;
+  }
+}
+
 
