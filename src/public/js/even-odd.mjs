@@ -57,6 +57,24 @@ document.addEventListener("DOMContentLoaded", () => {
   // Event listeners
   document.getElementById("run-even-odd").onclick = runEvenOdd;
 
+  // Add market and submarket change listeners
+  const marketSelect = document.getElementById("market");
+  const submarketSelect = document.getElementById("submarket");
+  
+  if (marketSelect) {
+    marketSelect.addEventListener("change", () => {
+      console.log("Market changed, restarting stream...");
+      restartTickStream();
+    });
+  }
+  
+  if (submarketSelect) {
+    submarketSelect.addEventListener("change", () => {
+      console.log("Submarket changed, restarting stream...");
+      restartTickStream();
+    });
+  }
+
   // Initialize tick display and start streaming
   updateTickDisplay();
   startTickStream();
@@ -103,16 +121,34 @@ function updateTickDisplay() {
 }
 
 function startTickStream() {
-  const symbol = document.getElementById("submarket")?.value || "R_100";
+  const market = document.getElementById("market")?.value;
+  const submarket = document.getElementById("submarket")?.value;
+  
+  // Wait for both market and submarket to be selected
+  if (!market) {
+    console.log("Waiting for market selection...");
+    setTimeout(startTickStream, 1000);
+    return;
+  }
+  
+  if (!submarket) {
+    console.log("Waiting for submarket selection...");
+    setTimeout(startTickStream, 1000);
+    return;
+  }
+  
+  const symbol = submarket;
   
   try {
     tickWs = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=61696");
   } catch (err) {
     console.error("Failed to create WebSocket:", err);
+    setTimeout(startTickStream, 3000); // Retry after 3 seconds
     return;
   }
 
   tickWs.onopen = () => {
+    console.log("WebSocket connected for symbol:", symbol);
     try { 
       tickWs.send(JSON.stringify({ ticks: symbol, subscribe: 1 })); 
     } catch (e) {
@@ -147,21 +183,19 @@ function startTickStream() {
 
   tickWs.onerror = (error) => {
     console.error("WebSocket error:", error);
-    // Try to reconnect after 3 seconds
+    // Clear connection and retry after 3 seconds
+    tickWs = null;
     setTimeout(() => {
-      if (!tickWs || tickWs.readyState === WebSocket.CLOSED) {
-        startTickStream();
-      }
+      startTickStream();
     }, 3000);
   };
 
   tickWs.onclose = () => {
     console.log("WebSocket closed, attempting to reconnect...");
-    // Try to reconnect after 3 seconds
+    // Clear connection and retry after 3 seconds
+    tickWs = null;
     setTimeout(() => {
-      if (!tickWs || tickWs.readyState === WebSocket.CLOSED) {
-        startTickStream();
-      }
+      startTickStream();
     }, 3000);
   };
 }
@@ -293,6 +327,25 @@ function stopEvenOdd() {
   // Don't close WebSocket here as we want to keep streaming ticks
   document.getElementById("run-even-odd").textContent = "RUN";
   popup("Even/Odd Stopped");
+}
+
+function restartTickStream() {
+  // Clear existing connection
+  if (tickWs) {
+    try {
+      tickWs.close();
+    } catch (e) {
+      console.error("Error closing WebSocket:", e);
+    }
+    tickWs = null;
+  }
+  
+  // Reset tick history when symbol changes
+  tickHistory = [];
+  updateTickDisplay();
+  
+  // Start new stream with updated symbol
+  setTimeout(startTickStream, 1000);
 }
 
 function popup(msg, details = null, timeout = 2000) {
