@@ -2,6 +2,7 @@ import { buyContract } from "./buyContract.mjs";
 import { getCurrentToken } from './popupMessages.mjs';
 
 let running = false;
+let checkingForEntry = false;
 let tickWs = null;
 let tickHistory = [];
 let tickCountInput, stakeInput, tickGrid, totalTicksDisplay, resultsDisplay;
@@ -64,13 +65,13 @@ document.addEventListener("DOMContentLoaded", () => {
 function updateTickDisplay() {
   tickGrid.innerHTML = '';
   
-  // Get last 50 ticks and reverse them so newest is at bottom-right
+  // Get last 50 ticks
   const displayTicks = tickHistory.slice(-50);
   
-  // Create a 10x5 grid (50 cells total)
-  for (let row = 0; row < 10; row++) {
-    for (let col = 0; col < 5; col++) {
-      const tickIndex = row * 5 + col;
+  // Create a 5x10 grid (50 cells total) - 5 rows, 10 columns
+  for (let row = 0; row < 5; row++) {
+    for (let col = 0; col < 10; col++) {
+      const tickIndex = row * 10 + col;
       const tickEl = document.createElement('div');
       tickEl.className = 'tick-item';
       
@@ -86,7 +87,7 @@ function updateTickDisplay() {
         }
         
         // Add animation for newest tick (last position in grid)
-        if (tickIndex === displayTicks.length - 1 && tickHistory.length > 50) {
+        if (tickIndex === displayTicks.length - 1) {
           tickEl.classList.add('new-tick');
         }
       } else {
@@ -133,6 +134,11 @@ function startTickStream() {
         }
         
         updateTickDisplay();
+        
+        // Check for pattern if we're actively looking for entry
+        if (checkingForEntry && tickHistory.length >= 5) {
+          checkForPatternAndTrade();
+        }
       }
     } catch (error) {
       console.error("Error processing tick message:", error);
@@ -170,15 +176,24 @@ async function runEvenOdd() {
   const numTrades = parseInt(tickCountInput.value) || 5;
   const stake = stakeInput.value;
 
-  // Check if we have enough ticks to analyze
-  if (tickHistory.length < 5) {
-    resultsDisplay.innerHTML = "Collecting ticks... Need at least 5 ticks to analyze";
-    return;
-  }
-
   running = true;
+  checkingForEntry = true;
   document.getElementById("run-even-odd").textContent = "STOP";
-  resultsDisplay.innerHTML = "Analyzing last 5 ticks for pattern...";
+  resultsDisplay.innerHTML = "Monitoring for entry pattern...";
+  
+  // Show checking popup
+  const checkingPopup = popup("Checking Stream for entry", "Looking for 5 consecutive even or odd ticks", 0);
+
+  // Check immediately if we already have a pattern
+  if (tickHistory.length >= 5) {
+    checkForPatternAndTrade();
+  }
+}
+
+async function checkForPatternAndTrade() {
+  const symbol = document.getElementById("submarket")?.value || "R_100";
+  const numTrades = parseInt(tickCountInput.value) || 5;
+  const stake = stakeInput.value;
 
   // Check last 5 ticks for consecutive even or odd
   const last5Ticks = tickHistory.slice(-5);
@@ -186,10 +201,17 @@ async function runEvenOdd() {
   const allOdd = last5Ticks.every(tick => tick % 2 !== 0);
 
   if (!allEven && !allOdd) {
-    resultsDisplay.innerHTML = "No consecutive pattern found in last 5 ticks<br>Waiting for pattern...";
-    running = false;
-    document.getElementById("run-even-odd").textContent = "RUN";
+    // No pattern found, continue monitoring
     return;
+  }
+
+  // Pattern found - stop checking and place trades
+  checkingForEntry = false;
+  
+  // Close checking popup
+  const checkingPopup = document.querySelector('.trade-popup-overlay');
+  if (checkingPopup) {
+    checkingPopup.remove();
   }
 
   const tradeType = allEven ? "DIGITODD" : "DIGITEVEN";
@@ -209,11 +231,34 @@ async function runEvenOdd() {
       const failed = trades.filter(t => t.error).length;
       resultsDisplay.innerHTML = `Placing ${tradeType} trades...<br>Completed: ${success + failed}/${numTrades}<br>Success: ${success}, Failed: ${failed}`;
       
+      // Show trade confirmation popup like smart over/under
+      const tradeNumber = i + 1;
+      let tradeResult = 'Failed';
+      if (!result.error) {
+        // Try to extract profit info
+        const buyInfo = result.buy || result;
+        const stakeAmt = Number(stake) || 0;
+        const payout = Number(buyInfo?.payout ?? buyInfo?.payout_amount ?? 0) || 0;
+        
+        if (payout > stakeAmt) {
+          tradeResult = `Profit: $${(payout - stakeAmt).toFixed(2)}`;
+        } else if (payout > 0) {
+          tradeResult = `Loss: $${(stakeAmt - payout).toFixed(2)}`;
+        } else {
+          tradeResult = 'Lost';
+        }
+      }
+      
+      popup(`Trade ${tradeNumber}/${numTrades}`, `Type: ${tradeType}<br>Stake: $${Number(stake).toFixed(2)}<br>${tradeResult}`, 3000);
+      
       // Small delay between trades to avoid rate limiting
       await new Promise(resolve => setTimeout(resolve, 500));
     } catch (error) {
       console.error('Trade failed:', error);
       trades.push({ error: error.message });
+      
+      // Show error popup
+      popup(`Trade ${i + 1}/${numTrades}`, `Type: ${tradeType}<br>Stake: $${Number(stake).toFixed(2)}<br>Error: ${error.message}`, 3000);
     }
   }
 
@@ -237,7 +282,15 @@ async function runEvenOdd() {
 
 function stopEvenOdd() {
   running = false;
-  // Don't close the WebSocket here as we want to keep streaming ticks
+  checkingForEntry = false;
+  
+  // Close any checking popup
+  const checkingPopup = document.querySelector('.trade-popup-overlay');
+  if (checkingPopup) {
+    checkingPopup.remove();
+  }
+  
+  // Don't close WebSocket here as we want to keep streaming ticks
   document.getElementById("run-even-odd").textContent = "RUN";
   popup("Even/Odd Stopped");
 }

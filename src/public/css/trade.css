@@ -840,12 +840,15 @@ body.smart-mode > #side-panel.open { display: block; visibility: visible; transf
 
 .tick-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  grid-template-rows: repeat(10, 1fr);
+  grid-template-columns: repeat(10, 1fr);
+  grid-template-rows: repeat(5, 1fr);
   gap: 0.25rem;
   margin-bottom: 1rem;
-  height: 320px; /* Fixed height for 10 rows */
+  height: 160px; /* Fixed height for 5 rows */
   width: 100%;
+  max-width: 500px; /* Prevent overlap */
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .tick-item {
@@ -933,7 +936,8 @@ body.smart-mode > #side-panel.open { display: block; visibility: visible; transf
 @media (max-width: 768px) {
   .tick-grid {
     gap: 0.2rem;
-    height: 280px; /* Slightly smaller for mobile */
+    height: 140px; /* Slightly smaller for mobile */
+    max-width: 400px;
   }
   
   .tick-item {
@@ -944,7 +948,8 @@ body.smart-mode > #side-panel.open { display: block; visibility: visible; transf
 @media (max-width: 480px) {
   .tick-grid {
     gap: 0.15rem;
-    height: 240px; /* Smaller for small screens */
+    height: 120px; /* Smaller for small screens */
+    max-width: 320px;
   }
   
   .tick-item {
