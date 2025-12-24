@@ -134,11 +134,11 @@ function startPing() {
   if (!connection || pingInterval) return;
   pingInterval = setInterval(() => {
     try { connection.send(JSON.stringify({ ping: 1 })); } catch (e) {}
-  }, 30000);
+  }, 15000); // Reduced ping interval for faster connection
 }
 
 // --- low-level send + await single response ---
-function sendJson(payload, timeoutMs = 8000) {
+function sendJson(payload, timeoutMs = 3000) {
   if (!connection || connection.readyState !== WebSocket.OPEN) {
     return Promise.reject(new Error("WebSocket not open"));
   }
@@ -305,7 +305,7 @@ async function evaluateAndBuyContractSafe() {
     return console.error("⛔ Could not map sentiment → trade type");
   }
 
-  const price = parseFloat(document.getElementById("price")?.value || 1);
+const price = parseFloat(document.getElementById("price")?.value || 1);
 
   console.log(`🔥 Automated mode active — executing trade
   Symbol: ${submarket}
@@ -313,7 +313,10 @@ async function evaluateAndBuyContractSafe() {
   Price: ${price}
   Digit: ${tradeDigit}`);
 
-  await buyContract(submarket, tradeType, 1, price, tradeDigit);
+  // Execute trade without waiting for faster automation
+  buyContract(submarket, tradeType, 1, price, tradeDigit).catch(err => {
+    console.error("Automation trade failed:", err);
+  });
 }
 
 async function getTradeTypeForSentiment(sentiment, index) {
@@ -455,26 +458,27 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     const propId = prop.id;
     const askPrice = prop.ask_price ?? prop.ask_price; // use ask_price if present
 
-    // 4) BUY CONTRACT
-    // Capture starting balance immediately before attempting the buy so we
-    // can determine whether the account decreased after the purchase.
-    let startingBalance = null;
-    try {
-        const balBefore = await sendJson({ balance: 1 });
-        if (balBefore) {
-          const candidates = [balBefore.balance.balance, balBefore.balance_after, balBefore.account_balance, balBefore.balance_before];
-          for (const c of candidates) {
-            if (typeof c === 'number') { startingBalance = c; break; }
-            if (typeof c === 'string' && !Number.isNaN(Number(c))) { startingBalance = Number(c); break; }
-          }
-        }
-    } catch (e) {
-      // ignore balance read errors
-    }
-
+// 4) BUY CONTRACT - Optimized for speed
     let buyResp;
     try {
-        buyResp = await sendJson({ buy: propId, price: askPrice });
+        // Skip balance check for faster execution when in automation mode
+        if (!isAutomationEnabled) {
+            let startingBalance = null;
+            try {
+                const balBefore = await sendJson({ balance: 1, timeoutMs: 2000 });
+                if (balBefore) {
+                    const candidates = [balBefore.balance.balance, balBefore.balance_after, balBefore.account_balance, balBefore.balance_before];
+                    for (const c of candidates) {
+                        if (typeof c === 'number') { startingBalance = c; break; }
+                        if (typeof c === 'string' && !Number.isNaN(Number(c))) { startingBalance = Number(c); break; }
+                    }
+                }
+            } catch (e) {
+                // ignore balance read errors
+            }
+        }
+        
+        buyResp = await sendJson({ buy: propId, price: askPrice, timeoutMs: 2000 });
         console.log("Buy response:", buyResp);
     } catch (err) {
         console.error("❌ Buy call failed:", err);
