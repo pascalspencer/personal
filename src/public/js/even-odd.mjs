@@ -64,28 +64,39 @@ document.addEventListener("DOMContentLoaded", () => {
 function updateTickDisplay() {
   tickGrid.innerHTML = '';
   
-  // Display last 50 ticks (or fewer if we don't have that many yet)
+  // Get last 50 ticks and reverse them so newest is at bottom-right
   const displayTicks = tickHistory.slice(-50);
   
-  displayTicks.forEach((tick, index) => {
-    const tickEl = document.createElement('div');
-    tickEl.className = 'tick-item';
-    tickEl.textContent = tick;
-    
-    // Color based on even/odd
-    if (tick % 2 === 0) {
-      tickEl.classList.add('even');
-    } else {
-      tickEl.classList.add('odd');
+  // Create a 10x5 grid (50 cells total)
+  for (let row = 0; row < 10; row++) {
+    for (let col = 0; col < 5; col++) {
+      const tickIndex = row * 5 + col;
+      const tickEl = document.createElement('div');
+      tickEl.className = 'tick-item';
+      
+      if (tickIndex < displayTicks.length) {
+        const tick = displayTicks[tickIndex];
+        tickEl.textContent = tick;
+        
+        // Color based on even/odd
+        if (tick % 2 === 0) {
+          tickEl.classList.add('even');
+        } else {
+          tickEl.classList.add('odd');
+        }
+        
+        // Add animation for newest tick (last position in grid)
+        if (tickIndex === displayTicks.length - 1 && tickHistory.length > 50) {
+          tickEl.classList.add('new-tick');
+        }
+      } else {
+        // Empty cell - show as placeholder
+        tickEl.classList.add('empty');
+      }
+      
+      tickGrid.appendChild(tickEl);
     }
-    
-    // Add animation for new ticks
-    if (index === displayTicks.length - 1 && tickHistory.length > 50) {
-      tickEl.classList.add('new-tick');
-    }
-    
-    tickGrid.appendChild(tickEl);
-  });
+  }
   
   totalTicksDisplay.textContent = tickHistory.length;
 }
