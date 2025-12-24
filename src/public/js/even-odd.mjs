@@ -172,7 +172,7 @@ function startTickStream() {
         updateTickDisplay();
         
         // Check for pattern if we're actively looking for entry
-        if (checkingForEntry && tickHistory.length >= 5) {
+        if (checkingForEntry && tickHistory.length >= 3) {
           checkForPatternAndTrade();
         }
       }
@@ -216,10 +216,10 @@ async function runEvenOdd() {
   resultsDisplay.innerHTML = "Monitoring for entry pattern...";
   
   // Show checking popup
-  const checkingPopup = popup("Checking Stream for entry", "Looking for 5 consecutive even or odd ticks", 0);
+  const checkingPopup = popup("Checking Stream for entry", "Looking for 3 consecutive even or odd ticks", 0);
 
   // Check immediately if we already have a pattern
-  if (tickHistory.length >= 5) {
+  if (tickHistory.length >= 3) {
     checkForPatternAndTrade();
   }
 }
@@ -229,10 +229,10 @@ async function checkForPatternAndTrade() {
   const numTrades = parseInt(tickCountInput.value) || 5;
   const stake = stakeInput.value;
 
-  // Check last 5 ticks for consecutive even or odd
-  const last5Ticks = tickHistory.slice(-5);
-  const allEven = last5Ticks.every(tick => tick % 2 === 0);
-  const allOdd = last5Ticks.every(tick => tick % 2 !== 0);
+  // Check last 3 ticks for consecutive even or odd
+  const last3Ticks = tickHistory.slice(-3);
+  const allEven = last3Ticks.every(tick => tick % 2 === 0);
+  const allOdd = last3Ticks.every(tick => tick % 2 !== 0);
 
   if (!allEven && !allOdd) {
     // No pattern found, continue monitoring
@@ -248,10 +248,10 @@ async function checkForPatternAndTrade() {
     checkingPopup.remove();
   }
 
-  const tradeType = allEven ? "DIGITODD" : "DIGITEVEN";
+  const tradeType = allEven ? "DIGITEVEN" : "DIGITODD";
   const pattern = allEven ? "Even" : "Odd";
   
-  resultsDisplay.innerHTML = `Found 5 consecutive ${pattern} ticks<br>Placing ${numTrades} ${tradeType} trades...`;
+  resultsDisplay.innerHTML = `Found 3 consecutive ${pattern} ticks<br>Placing ${numTrades} ${tradeType} trades...`;
 
   // Place trades - similar to smart over/under logic
   const trades = [];
@@ -302,7 +302,7 @@ async function checkForPatternAndTrade() {
   
   resultsDisplay.innerHTML = `
     <strong>Execution Complete</strong><br>
-    Pattern: ${pattern} (5 consecutive)<br>
+    Pattern: ${pattern} (3 consecutive)<br>
     Trades: ${tradeType}<br>
     Total: ${numTrades}<br>
     Success: ${success}, Failed: ${failed}
