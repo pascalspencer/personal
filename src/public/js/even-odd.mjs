@@ -297,12 +297,12 @@ async function checkForPatternAndTrade() {
     
     // Check if we need more trades
     if (newSuccess + newFailed < numTrades) {
-      // Wait a moment then check for pattern again before next trade
+      // Reduced delay for faster execution
       setTimeout(() => {
         if (checkingForEntry) {
           checkForPatternAndTrade();
         }
-      }, 1000);
+      }, 500);
     } else {
       // All trades completed
       checkingForEntry = false;
@@ -325,14 +325,13 @@ async function checkForPatternAndTrade() {
     const currentSuccess = parseInt(resultsDisplay.dataset.success) || 0;
     const totalTrades = currentSuccess + currentFailed + 1;
     
-    resultsDisplay.dataset.failed = currentFailed + 1;
-    
     if (totalTrades < numTrades) {
+      // Reduced delay for faster execution
       setTimeout(() => {
         if (checkingForEntry) {
           checkForPatternAndTrade();
         }
-      }, 1000);
+      }, 500);
     } else {
       checkingForEntry = false;
       running = false;
@@ -371,8 +370,12 @@ function restartTickStream() {
   tickHistory = [];
   updateTickDisplay();
   
-  // Start new stream with updated symbol
-  setTimeout(startTickStream, 1000);
+  // Wait a moment before starting new stream
+  setTimeout(() => {
+    if (!tickWs) {
+      startTickStream();
+    }
+  }, 1000);
 }
 
 function popup(msg, details = null, timeout = 2000) {

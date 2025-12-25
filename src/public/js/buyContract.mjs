@@ -126,6 +126,11 @@ connection.onmessage = (evt) => {
 
   // Untracked messages (e.g., general updates) — log at debug level
   // console.log("Unmatched message:", msg);
+  
+  // Debug WebSocket state
+  if (connection) {
+    // console.log("WebSocket state:", connection.readyState, WebSocket.OPEN);
+  }
 };
 
 // --- Ping keep-alive ---
@@ -221,8 +226,17 @@ async function fetchLiveInstruments() {
   if (tradingInstruments) return tradingInstruments;
 
   try {
-    const response = await fetch("/api/data"); // backend fetch from Deriv API
-    tradingInstruments = await response.json();
+    const response = await fetch("/api/data", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json"
+      }
+    }); // backend fetch from Deriv API
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    const data = await response.text();
+    tradingInstruments = JSON.parse(data);
     return tradingInstruments;
   } catch (err) {
     console.error("Error fetching live trading instruments:", err);
@@ -465,7 +479,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
         if (!isAutomationEnabled) {
             let startingBalance = null;
             try {
-                const balBefore = await sendJson({ balance: 1, timeoutMs: 2000 });
+                const balBefore = await sendJson({ balance: 1 }, 2000);
                 if (balBefore) {
                     const candidates = [balBefore.balance.balance, balBefore.balance_after, balBefore.account_balance, balBefore.balance_before];
                     for (const c of candidates) {
@@ -478,7 +492,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
             }
         }
         
-        buyResp = await sendJson({ buy: propId, price: askPrice, timeoutMs: 2000 });
+        buyResp = await sendJson({ buy: propId, price: askPrice }, 2000);
         console.log("Buy response:", buyResp);
     } catch (err) {
         console.error("❌ Buy call failed:", err);
