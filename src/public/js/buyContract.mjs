@@ -474,12 +474,12 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
 
 // 4) BUY CONTRACT - Optimized for speed
     let buyResp;
+    let startingBalance = null;
     try {
         // Skip balance check for faster execution when in automation mode
         if (!isAutomationEnabled) {
-            let startingBalance = null;
             try {
-                const balBefore = await sendJson({ balance: 1 }, 2000);
+                const balBefore = await sendJson({ balance: 1, timeoutMs: 2000 });
                 if (balBefore) {
                     const candidates = [balBefore.balance.balance, balBefore.balance_after, balBefore.account_balance, balBefore.balance_before];
                     for (const c of candidates) {
