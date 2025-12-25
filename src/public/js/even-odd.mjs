@@ -139,16 +139,21 @@ function startTickStream() {
   
   const symbol = submarket;
   
-  try {
-    tickWs = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=61696");
-  } catch (err) {
-    console.error("Failed to create WebSocket:", err);
-    setTimeout(startTickStream, 3000); // Retry after 3 seconds
-    return;
+  // Only create new WebSocket if one doesn't exist or is closed
+  if (!tickWs || tickWs.readyState === WebSocket.CLOSED) {
+    try {
+      tickWs = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=61696");
+      console.log("Creating new WebSocket for symbol:", symbol);
+    } catch (err) {
+      console.error("Failed to create WebSocket:", err);
+      setTimeout(startTickStream, 3000);
+      return;
+    }
   }
 
   tickWs.onopen = () => {
     console.log("WebSocket connected for symbol:", symbol);
+    tickWs.readyState = WebSocket.OPEN; // Set state flag
     try { 
       tickWs.send(JSON.stringify({ ticks: symbol, subscribe: 1 })); 
     } catch (e) {
@@ -238,6 +243,107 @@ async function checkForPatternAndTrade() {
     // No pattern found, continue monitoring
     return;
   }
+
+  const tradeType = allEven ? "DIGITEVEN" : "DIGITODD";
+  const pattern = allEven ? "Even" : "Odd";
+  
+  // Close checking popup
+  const checkingPopup = document.querySelector('.trade-popup-overlay');
+  if (checkingPopup) {
+    checkingPopup.remove();
+  }
+
+  // Initialize results tracking
+  if (!resultsDisplay.dataset.success) resultsDisplay.dataset.success = "0";
+  if (!resultsDisplay.dataset.failed) resultsDisplay.dataset.failed = "0";
+  
+  resultsDisplay.innerHTML = `Found 3 consecutive ${pattern} ticks<br>Placing ${numTrades} ${tradeType} trades...`;
+
+  // Execute trades with proper limits
+  let completedTrades = 0;
+  const maxTradesPerSession = 10; // Limit to prevent over-execution
+  
+  while (completedTrades < numTrades && completedTrades < maxTradesPerSession) {
+    try {
+      const result = await buyContract(symbol, tradeType, 1, stake, null, null, true);
+      
+      // Get the last digit for popup display
+      const lastDigit = last3Ticks[last3Ticks.length - 1];
+      const digitType = lastDigit % 2 === 0 ? "Even" : "Odd";
+      
+      // Show trade confirmation popup with stake and digit type
+      let tradeResult = 'Failed';
+      if (!result.error) {
+        const buyInfo = result.buy || result;
+        const payout = Number(buyInfo?.payout ?? buyInfo?.payout_amount ?? 0) || 0;
+        const stakeAmt = Number(stake) || 0;
+        
+        if (payout > stakeAmt) {
+          tradeResult = 'Won';
+        } else {
+          tradeResult = 'Lost';
+        }
+      }
+      
+      popup(`Trade Executed`, `Type: ${tradeType}<br>Stake: $${Number(stake).toFixed(2)}<br>Last Digit: ${lastDigit} (${digitType})<br>Result: ${tradeResult}`, 2000);
+      
+      // Update results
+      const currentSuccess = parseInt(resultsDisplay.dataset.success) || 0;
+      const currentFailed = parseInt(resultsDisplay.dataset.failed) || 0;
+      const newSuccess = !result.error ? currentSuccess + 1 : currentSuccess;
+      const newFailed = result.error ? currentFailed + 1 : currentFailed;
+      
+      resultsDisplay.dataset.success = newSuccess;
+      resultsDisplay.dataset.failed = newFailed;
+      
+      completedTrades++;
+      
+      // Update display after each trade
+      resultsDisplay.innerHTML = `
+        <strong>Trading Active</strong><br>
+        Pattern: ${pattern} (3 consecutive)<br>
+        Trades: ${tradeType}<br>
+        Completed: ${newSuccess + newFailed}/${numTrades}<br>
+        Success: ${newSuccess}, Failed: ${newFailed}
+      `;
+      
+      // Short delay before checking for next pattern
+      if (completedTrades < numTrades) {
+        setTimeout(() => {
+          if (checkingForEntry) {
+            checkForPatternAndTrade();
+          }
+        }, 1000);
+      } else {
+        break; // Exit the while loop
+      }
+    } catch (error) {
+      console.error('Trade failed:', error);
+      completedTrades++;
+      
+      const lastDigit = last3Ticks[Math.max(0, last3Ticks.length - 1)];
+      const digitType = lastDigit % 2 === 0 ? "Even" : "Odd";
+      
+      popup(`Trade Failed`, `Type: ${tradeType}<br>Stake: $${Number(stake).toFixed(2)}<br>Last Digit: ${lastDigit} (${digitType})<br>Error: ${error.message}`, 3000);
+      
+      // Continue if we haven't reached the limit
+      if (completedTrades < maxTradesPerSession) {
+        setTimeout(() => {
+          if (checkingForEntry) {
+            checkForPatternAndTrade();
+          }
+        }, 1000);
+      }
+    }
+  }
+
+  // Final completion message
+  checkingForEntry = false;
+  running = false;
+  document.getElementById("run-even-odd").textContent = "RUN";
+  
+  popup(`Even/Odd Complete`, `Completed ${completedTrades} trades<br>Success: ${(resultsDisplay.dataset.success || 0)}, Failed: ${(resultsDisplay.dataset.failed || 0)}`, 5000);
+}
 
   const tradeType = allEven ? "DIGITEVEN" : "DIGITODD";
   const pattern = allEven ? "Even" : "Odd";
