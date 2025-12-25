@@ -443,7 +443,6 @@ async function checkForPatternAndTrade() {
       running = false;
       document.getElementById("run-even-odd").textContent = "RUN";
     }
-  }
 }
 
 function stopEvenOdd() {
