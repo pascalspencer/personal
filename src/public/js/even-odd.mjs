@@ -153,7 +153,6 @@ function startTickStream() {
 
   tickWs.onopen = () => {
     console.log("WebSocket connected for symbol:", symbol);
-    tickWs.readyState = WebSocket.OPEN; // Set state flag
     try { 
       tickWs.send(JSON.stringify({ ticks: symbol, subscribe: 1 })); 
     } catch (e) {
