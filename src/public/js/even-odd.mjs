@@ -258,7 +258,7 @@ async function checkForPatternAndTrade() {
   
   resultsDisplay.innerHTML = `Found 3 consecutive ${pattern} ticks<br>Placing ${numTrades} ${tradeType} trades...`;
 
-  // Execute trades exactly as requested
+  // Initialize completedTrades at the start of the function
   let completedTrades = 0;
   
   while (completedTrades < numTrades) {
