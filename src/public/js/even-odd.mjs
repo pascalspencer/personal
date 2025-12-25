@@ -345,6 +345,9 @@ async function checkForPatternAndTrade() {
   popup(`Even/Odd Complete`, `Completed ${completedTrades} trades<br>Success: ${(resultsDisplay.dataset.success || 0)}, Failed: ${(resultsDisplay.dataset.failed || 0)}`, 5000);
 }
 
+  // Check last 3 ticks for consecutive even or odd
+  const last3Ticks = tickHistory.slice(-3);
+  const allEven = last3Ticks.every(tick => tick % 2 === 0);
   const tradeType = allEven ? "DIGITEVEN" : "DIGITODD";
   const pattern = allEven ? "Even" : "Odd";
   
