@@ -609,7 +609,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
         buyResp.buy?.balance_before,
         buyResp.buy?.balance,
         buyResp.balance_before,
-        buyResp.balance.balance,
+        buyResp.balance,
         buyResp.account_balance,
         buyResp.buy?.account_balance,
       ]);
