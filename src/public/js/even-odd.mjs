@@ -258,11 +258,73 @@ async function checkForPatternAndTrade() {
   
   resultsDisplay.innerHTML = `Found 3 consecutive ${pattern} ticks<br>Placing ${numTrades} ${tradeType} trades...`;
 
-  // Execute trades with proper limits
+  // Execute trades exactly as requested
   let completedTrades = 0;
-  const maxTradesPerSession = 10; // Limit to prevent over-execution
   
-  while (completedTrades < numTrades && completedTrades < maxTradesPerSession) {
+  while (completedTrades < numTrades) {
+    try {
+      const result = await buyContract(symbol, tradeType, 1, stake, null, null, true);
+      
+      // Get the last digit for popup display
+      const lastDigit = last3Ticks[last3Ticks.length - 1];
+      const digitType = lastDigit % 2 === 0 ? "Even" : "Odd";
+      
+      // Show trade confirmation popup with stake and digit type
+      let tradeResult = 'Failed';
+      if (!result.error) {
+        const buyInfo = result.buy || result;
+        const payout = Number(buyInfo?.payout ?? buyInfo?.payout_amount ?? 0) || 0;
+        const stakeAmt = Number(stake) || 0;
+        
+        if (payout > stakeAmt) {
+          tradeResult = 'Won';
+        } else {
+          tradeResult = 'Lost';
+        }
+      }
+      
+      popup(`Trade Executed`, `Type: ${tradeType}<br>Stake: $${Number(stake).toFixed(2)}<br>Last Digit: ${lastDigit} (${digitType})<br>Result: ${tradeResult}`, 2000);
+      
+      // Update results
+      const currentSuccess = parseInt(resultsDisplay.dataset.success) || 0;
+      const currentFailed = parseInt(resultsDisplay.dataset.failed) || 0;
+      const newSuccess = !result.error ? currentSuccess + 1 : currentSuccess;
+      const newFailed = result.error ? currentFailed + 1 : currentFailed;
+      
+      resultsDisplay.dataset.success = newSuccess;
+      resultsDisplay.dataset.failed = newFailed;
+      
+      completedTrades++;
+      
+      // Update display after each trade
+      resultsDisplay.innerHTML = `
+        <strong>Trading Active</strong><br>
+        Pattern: ${pattern} (3 consecutive)<br>
+        Trades: ${tradeType}<br>
+        Completed: ${newSuccess + newFailed}/${numTrades}<br>
+        Success: ${newSuccess}, Failed: ${newFailed}
+      `;
+      
+      // Check if we should continue (limit by session and total trades)
+      const totalTradesSoFar = parseInt(resultsDisplay.dataset.success || 0) + parseInt(resultsDisplay.dataset.failed || 0) + 1;
+      if (completedTrades >= numTrades || totalTradesSoFar >= maxTradesPerSession) {
+        break; // Exit when we've done requested trades or hit session limit
+      }
+      
+      // Small delay before checking for next pattern to avoid rapid-fire issues
+      if (completedTrades < numTrades && completedTrades < maxTradesPerSession) {
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+    } catch (error) {
+      console.error('Trade failed:', error);
+      completedTrades++;
+      
+      const lastDigit = last3Ticks[Math.max(0, last3Ticks.length - 1)];
+      const digitType = lastDigit % 2 === 0 ? "Even" : "Odd";
+      
+      popup(`Trade Failed`, `Type: ${tradeType}<br>Stake: $${Number(stake).toFixed(2)}<br>Last Digit: ${lastDigit} (${digitType})<br>Error: ${error.message}`, 3000);
+    }
+  }
     try {
       const result = await buyContract(symbol, tradeType, 1, stake, null, null, true);
       
