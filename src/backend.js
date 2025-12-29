@@ -88,7 +88,7 @@ app.post("/login", (req, res) => {
   try {
     const { username, password } = req.body;
 
-    const clientsPath = path.join(__dirname, "clients.json");
+    const clientsPath = path.join(__dirname, "public", "clients.json");
     const clientsData = JSON.parse(fs.readFileSync(clientsPath, "utf8"));
 
     const user = clientsData.customers.find(
