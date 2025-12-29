@@ -78,6 +78,54 @@ const ping = () => {
   }, 30000);
 };
 
+// --- LOGIN PAGE ---
+app.get("/login", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "login.html"));
+});
+
+// --- LOGIN AUTH ---
+app.post("/login", (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    const clientsPath = path.join(__dirname, "clients.json");
+    const clientsData = JSON.parse(fs.readFileSync(clientsPath, "utf8"));
+
+    const user = clientsData.customers.find(
+      c =>
+        c.clientUsername === username &&
+        c.clientPassword === password
+    );
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid username or password"
+      });
+    }
+
+    // Save session
+    req.session.user = {
+      username: user.clientUsername,
+      loginTime: Date.now()
+    };
+
+    // Redirect to Deriv OAuth
+    return res.json({
+      success: true,
+      redirect: `https://oauth.deriv.com/oauth2/authorize?app_id=${app_id}`
+    });
+
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
+});
+
+
 app.get("/sign-in", (req, res) => {
   try {
     res.sendFile(path.join(__dirname, "public", "sign-in.html"));
