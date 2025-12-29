@@ -2,7 +2,7 @@
 class NeumorphismLoginForm {
     constructor() {
         this.form = document.getElementById('loginForm');
-        this.emailInput = document.getElementById('email');
+        this.usernameInput = document.getElementById('username');
         this.passwordInput = document.getElementById('password');
         this.passwordToggle = document.getElementById('passwordToggle');
         this.submitButton = this.form.querySelector('.login-btn');
@@ -21,18 +21,27 @@ class NeumorphismLoginForm {
     }
     
     bindEvents() {
+        if (!this.form) return;
+
         this.form.addEventListener('submit', (e) => this.handleSubmit(e));
-        this.emailInput.addEventListener('blur', () => this.validateEmail());
-        this.passwordInput.addEventListener('blur', () => this.validatePassword());
-        this.emailInput.addEventListener('input', () => this.clearError('email'));
-        this.passwordInput.addEventListener('input', () => this.clearError('password'));
-        
-        // Add soft press effects to inputs
-        [this.emailInput, this.passwordInput].forEach(input => {
-            input.addEventListener('focus', (e) => this.addSoftPress(e));
-            input.addEventListener('blur', (e) => this.removeSoftPress(e));
-        });
+
+        if (this.usernameInput) {
+            this.usernameInput.addEventListener('blur', () => this.validateUsername());
+            this.usernameInput.addEventListener('input', () => this.clearError('username'));
+
+            this.usernameInput.addEventListener('focus', (e) => this.addSoftPress(e));
+            this.usernameInput.addEventListener('blur', (e) => this.removeSoftPress(e));
+        }
+
+        if (this.passwordInput) {
+            this.passwordInput.addEventListener('blur', () => this.validatePassword());
+            this.passwordInput.addEventListener('input', () => this.clearError('password'));
+
+            this.passwordInput.addEventListener('focus', (e) => this.addSoftPress(e));
+            this.passwordInput.addEventListener('blur', (e) => this.removeSoftPress(e));
+        }
     }
+
 
     loadSavedCredentials() {
         const saved = localStorage.getItem("zodiac_login");
@@ -74,6 +83,19 @@ class NeumorphismLoginForm {
             this.animateSoftPress(this.passwordToggle);
         });
     }
+
+    validateUsername() {
+        const value = this.usernameInput.value.trim();
+
+        if (!value) {
+            this.showError('username', 'Username is required');
+            return false;
+        }
+
+        this.clearError('username');
+        return true;
+    }
+
 
     
     setupSocialButtons() {
@@ -150,21 +172,21 @@ class NeumorphismLoginForm {
         }, 150);
     }
     
-    validateEmail() {
-        const email = this.emailInput.value.trim();
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    validateusername() {
+        const username = this.usernameInput.value.trim();
+        const usernameRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         
-        if (!email) {
-            this.showError('email', 'Email is required');
+        if (!username) {
+            this.showError('username', 'username is required');
             return false;
         }
         
-        if (!emailRegex.test(email)) {
-            this.showError('email', 'Please enter a valid email');
+        if (!usernameRegex.test(username)) {
+            this.showError('username', 'Please enter a valid username');
             return false;
         }
         
-        this.clearError('email');
+        this.clearError('username');
         return true;
     }
     
@@ -215,7 +237,7 @@ class NeumorphismLoginForm {
     async handleSubmit(e) {
         e.preventDefault();
 
-        const username = document.getElementById("username").value.trim();
+        const username = this.usernameInput.value.trim();
         const password = this.passwordInput.value;
 
         if (!username || !password) {
