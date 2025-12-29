@@ -166,11 +166,12 @@ class NeumorphismLoginForm {
     }
     
     animateSoftPress(element) {
-        element.style.transform = 'scale(0.95)';
+        element.style.scale = '0.9';
         setTimeout(() => {
-            element.style.transform = 'scale(1)';
-        }, 150);
+            element.style.scale = '1';
+        }, 120);
     }
+
     
     validateusername() {
         const username = this.usernameInput.value.trim();

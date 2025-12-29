@@ -182,7 +182,7 @@ body {
     position: absolute;
     right: 15px;
     top: 50%;
-    transform: translateY(-50%);
+    translate: 0 -50%; 
     background: #e0e5ec;
     border: none;
     width: 35px;
@@ -196,8 +196,12 @@ body {
     box-shadow: 
         4px 4px 10px #bec3cf,
         -4px -4px 10px #ffffff;
-    transition: all 0.3s ease;
+    transition: 
+        box-shadow 0.2s ease,
+        color 0.2s ease,
+        scale 0.15s ease; 
 }
+
 
 .neu-toggle:hover {
     color: #6c7293;
@@ -212,6 +216,11 @@ body {
 .neu-toggle svg {
     width: 18px;
     height: 18px;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.neu-toggle.show-password svg {
+    transform: scale(1.1);
 }
 
 .eye-closed {
