@@ -269,8 +269,8 @@ async function checkForPatternAndTrade() {
 
     popup(
       "Trade Executed",
-      `Type: ${tradeType}<br>Stake: $${stake.toFixed(2)}<br>Last Digit: ${lastDigit}<br>Result: ${win ? "WON" : "LOST"}`,
-      2500
+      `Type: ${tradeType}<br>Stake: $${stake.toFixed(2)}<br>Last Digit: ${lastDigit}`,
+      1500
     );
 
     resultsDisplay.innerHTML = `
