@@ -17,6 +17,7 @@ class NeumorphismLoginForm {
         this.setupPasswordToggle();
         this.setupSocialButtons();
         this.setupNeumorphicEffects();
+        this.loadSavedCredentials();
     }
     
     bindEvents() {
@@ -32,18 +33,48 @@ class NeumorphismLoginForm {
             input.addEventListener('blur', (e) => this.removeSoftPress(e));
         });
     }
+
+    loadSavedCredentials() {
+        const saved = localStorage.getItem("zodiac_login");
+
+        if (!saved) return;
+
+        const { username, password } = JSON.parse(saved);
+
+        if (username && password) {
+            document.getElementById("username").value = username;
+            this.passwordInput.value = password;
+            document.getElementById("remember").checked = true;
+        }
+    }
+
+    saveCredentials(username, password) {
+        const remember = document.getElementById("remember").checked;
+
+        if (!remember) {
+            localStorage.removeItem("zodiac_login");
+            return;
+        }
+
+        localStorage.setItem(
+            "zodiac_login",
+            JSON.stringify({ username, password })
+        );
+    }
+
     
     setupPasswordToggle() {
         this.passwordToggle.addEventListener('click', () => {
-            const type = this.passwordInput.type === 'password' ? 'text' : 'password';
-            this.passwordInput.type = type;
-            
-            this.passwordToggle.classList.toggle('show-password', type === 'text');
-            
-            // Add soft click animation
+            const isHidden = this.passwordInput.type === 'password';
+
+            this.passwordInput.type = isHidden ? 'text' : 'password';
+
+            this.passwordToggle.classList.toggle('show-password', isHidden);
+
             this.animateSoftPress(this.passwordToggle);
         });
     }
+
     
     setupSocialButtons() {
         this.socialButtons.forEach(button => {
@@ -208,6 +239,7 @@ class NeumorphismLoginForm {
                 return;
             }
 
+            this.saveCredentials(username, password);
             this.showNeumorphicSuccess();
 
             setTimeout(() => {
