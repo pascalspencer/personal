@@ -614,6 +614,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
         buyResp.buy?.account_balance,
       ]);
     }
+    console.log("Starting balance:", startingBalance);
 
     // Try to determine account balance from response fields if present (current balance candidate)
     let balanceCandidate = firstNumeric([
