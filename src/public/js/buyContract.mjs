@@ -476,26 +476,16 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     let buyResp;
     let startingBalance = null;
     try {
-        // Skip balance check for faster execution when in automation mode
-        if (!isAutomationEnabled) {
-            try {
-                const balBefore = await sendJson({ balance: 1 });
-                if (balBefore) {
-                    const candidates = [balBefore.balance.balance, balBefore.balance_after, balBefore.account_balance, balBefore.balance_before];
-                    for (const c of candidates) {
-                        if (typeof c === 'number') { startingBalance = c; break; }
-                        if (typeof c === 'string' && !Number.isNaN(Number(c))) { startingBalance = Number(c); break; }
-                    }
-                }
-            } catch (e) {
-                // ignore balance read errors
-            }
-        }
+      buyResp = await sendJson({ buy: propId, price: askPrice }, 2000);
+      console.log("Buy response:", buyResp);
+      const balResp = await sendJson({ balance: 1 });
+      startingBalance = Number(balResp?.balance?.balance ?? null);
+      console.log("Captured starting balance before buy:", startingBalance);
         
-        buyResp = await sendJson({ buy: propId, price: askPrice }, 2000);
-        console.log("Buy response:", buyResp);
+        
     } catch (err) {
         console.error("❌ Buy call failed:", err);
+        
         if (!suppressPopup) {
           try {
             const overlay = document.createElement('div');
