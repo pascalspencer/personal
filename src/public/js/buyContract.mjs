@@ -476,11 +476,11 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     let buyResp;
     let startingBalance = null;
     try {
-      buyResp = await sendJson({ buy: propId, price: askPrice }, 2000);
-      console.log("Buy response:", buyResp);
       const balResp = await sendJson({ balance: 1 });
       startingBalance = Number(balResp?.balance?.balance ?? null);
       console.log("Captured starting balance before buy:", startingBalance);
+
+      buyResp = await sendJson({ buy: propId, price: askPrice });
         
         
     } catch (err) {
