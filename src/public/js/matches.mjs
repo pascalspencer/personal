@@ -2,7 +2,7 @@ const numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
 // Constants
 const MAX_PERCENTAGE = 93;
-const MATCH_CHANCE_FREQUENCY = 2 / 11; // Probability of high match chance
+const MATCH_CHANCE_FREQUENCY = 4 / 10; // Probability of high match chance
 const DERIV_DEVIATION_CHANCE = 0.2;
 const GENERAL_DEVIATION_CHANCE = 0.1;
 const DEVIATION_BASE = 90.0;
@@ -109,4 +109,6 @@ function determineChances(selectedNumber) {
     return { matchesChance, differsChance };
   }
 
+
 export { determineChances };
+
