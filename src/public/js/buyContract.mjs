@@ -715,11 +715,10 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
 
         const profitP = document.createElement('p');
 
-        if (profit > 0) {
+if (profit > 0) {
           profitP.innerHTML = `Result: <span class="profit">+ $${profit.toFixed(2)}</span>`;
         } else if (lossToDisplay > 0) {
-          const displayLoss = (typeof lossToDisplay === 'number' && lossToDisplay > 0) ? lossToDisplay : (lossToDisplay > 0 ? lossToDisplay : Number(stakeAmount));
-          profitP.innerHTML = `Result: <span class="loss">- $${Number(displayLoss).toFixed(2)}</span>`;
+          profitP.innerHTML = `Result: <span class="loss">- $${Number(stakeAmount).toFixed(2)}</span>`;
         } else {
           profitP.innerHTML = `Result: <span class="amount">$0.00</span>`;
         }
