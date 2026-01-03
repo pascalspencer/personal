@@ -478,7 +478,6 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     try {
       const balResp = await sendJson({ balance: 1 });
       startingBalance = Number(balResp?.balance?.balance ?? null);
-      console.log("Captured starting balance before buy:", startingBalance);
 
       buyResp = await sendJson({ buy: propId, price: askPrice });
         
@@ -604,7 +603,6 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
         buyResp.buy?.account_balance,
       ]);
     }
-    console.log("Starting balance:", startingBalance);
 
     // Try to determine account balance from response fields if present (current balance candidate)
     let balanceCandidate = firstNumeric([
