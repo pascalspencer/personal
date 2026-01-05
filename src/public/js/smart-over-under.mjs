@@ -130,47 +130,54 @@ document.addEventListener("DOMContentLoaded", () => {
     observer.observe(document.getElementById("smart-over-under"), { attributes: true });
   }
 
-  // Add hover animations for toggle switches
+  // Add smooth hover animations for toggle switches
   document.querySelectorAll(".small-toggle").forEach(toggle => {
+    // Create hover timeline for each toggle
+    const hoverTl = gsap.timeline({ paused: true });
+    hoverTl.to(toggle, {
+      duration: 0.2,
+      scale: 1.03,
+      boxShadow: "0 6px 20px rgba(0, 187, 240, 0.3)",
+      ease: "power2.out"
+    });
+    
     toggle.addEventListener("mouseenter", () => {
-      gsap.to(toggle, {
-        duration: 0.3,
-        scale: 1.05,
-        boxShadow: "0 6px 20px rgba(0, 187, 240, 0.3)",
-        ease: "power2.out"
-      });
+      hoverTl.play();
     });
 
     toggle.addEventListener("mouseleave", () => {
-      gsap.to(toggle, {
-        duration: 0.3,
-        scale: 1,
-        boxShadow: "0 2px 6px rgba(2,6,23,0.06)",
-        ease: "power2.out"
-      });
+      hoverTl.reverse();
     });
 
-    // Add click animation for checkboxes
+    // Add smooth click animation for checkboxes
     const checkbox = toggle.querySelector('input[type="checkbox"]');
     if (checkbox) {
       checkbox.addEventListener("change", () => {
+        // Kill any existing animations
+        gsap.killTweensOf(toggle);
+        
         gsap.to(toggle, {
-          duration: 0.15,
-          scale: 0.95,
-          yoyo: true,
-          repeat: 1,
-          ease: "power2.inOut"
+          duration: 0.1,
+          scale: 0.97,
+          ease: "power2.inOut",
+          onComplete: () => {
+            gsap.to(toggle, {
+              duration: 0.15,
+              scale: 1,
+              ease: "power2.out"
+            });
+          }
         });
 
         // Add glow effect when checked
         if (checkbox.checked) {
           gsap.to(toggle, {
-            duration: 0.4,
+            duration: 0.3,
             boxShadow: "0 0 20px rgba(0, 187, 240, 0.5)",
             ease: "power2.out",
             onComplete: () => {
               gsap.to(toggle, {
-                duration: 0.3,
+                duration: 0.2,
                 boxShadow: "0 2px 6px rgba(2,6,23,0.06)",
                 ease: "power2.out"
               });
@@ -181,34 +188,36 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Add animations for buttons
+  // Add smooth animations for buttons
   document.querySelectorAll("#run-smart, #stop-smart").forEach(btn => {
+    // Create hover timeline for each button
+    const hoverTl = gsap.timeline({ paused: true });
+    hoverTl.to(btn, {
+      duration: 0.2,
+      scale: 1.03,
+      y: -1,
+      ease: "power2.out"
+    });
+    
     btn.addEventListener("mouseenter", () => {
-      gsap.to(btn, {
-        duration: 0.3,
-        scale: 1.05,
-        y: -2,
-        ease: "power2.out"
-      });
+      hoverTl.play();
     });
 
     btn.addEventListener("mouseleave", () => {
-      gsap.to(btn, {
-        duration: 0.3,
-        scale: 1,
-        y: 0,
-        ease: "power2.out"
-      });
+      hoverTl.reverse();
     });
 
     btn.addEventListener("click", () => {
+      // Kill any existing animations
+      gsap.killTweensOf(btn);
+      
       gsap.to(btn, {
         duration: 0.1,
-        scale: 0.95,
+        scale: 0.97,
         ease: "power2.in",
         onComplete: () => {
           gsap.to(btn, {
-            duration: 0.2,
+            duration: 0.15,
             scale: 1,
             ease: "power2.out"
           });
