@@ -30,7 +30,11 @@ document.addEventListener("DOMContentLoaded", () => {
     x: -300,
     opacity: 0,
     ease: "power3.out",
-    delay: 0.4
+    delay: 0.4,
+    onStart: () => {
+      // Ensure panel is visible during animation
+      sidePanel.style.visibility = 'visible';
+    }
   });
 
   // Animate tab buttons with stagger for symmetry
@@ -79,7 +83,11 @@ document.addEventListener("DOMContentLoaded", () => {
     rotation: -180,
     opacity: 0,
     ease: "back.out(1.7)",
-    delay: 0.8
+    delay: 0.8,
+    onStart: () => {
+      // Ensure close button is visible
+      closeBtn.style.visibility = 'visible';
+    }
   });
 
   const menuBtn = document.getElementById("menu-btn");
@@ -102,12 +110,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
 menuBtn.onclick = () => {
     sidePanel.classList.add("open");
+    // Ensure panel is visible before animating
+    sidePanel.style.visibility = 'visible';
     // Animate panel opening
-    gsap.to(sidePanel, {
-      duration: 0.4,
-      x: 0,
-      ease: "power3.out"
-    });
+    gsap.fromTo(sidePanel, 
+      { x: -300 },
+      { 
+        duration: 0.4,
+        x: 0,
+        ease: "power3.out"
+      }
+    );
     // Animate menu button disappearing
     gsap.to(menuBtn, {
       duration: 0.3,
@@ -127,6 +140,7 @@ menuBtn.onclick = () => {
       ease: "power3.in",
       onComplete: () => {
         sidePanel.classList.remove("open");
+        sidePanel.style.visibility = 'hidden';
         sidePanel.style.transform = 'translateX(-100%)';
       }
     });
