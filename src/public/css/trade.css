@@ -55,7 +55,7 @@ body {
   transform: translateX(-100%);
   transition: transform 0.3s ease;
   z-index: 10000;
-  visibility: hidden;
+  visibility: visible;
 }
 
 #side-panel.open {
@@ -841,6 +841,39 @@ body.smart-mode > #side-panel.open { display: block; visibility: visible; transf
 #side-panel .panel-tabs {
   visibility: visible;
   opacity: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Force tab button visibility */
+#side-panel .tab-btn {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* Ensure panel content is visible */
+#side-panel .panel-header,
+#side-panel .panel-tabs,
+#side-panel .tab-btn {
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+/* Override any hiding styles */
+#side-panel * {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+#side-panel.open * {
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 .tab-content {

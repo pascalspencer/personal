@@ -2,14 +2,14 @@ document.addEventListener("DOMContentLoaded", () => {
   // Create hamburger + panel dynamically
   document.body.insertAdjacentHTML("afterbegin", `
     <div id="menu-btn">☰</div>
-    <div id="side-panel">
-      <div class="panel-header">
-        <span id="panel-close">✕</span>
+    <div id="side-panel" style="visibility: visible; display: block;">
+      <div class="panel-header" style="visibility: visible; display: block; opacity: 1;">
+        <span id="panel-close" style="visibility: visible; display: block; opacity: 1;">✕</span>
       </div>
-<div class="panel-tabs">
-        <button class="tab-btn active" data-tab="auto">Auto Analysis</button>
-        <button class="tab-btn" data-tab="smart">Smart Over/Under</button>
-        <button class="tab-btn" data-tab="even-odd">Even/Odd Switch</button>
+<div class="panel-tabs" style="visibility: visible; display: flex; opacity: 1; flex-direction: column;">
+        <button class="tab-btn active" data-tab="auto" style="visibility: visible; display: block; opacity: 1; position: relative;">Auto Analysis</button>
+        <button class="tab-btn" data-tab="smart" style="visibility: visible; display: block; opacity: 1; position: relative;">Smart Over/Under</button>
+        <button class="tab-btn" data-tab="even-odd" style="visibility: visible; display: block; opacity: 1; position: relative;">Even/Odd Switch</button>
       </div>
     </div>
   `);
@@ -90,10 +90,25 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  const menuBtn = document.getElementById("menu-btn");
+const menuBtn = document.getElementById("menu-btn");
   const sidePanel = document.getElementById("side-panel");
   const closeBtn = document.getElementById("panel-close");
   const tabs = document.querySelectorAll(".tab-btn");
+
+  // Debug: Check if elements exist
+  console.log('Menu button:', menuBtn);
+  console.log('Side panel:', sidePanel);
+  console.log('Close button:', closeBtn);
+  console.log('Tabs found:', tabs.length);
+
+  // Force panel content to be visible on load
+  if (sidePanel) {
+    const allPanelContent = sidePanel.querySelectorAll('*');
+    allPanelContent.forEach(el => {
+      el.style.visibility = 'visible';
+      el.style.opacity = '1';
+    });
+  }
 
   // Detect whether the menu/hamburger is positioned on the right side of the
   // viewport and toggle a `body.menu-right` class so CSS can mirror offsets.
@@ -110,8 +125,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
 menuBtn.onclick = () => {
     sidePanel.classList.add("open");
-    // Ensure panel is visible before animating
+    // Force panel and all content to be visible
     sidePanel.style.visibility = 'visible';
+    sidePanel.style.display = 'block';
+    
+    // Force all panel content to be visible
+    const panelContent = sidePanel.querySelectorAll('.panel-header, .panel-tabs, .tab-btn');
+    panelContent.forEach(el => {
+      el.style.visibility = 'visible';
+      el.style.opacity = '1';
+      el.style.display = 'block';
+    });
+    
     // Animate panel opening
     gsap.fromTo(sidePanel, 
       { x: -300 },
