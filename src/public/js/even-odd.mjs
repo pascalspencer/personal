@@ -559,8 +559,8 @@ function finishSession() {
   // Check last 3 ticks for consecutive even or odd
   const last3Ticks = tickHistory.slice(-3);
   const allEven = last3Ticks.every(tick => tick % 2 === 0);
-  const tradeType = allEven ? "DIGITODD" : "DIGITEVEN";
-  const pattern = allEven ? "Odd" : "Even";
+  const tradeType = allEven ? "DIGITEVEN" : "DIGITODD";
+  const pattern = allEven ? "Even" : "Odd";
   
   // Close checking popup
   const checkingPopup = document.querySelector('.trade-popup-overlay');
@@ -572,7 +572,7 @@ function finishSession() {
   if (!resultsDisplay.dataset.success) resultsDisplay.dataset.success = "0";
   if (!resultsDisplay.dataset.failed) resultsDisplay.dataset.failed = "0";
   
-  resultsDisplay.innerHTML = `Found entry for ${pattern} ticks<br>Placing ${tradeType} trades...`;
+  resultsDisplay.innerHTML = `Found 3 consecutive ${pattern} ticks<br>Placing ${tradeType} trades...`;
 
   // Place single trade and check pattern again before next trade
   try {
