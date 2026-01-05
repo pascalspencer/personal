@@ -962,4 +962,84 @@ body.smart-mode > #side-panel.open { display: block; visibility: visible; transf
   }
 }
 
+/* GSAP Animation Enhancements */
+.smart-card,
+#trade-form {
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
+.tick-item {
+  transform-style: preserve-3d;
+  transition: transform 0.2s ease;
+}
+
+.small-toggle {
+  transform-style: preserve-3d;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#run-smart,
+#stop-smart,
+.run-btn {
+  transform-style: preserve-3d;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Enhanced hover states for animated elements */
+.smart-card:hover {
+  transform: translateY(-2px);
+}
+
+.tick-item:hover {
+  z-index: 10;
+  transform: translateZ(10px) scale(1.1);
+}
+
+/* Smooth transitions for all interactive elements */
+input, select, button {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Animation-ready classes */
+.gsap-ready {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.gsap-animate {
+  opacity: 1;
+  transform: translateY(0);
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Special effects for tick animations */
+.tick-item.even {
+  background: linear-gradient(135deg, #10b981, #059669);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.tick-item.odd {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+/* Glow effects for active states */
+.small-toggle input:checked + span {
+  box-shadow: 0 0 15px rgba(0, 187, 240, 0.5);
+}
+
+#run-smart:active,
+#stop-smart:active,
+.run-btn:active {
+  transform: scale(0.95) translateY(1px);
+}
+
+/* Symmetric animation delays */
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+
 

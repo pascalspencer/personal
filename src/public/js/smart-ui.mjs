@@ -14,6 +14,74 @@ document.addEventListener("DOMContentLoaded", () => {
     </div>
   `);
 
+  // GSAP Animations for UI elements
+  // Animate menu button entrance
+  gsap.from("#menu-btn", {
+    duration: 0.8,
+    x: -100,
+    opacity: 0,
+    ease: "power3.out",
+    delay: 0.2
+  });
+
+  // Animate side panel entrance
+  gsap.from("#side-panel", {
+    duration: 1,
+    x: -300,
+    opacity: 0,
+    ease: "power3.out",
+    delay: 0.4
+  });
+
+  // Animate tab buttons with stagger for symmetry
+  gsap.from(".tab-btn", {
+    duration: 0.6,
+    y: 50,
+    opacity: 0,
+    ease: "back.out(1.7)",
+    stagger: 0.1,
+    delay: 0.6
+  });
+
+  // Add hover animations for tab buttons
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("mouseenter", () => {
+      gsap.to(btn, {
+        duration: 0.3,
+        scale: 1.05,
+        ease: "power2.out"
+      });
+    });
+
+    btn.addEventListener("mouseleave", () => {
+      gsap.to(btn, {
+        duration: 0.3,
+        scale: 1,
+        ease: "power2.out"
+      });
+    });
+
+    // Add click animation
+    btn.addEventListener("click", () => {
+      gsap.to(btn, {
+        duration: 0.1,
+        scale: 0.95,
+        yoyo: true,
+        repeat: 1,
+        ease: "power2.inOut"
+      });
+    });
+  });
+
+  // Animate panel close button
+  gsap.from("#panel-close", {
+    duration: 0.5,
+    rotation: -180,
+    opacity: 0,
+    ease: "back.out(1.7)",
+    delay: 0.8
+  });
+
   const menuBtn = document.getElementById("menu-btn");
   const sidePanel = document.getElementById("side-panel");
   const closeBtn = document.getElementById("panel-close");
@@ -32,15 +100,48 @@ document.addEventListener("DOMContentLoaded", () => {
   updateMenuSide();
   window.addEventListener('resize', updateMenuSide);
 
-  menuBtn.onclick = () => {
+menuBtn.onclick = () => {
     sidePanel.classList.add("open");
-    // hide hamburger while side panel is open
-    menuBtn.style.display = 'none';
+    // Animate panel opening
+    gsap.to(sidePanel, {
+      duration: 0.4,
+      x: 0,
+      ease: "power3.out"
+    });
+    // Animate menu button disappearing
+    gsap.to(menuBtn, {
+      duration: 0.3,
+      opacity: 0,
+      scale: 0.8,
+      ease: "power2.in",
+      onComplete: () => {
+        menuBtn.style.display = 'none';
+      }
+    });
   };
   closeBtn.onclick = () => {
-    sidePanel.classList.remove("open");
+    // Animate panel closing
+    gsap.to(sidePanel, {
+      duration: 0.4,
+      x: -300,
+      ease: "power3.in",
+      onComplete: () => {
+        sidePanel.classList.remove("open");
+        sidePanel.style.transform = 'translateX(-100%)';
+      }
+    });
     // restore hamburger when panel closed
     menuBtn.style.display = '';
+    gsap.fromTo(menuBtn, 
+      { opacity: 0, scale: 0.8 },
+      { 
+        duration: 0.3, 
+        opacity: 1, 
+        scale: 1, 
+        ease: "power2.out",
+        delay: 0.2
+      }
+    );
   };
 
 tabs.forEach(btn => {
@@ -48,13 +149,27 @@ tabs.forEach(btn => {
       tabs.forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
 
-      // Hide all panels first
-      document.getElementById("auto-analysis").style.display = "none";
-      document.getElementById("smart-over-under").style.display = "none";
-      document.getElementById("even-odd-panel").style.display = "none";
+      // Hide all panels first with animation
+      const panels = ["auto-analysis", "smart-over-under", "even-odd-panel"];
+      panels.forEach(panelId => {
+        const panel = document.getElementById(panelId);
+        if (panel && panel.style.display !== "none") {
+          gsap.to(panel, {
+            duration: 0.3,
+            opacity: 0,
+            y: 20,
+            ease: "power2.in",
+            onComplete: () => {
+              panel.style.display = "none";
+            }
+          });
+        }
+      });
 
+      // Show selected panel with animation
+      let targetPanel;
       if (btn.dataset.tab === "auto") {
-        document.getElementById("auto-analysis").style.display = "block";
+        targetPanel = document.getElementById("auto-analysis");
         // Auto Analysis gets all form elements
         document.querySelectorAll("form > *").forEach(el => {
           if (el.id !== "market" && el.id !== "submarket") {
@@ -62,7 +177,7 @@ tabs.forEach(btn => {
           }
         });
       } else if (btn.dataset.tab === "smart") {
-        document.getElementById("smart-over-under").style.display = "block";
+        targetPanel = document.getElementById("smart-over-under");
         // Smart Over/Under gets all form elements
         document.querySelectorAll("form > *").forEach(el => {
           if (el.id !== "market" && el.id !== "submarket") {
@@ -70,7 +185,7 @@ tabs.forEach(btn => {
           }
         });
       } else if (btn.dataset.tab === "even-odd") {
-        document.getElementById("even-odd-panel").style.display = "block";
+        targetPanel = document.getElementById("even-odd-panel");
         // Even/Odd only gets market and submarket, hide everything else
         const formElements = document.querySelectorAll("#trade-form > *");
         formElements.forEach(el => {
@@ -82,9 +197,58 @@ tabs.forEach(btn => {
         });
       }
 
-      sidePanel.classList.remove("open");
+      // Animate panel appearance with symmetry
+      if (targetPanel) {
+        targetPanel.style.display = "block";
+        gsap.fromTo(targetPanel, 
+          { opacity: 0, y: 30, scale: 0.95 },
+          { 
+            duration: 0.5, 
+            opacity: 1, 
+            y: 0, 
+            scale: 1, 
+            ease: "back.out(1.7)",
+            onComplete: () => {
+              // Animate form elements within the panel
+              const formElements = targetPanel.querySelectorAll('input, select, button, .field, .toggle-container');
+              gsap.fromTo(formElements, 
+                { opacity: 0, y: 20 },
+                { 
+                  duration: 0.4,
+                  opacity: 1,
+                  y: 0,
+                  stagger: 0.05,
+                  ease: "power2.out"
+                }
+              );
+            }
+          }
+        );
+      }
+
+      // Animate panel closing
+      gsap.to(sidePanel, {
+        duration: 0.4,
+        x: -300,
+        ease: "power3.in",
+        onComplete: () => {
+          sidePanel.classList.remove("open");
+          sidePanel.style.transform = 'translateX(-100%)';
+        }
+      });
+
       // restore hamburger after choosing a tab
       menuBtn.style.display = '';
+      gsap.fromTo(menuBtn, 
+        { opacity: 0, scale: 0.8 },
+        { 
+          duration: 0.3, 
+          opacity: 1, 
+          scale: 1, 
+          ease: "power2.out",
+          delay: 0.2
+        }
+      );
     };
   });
 });

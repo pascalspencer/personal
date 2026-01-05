@@ -68,6 +68,176 @@ document.addEventListener("DOMContentLoaded", () => {
   </div>
 `);
 
+  // GSAP Animations for Smart Over/Under
+  // Animate the smart card entrance when it becomes visible
+  const smartCard = document.querySelector("#smart-over-under .smart-card");
+  if (smartCard) {
+    // Create observer for when the panel becomes visible
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+          const smartContainer = document.getElementById("smart-over-under");
+          if (smartContainer.style.display !== "none") {
+            // Animate card entrance with symmetry
+            gsap.fromTo(smartCard, 
+              { 
+                opacity: 0, 
+                scale: 0.8, 
+                rotationY: -15,
+                y: 50 
+              },
+              { 
+                duration: 0.8, 
+                opacity: 1, 
+                scale: 1, 
+                rotationY: 0,
+                y: 0,
+                ease: "back.out(1.7)",
+                onComplete: () => {
+                  // Animate form elements with stagger
+                  const formElements = smartCard.querySelectorAll('.field, .toggle-container, .stake-row, .smart-results');
+                  gsap.fromTo(formElements, 
+                    { opacity: 0, y: 30 },
+                    { 
+                      duration: 0.5,
+                      opacity: 1,
+                      y: 0,
+                      stagger: 0.08,
+                      ease: "power2.out"
+                    }
+                  );
+
+                  // Animate header elements
+                  const headerElements = smartCard.querySelectorAll('.smart-title, .smart-sub');
+                  gsap.fromTo(headerElements, 
+                    { opacity: 0, x: -30 },
+                    { 
+                      duration: 0.6,
+                      opacity: 1,
+                      x: 0,
+                      stagger: 0.1,
+                      ease: "power3.out"
+                    }
+                  );
+                }
+              }
+            );
+          }
+        }
+      });
+    });
+
+    observer.observe(document.getElementById("smart-over-under"), { attributes: true });
+  }
+
+  // Add hover animations for toggle switches
+  document.querySelectorAll(".small-toggle").forEach(toggle => {
+    toggle.addEventListener("mouseenter", () => {
+      gsap.to(toggle, {
+        duration: 0.3,
+        scale: 1.05,
+        boxShadow: "0 6px 20px rgba(0, 187, 240, 0.3)",
+        ease: "power2.out"
+      });
+    });
+
+    toggle.addEventListener("mouseleave", () => {
+      gsap.to(toggle, {
+        duration: 0.3,
+        scale: 1,
+        boxShadow: "0 2px 6px rgba(2,6,23,0.06)",
+        ease: "power2.out"
+      });
+    });
+
+    // Add click animation for checkboxes
+    const checkbox = toggle.querySelector('input[type="checkbox"]');
+    if (checkbox) {
+      checkbox.addEventListener("change", () => {
+        gsap.to(toggle, {
+          duration: 0.15,
+          scale: 0.95,
+          yoyo: true,
+          repeat: 1,
+          ease: "power2.inOut"
+        });
+
+        // Add glow effect when checked
+        if (checkbox.checked) {
+          gsap.to(toggle, {
+            duration: 0.4,
+            boxShadow: "0 0 20px rgba(0, 187, 240, 0.5)",
+            ease: "power2.out",
+            onComplete: () => {
+              gsap.to(toggle, {
+                duration: 0.3,
+                boxShadow: "0 2px 6px rgba(2,6,23,0.06)",
+                ease: "power2.out"
+              });
+            }
+          });
+        }
+      });
+    }
+  });
+
+  // Add animations for buttons
+  document.querySelectorAll("#run-smart, #stop-smart").forEach(btn => {
+    btn.addEventListener("mouseenter", () => {
+      gsap.to(btn, {
+        duration: 0.3,
+        scale: 1.05,
+        y: -2,
+        ease: "power2.out"
+      });
+    });
+
+    btn.addEventListener("mouseleave", () => {
+      gsap.to(btn, {
+        duration: 0.3,
+        scale: 1,
+        y: 0,
+        ease: "power2.out"
+      });
+    });
+
+    btn.addEventListener("click", () => {
+      gsap.to(btn, {
+        duration: 0.1,
+        scale: 0.95,
+        ease: "power2.in",
+        onComplete: () => {
+          gsap.to(btn, {
+            duration: 0.2,
+            scale: 1,
+            ease: "power2.out"
+          });
+        }
+      });
+    });
+  });
+
+  // Add input focus animations
+  document.querySelectorAll("#smart-over-under input, #smart-over-under select").forEach(input => {
+    input.addEventListener("focus", () => {
+      gsap.to(input, {
+        duration: 0.3,
+        scale: 1.02,
+        boxShadow: "0 0 0 3px rgba(0, 187, 240, 0.2)",
+        ease: "power2.out"
+      });
+    });
+
+    input.addEventListener("blur", () => {
+      gsap.to(input, {
+        duration: 0.3,
+        scale: 1,
+        boxShadow: "0 0 0 0px rgba(0, 187, 240, 0)",
+        ease: "power2.out"
+      });
+    });
+  });
+
 
   overDigit = document.getElementById("over-digit");
   underDigit = document.getElementById("under-digit");
