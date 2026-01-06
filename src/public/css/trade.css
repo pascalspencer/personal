@@ -53,14 +53,12 @@ body {
   background: #ffffff;
   box-shadow: 2px 0 20px rgba(0,0,0,0.15);
   transform: translateX(-100%);
-  /* Remove CSS transition to prevent conflicts with GSAP */
+  transition: transform 0.3s ease;
   z-index: 10000;
-  visibility: visible;
 }
 
 #side-panel.open {
   transform: translateX(0);
-  visibility: visible;
 }
 
 .panel-header {
@@ -68,37 +66,25 @@ body {
   text-align: right;
   font-size: 22px;
   cursor: pointer;
-  border-bottom: 1px solid #e5e7eb;
-  background: #f9fafb;
 }
 
 .panel-tabs {
   display: flex;
   flex-direction: column;
-  padding: 10px 0;
 }
 
 .tab-btn {
-  padding: 15px 20px;
+  padding: 15px;
   border: none;
   background: none;
   text-align: left;
   font-size: 16px;
   cursor: pointer;
-  border-radius: 0;
-  margin: 2px 10px;
-  font-weight: 500;
-  /* Remove CSS transitions to prevent conflicts with GSAP */
-}
-
-.tab-btn:hover {
-  background: rgba(0, 187, 240, 0.1);
 }
 
 .tab-btn.active {
-  background: var(--primary-color);
-  color: var(--text-light);
-  box-shadow: 0 2px 8px rgba(0, 187, 240, 0.3);
+  background: #00bbf0;
+  color: #fff;
 }
 
 
@@ -823,55 +809,10 @@ body.smart-mode > #side-panel.open { display: block; visibility: visible; transf
 #side-panel .tab-btn {
   padding: 1rem 0.5rem;
   font-size: 0.9rem;
-  width: calc(100% - 20px);
-  margin: 5px 10px;
-  text-align: left;
+  width: 100%;
+  margin-bottom: 0.5rem;
+  text-align: center;
   border-radius: 6px;
-  visibility: visible;
-  opacity: 1;
-}
-
-#side-panel .panel-header {
-  visibility: visible;
-  opacity: 1;
-}
-
-#side-panel .panel-tabs {
-  visibility: visible;
-  opacity: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Force tab button visibility */
-#side-panel .tab-btn {
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  position: relative !important;
-  z-index: 1 !important;
-}
-
-/* Ensure panel content is visible */
-#side-panel .panel-header,
-#side-panel .panel-tabs,
-#side-panel .tab-btn {
-  visibility: visible !important;
-  opacity: 1 !important;
-  display: block !important;
-  position: relative !important;
-  z-index: 10 !important;
-}
-
-/* Override any hiding styles */
-#side-panel * {
-  visibility: visible !important;
-  opacity: 1 !important;
-}
-
-#side-panel.open * {
-  visibility: visible !important;
-  opacity: 1 !important;
 }
 
 .tab-content {
@@ -1020,85 +961,5 @@ body.smart-mode > #side-panel.open { display: block; visibility: visible; transf
     flex-direction: column;
   }
 }
-
-/* GSAP Animation Enhancements */
-.smart-card,
-#trade-form {
-  transform-style: preserve-3d;
-  perspective: 1000px;
-}
-
-.tick-item {
-  transform-style: preserve-3d;
-  transition: transform 0.2s ease;
-}
-
-.small-toggle {
-  transform-style: preserve-3d;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-#run-smart,
-#stop-smart,
-.run-btn {
-  transform-style: preserve-3d;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Enhanced hover states for animated elements */
-.smart-card:hover {
-  transform: translateY(-2px);
-}
-
-.tick-item:hover {
-  z-index: 10;
-  transform: translateZ(10px) scale(1.1);
-}
-
-/* Smooth transitions for all interactive elements */
-input, select, button {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Animation-ready classes */
-.gsap-ready {
-  opacity: 0;
-  transform: translateY(20px);
-}
-
-.gsap-animate {
-  opacity: 1;
-  transform: translateY(0);
-  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Special effects for tick animations */
-.tick-item.even {
-  background: linear-gradient(135deg, #10b981, #059669);
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
-}
-
-.tick-item.odd {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
-}
-
-/* Glow effects for active states */
-.small-toggle input:checked + span {
-  box-shadow: 0 0 15px rgba(0, 187, 240, 0.5);
-}
-
-#run-smart:active,
-#stop-smart:active,
-.run-btn:active {
-  transform: scale(0.95) translateY(1px);
-}
-
-/* Symmetric animation delays */
-.stagger-1 { animation-delay: 0.1s; }
-.stagger-2 { animation-delay: 0.2s; }
-.stagger-3 { animation-delay: 0.3s; }
-.stagger-4 { animation-delay: 0.4s; }
-.stagger-5 { animation-delay: 0.5s; }
 
 

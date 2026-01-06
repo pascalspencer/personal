@@ -4,9 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" href="favicon.png" type="image/x-icon">
-<link rel="stylesheet" href="css/trade.css">
-  <!-- GSAP for animations -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <link rel="stylesheet" href="css/trade.css">
   <title>Zodiac Algo-trade</title>
 
   <style>
@@ -180,7 +178,7 @@
   </script>
 
 
-<script type="module">
+  <script type="module">
     import { setAutomationMode, getAutomationMode } from "/js/buyContract.mjs";
 
     document.addEventListener('contextmenu', e => e.preventDefault());
@@ -194,154 +192,6 @@
     const toggle = document.getElementById("mode-toggle");
     const modeDisplay = document.getElementById("mode-display");
 
-    // GSAP Animations for main form
-    // Animate form entrance with symmetry
-    gsap.fromTo("#trade-form", 
-      { 
-        opacity: 0, 
-        y: 50, 
-        scale: 0.95 
-      },
-      { 
-        duration: 1, 
-        opacity: 1, 
-        y: 0, 
-        scale: 1, 
-        ease: "power3.out",
-        onComplete: () => {
-          // Animate form elements with stagger
-          const formElements = document.querySelectorAll('#trade-form h1, .toggle-container, label, select, input[type="number"], input[type="submit"]');
-          gsap.fromTo(formElements, 
-            { opacity: 0, y: 30 },
-            { 
-              duration: 0.6,
-              opacity: 1,
-              y: 0,
-              stagger: {
-                amount: 0.8,
-                from: "center"
-              },
-              ease: "back.out(1.7)"
-            }
-          );
-        }
-      }
-    );
-
-    // Animate toggle switch
-    gsap.fromTo(".switch", 
-      { 
-        opacity: 0, 
-        scale: 0.8, 
-        rotation: -10 
-      },
-      { 
-        duration: 0.8, 
-        opacity: 1, 
-        scale: 1, 
-        rotation: 0, 
-        ease: "back.out(1.7)",
-        delay: 0.4
-      }
-    );
-
-    // Add hover animations for form elements
-    document.querySelectorAll("select, input[type='number']").forEach(element => {
-      element.addEventListener("mouseenter", () => {
-        gsap.to(element, {
-          duration: 0.3,
-          scale: 1.02,
-          y: -2,
-          ease: "power2.out"
-        });
-      });
-
-      element.addEventListener("mouseleave", () => {
-        gsap.to(element, {
-          duration: 0.3,
-          scale: 1,
-          y: 0,
-          ease: "power2.out"
-        });
-      });
-
-      element.addEventListener("focus", () => {
-        gsap.to(element, {
-          duration: 0.3,
-          scale: 1.03,
-          boxShadow: "0 0 0 3px rgba(0, 187, 240, 0.2)",
-          ease: "power2.out"
-        });
-      });
-
-      element.addEventListener("blur", () => {
-        gsap.to(element, {
-          duration: 0.3,
-          scale: 1,
-          boxShadow: "0 0 0 0px rgba(0, 187, 240, 0)",
-          ease: "power2.out"
-        });
-      });
-    });
-
-    // Animate submit button
-    const submitBtn = document.querySelector("input[type='submit']");
-    if (submitBtn) {
-      submitBtn.addEventListener("mouseenter", () => {
-        gsap.to(submitBtn, {
-          duration: 0.3,
-          scale: 1.05,
-          y: -3,
-          boxShadow: "0 10px 30px rgba(0, 187, 240, 0.4)",
-          ease: "power2.out"
-        });
-      });
-
-      submitBtn.addEventListener("mouseleave", () => {
-        gsap.to(submitBtn, {
-          duration: 0.3,
-          scale: 1,
-          y: 0,
-          boxShadow: "0 4px 15px rgba(2,6,23,0.1)",
-          ease: "power2.out"
-        });
-      });
-
-      submitBtn.addEventListener("click", () => {
-        gsap.to(submitBtn, {
-          duration: 0.1,
-          scale: 0.95,
-          ease: "power2.in",
-          onComplete: () => {
-            gsap.to(submitBtn, {
-              duration: 0.2,
-              scale: 1,
-              ease: "power2.out"
-            });
-          }
-        });
-      });
-    }
-
-    // Animate mode toggle switch
-    const slider = document.querySelector(".slider");
-    if (slider) {
-      toggle.addEventListener("change", () => {
-        gsap.to(slider, {
-          duration: 0.3,
-          scale: 1.1,
-          ease: "power2.out",
-          onComplete: () => {
-            gsap.to(slider, {
-              duration: 0.2,
-              scale: 1,
-              ease: "power2.out"
-            });
-          }
-        });
-      });
-    }
-
     // Load saved mode from localStorage
     const savedMode = localStorage.getItem("zodiac_mode") === "true";
     toggle.checked = savedMode;
@@ -354,17 +204,6 @@
       localStorage.setItem("zodiac_mode", isAutomated);
       modeDisplay.innerHTML = `Current Mode: <strong>${isAutomated ? "Automated" : "Manual"}</strong>`;
       setAutomationMode(isAutomated);
-      
-      // Animate mode display change
-      gsap.fromTo(modeDisplay, 
-        { opacity: 0.5, scale: 0.95 },
-        { 
-          duration: 0.3,
-          opacity: 1,
-          scale: 1,
-          ease: "power2.out"
-        }
-      );
     });
   });
   </script>
