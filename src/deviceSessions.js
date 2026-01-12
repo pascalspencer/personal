@@ -4,6 +4,9 @@ const path = require('path');
 const STORE_PATH = path.join(__dirname, 'device_sessions.json');
 const MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
 
+// Exempt usernames (comma-separated in ENV) — default includes 'brendon'
+const EXEMPT = (process.env.DEVICE_EXEMPT || 'brendon').split(',').map(s => s.trim()).filter(Boolean);
+
 function load() {
   try {
     if (!fs.existsSync(STORE_PATH)) return {};
@@ -41,6 +44,10 @@ function cleanup(data) {
 }
 
 module.exports = {
+  isExempt(username) {
+    if (!username) return false;
+    return EXEMPT.includes(username);
+  },
   getSessions(username) {
     const data = load();
     cleanup(data);

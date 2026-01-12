@@ -105,16 +105,18 @@ app.post("/login", (req, res) => {
       });
     }
 
-    // Enforce max 2 devices per username
+    // Enforce max 2 devices per username (skip exempt users)
     try {
       const usernameKey = user.clientUsername;
-      const sessions = deviceSessions.getSessions(usernameKey);
-      const alreadyHas = sessions.some(s => s.sessionId === req.sessionID);
-      if (!alreadyHas && sessions.length >= 2) {
-        return res.status(403).json({
-          success: false,
-          message: "Maximum 2 devices allowed for this account. Please logout from another device."
-        });
+      if (!deviceSessions.isExempt(usernameKey)) {
+        const sessions = deviceSessions.getSessions(usernameKey);
+        const alreadyHas = sessions.some(s => s.sessionId === req.sessionID);
+        if (!alreadyHas && sessions.length >= 2) {
+          return res.status(403).json({
+            success: false,
+            message: "Maximum 2 devices allowed for this account. Please logout from another device."
+          });
+        }
       }
     } catch (err) {
       console.error('Device session check failed:', err);
