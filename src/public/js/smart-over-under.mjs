@@ -276,14 +276,14 @@ async function runSingleSequential(symbol) {
       // if a trade is already in progress, skip this tick
       if (tradeLock) return;
 
-if (digit <= Number(overDigit.value)) {
+if (digit < Number(overDigit.value)) {
         tradeLock = true;
         // Execute trade without waiting for faster execution
         executeTrade(symbol, "DIGITOVER", overDigit.value, quote).finally(() => {
           tradeLock = false;
           ticksSeen++;
         });
-      } else if (digit >= Number(underDigit.value)) {
+      } else if (digit > Number(underDigit.value)) {
         tradeLock = true;
         // Execute trade without waiting for faster execution
         executeTrade(symbol, "DIGITUNDER", underDigit.value, quote).finally(() => {
