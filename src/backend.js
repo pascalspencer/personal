@@ -4,6 +4,7 @@ const axios = require('axios/dist/browser/axios.cjs');
 const path = require("path");
 require("dotenv").config();
 const fs = require("fs");
+const deviceSessions = require('./deviceSessions');
 const WebSocket = require("ws");
 const DerivAPI = require("@deriv/deriv-api/dist/DerivAPI");
 
@@ -104,11 +105,36 @@ app.post("/login", (req, res) => {
       });
     }
 
+    // Enforce max 2 devices per username
+    try {
+      const usernameKey = user.clientUsername;
+      const sessions = deviceSessions.getSessions(usernameKey);
+      const alreadyHas = sessions.some(s => s.sessionId === req.sessionID);
+      if (!alreadyHas && sessions.length >= 2) {
+        return res.status(403).json({
+          success: false,
+          message: "Maximum 2 devices allowed for this account. Please logout from another device."
+        });
+      }
+    } catch (err) {
+      console.error('Device session check failed:', err);
+    }
+
     // Save session
     req.session.user = {
       username: user.clientUsername,
       loginTime: Date.now()
     };
+
+    // record device/session
+    try {
+      deviceSessions.addSession(user.clientUsername, req.sessionID, {
+        ip: req.ip || req.connection?.remoteAddress,
+        ua: req.get('User-Agent') || ''
+      });
+    } catch (err) {
+      console.error('Failed to record device session:', err);
+    }
 
     // Redirect to Deriv OAuth
     return res.json({
@@ -132,6 +158,31 @@ app.get("/sign-in", (req, res) => {
   }
   catch (err) {
     console.log(err);
+  }
+});
+
+// --- LOGOUT ---
+app.post('/logout', (req, res) => {
+  try {
+    const sid = req.sessionID;
+    // remove from device tracking
+    try {
+      deviceSessions.removeSession(sid);
+    } catch (e) {
+      console.error('Error removing device session:', e);
+    }
+
+    req.session.destroy(err => {
+      if (err) {
+        console.error('Session destroy error:', err);
+        return res.status(500).json({ success: false, message: 'Logout failed' });
+      }
+      res.clearCookie('connect.sid');
+      return res.json({ success: true });
+    });
+  } catch (err) {
+    console.error('Logout error:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
