@@ -273,20 +273,22 @@ async function runSingleSequential(symbol) {
       const quote = msg.tick.quote;
       const digit = Number(String(quote).slice(-1));
 
+
       // if a trade is already in progress, skip this tick
       if (tradeLock) return;
 
-if (digit < Number(overDigit.value)) {
+      // --- INSTANT BUY EXECUTION ---
+      if (digit < Number(overDigit.value)) {
         tradeLock = true;
-        // Execute trade without waiting for faster execution
-        executeTrade(symbol, "DIGITOVER", overDigit.value, quote).finally(() => {
+        Promise.resolve().then(async () => {
+          await executeTrade(symbol, "DIGITOVER", overDigit.value, quote);
           tradeLock = false;
           ticksSeen++;
         });
       } else if (digit > Number(underDigit.value)) {
         tradeLock = true;
-        // Execute trade without waiting for faster execution
-        executeTrade(symbol, "DIGITUNDER", underDigit.value, quote).finally(() => {
+        Promise.resolve().then(async () => {
+          await executeTrade(symbol, "DIGITUNDER", underDigit.value, quote);
           tradeLock = false;
           ticksSeen++;
         });
@@ -354,26 +356,28 @@ async function runBulkOnce(symbol) {
       tradeLock = true;
       const n = Math.max(1, Number(tickCount.value) || 1);
       const stake = stakeInput.value;
-      const buys = Array.from({ length: n }, () => buyContract(symbol, tradeType, 1, stake, barrier, quote, true));
+      // --- INSTANT BUY EXECUTION ---
+      Promise.resolve().then(async () => {
+        const buys = Array.from({ length: n }, () => buyContract(symbol, tradeType, 1, stake, barrier, quote, true));
+        let results = [];
+        try {
+          results = await Promise.allSettled(buys);
+        } catch (e) {
+          // shouldn't happen since we use allSettled, but guard anyway
+        }
 
-      let results = [];
-      try {
-        results = await Promise.allSettled(buys);
-      } catch (e) {
-        // shouldn't happen since we use allSettled, but guard anyway
-      }
+        let success = 0, failed = 0;
+        results.forEach(r => {
+          if (r.status === 'fulfilled' && !(r.value && r.value.error)) success++; else failed++;
+        });
 
-      let success = 0, failed = 0;
-      results.forEach(r => {
-        if (r.status === 'fulfilled' && !(r.value && r.value.error)) success++; else failed++;
+        const details = `Executed ${n} buys: <strong>${success} succeeded</strong>, <strong>${failed} failed</strong>`;
+        popup('Bulk trade executed', details, 6000);
+        tradeLock = false;
+
+        try { tickWs.close(); } catch (e) {}
+        resolve();
       });
-
-      const details = `Executed ${n} buys: <strong>${success} succeeded</strong>, <strong>${failed} failed</strong>`;
-      popup('Bulk trade executed', details, 6000);
-      tradeLock = false;
-
-      try { tickWs.close(); } catch (e) {}
-      resolve();
     };
 
     tickWs.onerror = () => {

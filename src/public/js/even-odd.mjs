@@ -253,45 +253,49 @@ async function checkForPatternAndTrade() {
 
   resultsDisplay.innerHTML = `Pattern detected: <b>${pattern}</b><br>Executing trade...`;
 
-  try {
-    const result = await buyContract(symbol, tradeType, 1, stake, null, null, true);
-    const payout = Number(result?.buy?.payout || 0);
-    const win    = payout > stake;
+  // --- INSTANT BUY EXECUTION ---
+  // Use microtask to ensure buy is executed immediately after pattern detection
+  Promise.resolve().then(async () => {
+    try {
+      const result = await buyContract(symbol, tradeType, 1, stake, null, null, true);
+      const payout = Number(result?.buy?.payout || 0);
+      const win    = payout > stake;
 
-    completedTrades++;
+      completedTrades++;
 
-    resultsDisplay.dataset.success = String(
-      Number(resultsDisplay.dataset.success) + (win ? 1 : 0)
-    );
-    resultsDisplay.dataset.failed = String(
-      Number(resultsDisplay.dataset.failed) + (win ? 0 : 1)
-    );
+      resultsDisplay.dataset.success = String(
+        Number(resultsDisplay.dataset.success) + (win ? 1 : 0)
+      );
+      resultsDisplay.dataset.failed = String(
+        Number(resultsDisplay.dataset.failed) + (win ? 0 : 1)
+      );
 
-    popup(
-      "Trade Executed",
-      `Type: ${tradeType}<br>Stake: $${stake.toFixed(2)}<br>Last Digit: ${lastDigit}`,
-      1500
-    );
+      popup(
+        "Trade Executed",
+        `Type: ${tradeType}<br>Stake: $${stake.toFixed(2)}<br>Last Digit: ${lastDigit}`,
+        1000 // reduce popup time for speed
+      );
 
-    resultsDisplay.innerHTML = `
-      <strong>Trading Active</strong><br>
-      Pattern: ${pattern}<br>
-      Completed: ${completedTrades}/${numTrades}<br>
-      Wins: ${resultsDisplay.dataset.success}, Losses: ${resultsDisplay.dataset.failed}
-    `;
+      resultsDisplay.innerHTML = `
+        <strong>Trading Active</strong><br>
+        Pattern: ${pattern}<br>
+        Completed: ${completedTrades}/${numTrades}<br>
+        Wins: ${resultsDisplay.dataset.success}, Losses: ${resultsDisplay.dataset.failed}
+      `;
 
-  } catch (err) {
-    completedTrades++;
-    popup("Trade Error", err.message, 3000);
-  }
+    } catch (err) {
+      completedTrades++;
+      popup("Trade Error", err.message, 1000);
+    }
 
-  if (completedTrades < numTrades && completedTrades < maxTradesPerSession) {
-    setTimeout(() => {
+    // Instantly re-enable entry checking for next trade if needed
+    if (completedTrades < numTrades && completedTrades < maxTradesPerSession) {
       checkingForEntry = true;
-    }, 300);
-  } else {
-    finishSession();
-  }
+      // No delay, check immediately
+    } else {
+      finishSession();
+    }
+  });
 }
 
 function finishSession() {

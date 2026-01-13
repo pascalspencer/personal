@@ -444,12 +444,8 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     if (liveTickQuote !== null && typeof liveTickQuote !== 'undefined') {
       livePrice = liveTickQuote;
     } else {
-      try {
-        livePrice = await waitForFirstTick(symbol);
-      } catch (err) {
-        console.error("❌ Could not get live tick:", err);
-        return;
-      }
+      // --- INSTANT TICK FETCH ---
+      livePrice = await Promise.resolve(waitForFirstTick(symbol));
     }
 
     if (!defaultCurrency) {

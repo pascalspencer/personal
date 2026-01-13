@@ -181,6 +181,6 @@ document.addEventListener("DOMContentLoaded", function () {
       } else {
         console.log("Manual mode active — skipping auto-trade.");
       }
-    }, 10500);
+    }, 5500);
   }
 });
