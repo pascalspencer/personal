@@ -15,19 +15,39 @@ const app_id = 61696;
 
 
 
-const connection = new WebSocket(
-  `wss://ws.derivws.com/websockets/v3?app_id=${app_id}`
-);
 
-connection.onopen = () => {
-  console.log("WebSocket connection established.");
-};
+// --- Robust WebSocket connection management ---
+let wsConnection = null;
+let wsReconnectAttempts = 0;
+const maxReconnects = 10;
+const reconnectDelay = 3000;
 
-connection.onerror = (error) => {
-  console.error("WebSocket error:", error);
-};
+function createWebSocket() {
+  wsConnection = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${app_id}`);
 
-const api = new DerivAPI({ connection });
+  wsConnection.onopen = () => {
+    wsReconnectAttempts = 0;
+    console.log("WebSocket connection established.");
+  };
+
+  wsConnection.onerror = (error) => {
+    console.error("WebSocket error:", error);
+  };
+
+  wsConnection.onclose = () => {
+    if (wsReconnectAttempts < maxReconnects) {
+      wsReconnectAttempts++;
+      console.warn(`WebSocket closed. Attempting reconnect #${wsReconnectAttempts} in ${reconnectDelay}ms.`);
+      setTimeout(createWebSocket, reconnectDelay);
+    } else {
+      console.error("Max WebSocket reconnect attempts reached.");
+    }
+  };
+}
+
+createWebSocket();
+
+const api = new DerivAPI({ connection: wsConnection });
 const basic = api.basic;
 
 const active_symbols_request = {
@@ -71,12 +91,18 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
+
+// --- Keep WebSocket alive with periodic ping ---
 const ping = () => {
   setInterval(() => {
-    if (basic) {
-      basic.ping();
+    if (wsConnection && wsConnection.readyState === WebSocket.OPEN) {
+      try {
+        wsConnection.send(JSON.stringify({ ping: 1 }));
+      } catch (e) {
+        // Ignore send errors
+      }
     }
-  }, 30000);
+  }, 20000); // 20s interval for better reliability
 };
 
 // --- LOGIN PAGE ---

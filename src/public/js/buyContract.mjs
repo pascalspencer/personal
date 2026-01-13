@@ -1,8 +1,40 @@
 import { getCurrentToken } from './popupMessages.mjs';
 
-// Note: DerivAPIBasic removed — sending raw JSON over WebSocket and handling responses by req_id.
+// --- WebSocket connection setup ---
 const derivAppID = 61696;
-const connection = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${derivAppID}`);
+let connection = null;
+let wsReconnectAttempts = 0;
+const maxReconnects = 10;
+const reconnectDelay = 3000;
+
+function createWebSocket() {
+  connection = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${derivAppID}`);
+
+  connection.onopen = function () {
+    wsReconnectAttempts = 0;
+    api = connection;
+    startPing();
+    console.log("WebSocket connection is fantastic.");
+
+    document.dispatchEvent(new Event("ws-opened"));
+  };
+
+  connection.onerror = (err) => {
+    console.error("WebSocket error:", err);
+  };
+
+  connection.onclose = function () {
+    if (wsReconnectAttempts < maxReconnects) {
+      wsReconnectAttempts++;
+      console.warn(`WebSocket closed. Attempting reconnect #${wsReconnectAttempts} in ${reconnectDelay}ms.`);
+      setTimeout(createWebSocket, reconnectDelay);
+    } else {
+      console.error("Max WebSocket reconnect attempts reached.");
+    }
+  };
+}
+
+createWebSocket();
 
 let api = null; // kept for compatibility checks in other codepaths
 const resultsContainer = document.getElementById("results-container");
@@ -133,13 +165,16 @@ connection.onmessage = (evt) => {
   }
 };
 
+
 // --- Ping keep-alive ---
 let pingInterval = null;
 function startPing() {
   if (!connection || pingInterval) return;
   pingInterval = setInterval(() => {
-    try { connection.send(JSON.stringify({ ping: 1 })); } catch (e) {}
-  }, 15000); // Reduced ping interval for faster connection
+    if (connection && connection.readyState === WebSocket.OPEN) {
+      try { connection.send(JSON.stringify({ ping: 1 })); } catch (e) {}
+    }
+  }, 20000); // 20s interval for better reliability
 }
 
 // --- low-level send + await single response ---
