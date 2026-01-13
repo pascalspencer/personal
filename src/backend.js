@@ -266,12 +266,31 @@ app.get("/api/data", async (req, res) => {
 
 
 app.get("/redirect", async (req, res) => {
-  const { acct1, token1, cur1, acct2, token2, cur2 } = req.query;
+  // Accept tokens/accounts as arrays for flexibility
+  let tokens = req.query.tokens;
+  let accounts = req.query.accounts;
+  let currencies = req.query.currencies;
 
-  const accounts = [
-    { account: acct1, token: token1, currency: cur1 },
-    { account: acct2, token: token2, currency: cur2 }
-  ];
+  // Support legacy token1/token2 if arrays not provided
+  if (!Array.isArray(tokens)) {
+    tokens = [req.query.token1, req.query.token2].filter(Boolean);
+  }
+  if (!Array.isArray(accounts)) {
+    accounts = [req.query.acct1, req.query.acct2].filter(Boolean);
+  }
+  if (!Array.isArray(currencies)) {
+    currencies = [req.query.cur1, req.query.cur2].filter(Boolean);
+  }
+
+  // Build account objects
+  const accountObjs = [];
+  for (let i = 0; i < tokens.length; i++) {
+    accountObjs.push({
+      token: tokens[i],
+      account: accounts[i] || null,
+      currency: currencies[i] || null
+    });
+  }
 
   if (!basic) {
     console.error("DerivAPI basic is not initialized.");
@@ -279,26 +298,26 @@ app.get("/redirect", async (req, res) => {
   }
 
   try {
+    // Map of loginid -> {token, currency, is_virtual}
+    const loginMap = {};
     let currentLoginId = null;
-    let userToken = null;
-    const loginIds = [];
+    let selectedAccounts = [];
 
-    // 🔥 Authorize only accounts that have tokens
-    for (const acc of accounts) {
+    // Authorize all tokens and collect account info
+    for (const acc of accountObjs) {
       if (!acc.token) continue;
-
       try {
         const response = await basic.authorize(acc.token);
-
         if (response?.authorize) {
-          userToken = acc.token; // last successful token
-
-          // build login ID list
+          // Add all accounts from this token
           response.authorize.account_list.forEach(a => {
-            loginIds.push(a.loginid);
+            loginMap[a.loginid] = {
+              token: acc.token,
+              currency: a.currency,
+              is_virtual: a.is_virtual
+            };
           });
-
-          // current login id
+          // Mark current loginid
           currentLoginId = response.authorize.loginid;
         }
       } catch (err) {
@@ -306,10 +325,21 @@ app.get("/redirect", async (req, res) => {
       }
     }
 
-    console.log("All user login IDs:", loginIds);
-    console.log("Current login ID:", currentLoginId);
+    // Build list of available accounts (real, demo, others)
+    selectedAccounts = Object.entries(loginMap).map(([loginid, info]) => ({
+      loginid,
+      token: info.token,
+      currency: info.currency,
+      type: info.is_virtual ? 'demo' : 'real'
+    }));
 
-    // ⛔ No valid login found → do not reload page
+    // If more than 2 tokens/accounts, include all in sign-in
+    // (frontend should show all available accounts for selection)
+
+    // Validate that when an account is selected, its token matches
+    // (frontend: pass selected loginid, backend: find correct token)
+
+    // If no valid login found
     if (!currentLoginId) {
       return res.send(`
         <h2 style="font-family: sans-serif; color: #444;">Authorization Failed</h2>
@@ -318,8 +348,9 @@ app.get("/redirect", async (req, res) => {
       `);
     }
 
-    // 🎯 SUCCESS → Clean redirect to sign-in page
-    const redirectUrl = `/sign-in?token1=${token1}&token2=${token2}`;
+    // Build redirect URL with all available accounts/tokens
+    // Pass as arrays for frontend to handle selection
+    const redirectUrl = `/sign-in?accounts=${encodeURIComponent(JSON.stringify(selectedAccounts))}`;
     console.log("Redirecting to:", redirectUrl);
 
     return res.redirect(redirectUrl);
