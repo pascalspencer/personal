@@ -420,32 +420,46 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     }
 
     // Ensure authorized (basic check: presence of cached userToken or session-based token)
-    const token = getCurrentToken();
-    if (!token) {
-        console.warn("No token available; cannot trade. Please re-login via Deriv.");
-        alert("Trading token missing. Please log in with your Deriv account to enable trading.");
-        return;
+    // --- Ensure correct token is used for selected account (real/demo) ---
+    let selectedToken = null;
+    const params = new URLSearchParams(window.location.search);
+    const accountSelect = typeof document !== 'undefined' ? document.getElementById("accountType") : null;
+    const accountFromUrl = params.get('accountType') || params.get('account');
+    const selected = accountSelect?.value ?? accountFromUrl;
+
+    if (selected === 'real') {
+      selectedToken = params.get('token1') || localStorage.getItem('token1');
+    } else if (selected === 'demo') {
+      selectedToken = params.get('token2') || localStorage.getItem('token2');
     } else {
-        // ensure authorization on server-side was done via /redirect; re-authorize if necessary
-        try {
-            console.log("[TRACK] Sending authorize request to Deriv API", { token: token.slice(0, 8) + '...' });
-            const authResp = await sendJson({ authorize: token });
-            if (authResp?.error) {
-                console.warn("Authorization failed:", authResp.error);
-                alert("Authorization failed: " + (authResp.error.message || "Unknown error"));
-                return;
-            } else {
-                const cur2 = getBestAccountCurrency(authResp);
-                if (cur2) {
-                    defaultCurrency = cur2;
-                    console.log("✅ Currency refreshed before proposal:", defaultCurrency);
-                }
-            }
-        } catch (err) {
-            console.warn("Authorize request error:", err);
-            alert("Authorization error: " + err.message);
-            return;
+      // fallback to legacy userToken or any available
+      selectedToken = params.get('userToken') || localStorage.getItem('userToken') || localStorage.getItem('token1') || localStorage.getItem('token2');
+    }
+
+    if (!selectedToken) {
+      console.warn("No token available for selected account; cannot trade. Please re-login via Deriv.");
+      alert("Trading token missing for selected account. Please log in with your Deriv account to enable trading.");
+      return;
+    } else {
+      try {
+        console.log("[TRACK] Sending authorize request to Deriv API", { token: selectedToken.slice(0, 8) + '...', account: selected });
+        const authResp = await sendJson({ authorize: selectedToken });
+        if (authResp?.error) {
+          console.warn("Authorization failed:", authResp.error);
+          alert("Authorization failed: " + (authResp.error.message || "Unknown error"));
+          return;
+        } else {
+          const cur2 = getBestAccountCurrency(authResp);
+          if (cur2) {
+            defaultCurrency = cur2;
+            console.log("✅ Currency refreshed before proposal:", defaultCurrency);
+          }
         }
+      } catch (err) {
+        console.warn("Authorize request error:", err);
+        alert("Authorization error: " + err.message);
+        return;
+      }
     }
 
 
