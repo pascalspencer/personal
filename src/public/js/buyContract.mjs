@@ -412,55 +412,70 @@ async function waitForFirstTick(symbol) {
 
 // Unified buyContract that follows contracts_for precisely
 async function buyContract(symbol, tradeType, duration, price, prediction = null, liveTickQuote = null, suppressPopup = false) {
+
     if (!connection || connection.readyState !== WebSocket.OPEN) {
         console.error("❌ WebSocket not connected.");
+        alert("Trading connection not established. Please refresh the page.");
         return;
     }
 
     // Ensure authorized (basic check: presence of cached userToken or session-based token)
     const token = getCurrentToken();
     if (!token) {
-      console.warn("No token available; attempt will likely fail.");
+        console.warn("No token available; cannot trade. Please re-login via Deriv.");
+        alert("Trading token missing. Please log in with your Deriv account to enable trading.");
+        return;
     } else {
-      // ensure authorization on server-side was done via /redirect; re-authorize if necessary
-      try {
-        const authResp = await sendJson({ authorize: token });
-        if (authResp?.error) {
-          console.warn("Authorization failed:", authResp.error);
-        } else {
-          const cur2 = getBestAccountCurrency(authResp);
-          if (cur2) {
-            defaultCurrency = cur2;
-            console.log("✅ Currency refreshed before proposal:", defaultCurrency);
-          }
+        // ensure authorization on server-side was done via /redirect; re-authorize if necessary
+        try {
+            console.log("[TRACK] Sending authorize request to Deriv API", { token: token.slice(0, 8) + '...' });
+            const authResp = await sendJson({ authorize: token });
+            if (authResp?.error) {
+                console.warn("Authorization failed:", authResp.error);
+                alert("Authorization failed: " + (authResp.error.message || "Unknown error"));
+                return;
+            } else {
+                const cur2 = getBestAccountCurrency(authResp);
+                if (cur2) {
+                    defaultCurrency = cur2;
+                    console.log("✅ Currency refreshed before proposal:", defaultCurrency);
+                }
+            }
+        } catch (err) {
+            console.warn("Authorize request error:", err);
+            alert("Authorization error: " + err.message);
+            return;
         }
-      } catch (err) {
-        console.warn("Authorize request error:", err);
-      }
     }
+
 
     // 1) Get live tick (use provided quote if available to avoid duplicate subscriptions)
     let livePrice = null;
     if (liveTickQuote !== null && typeof liveTickQuote !== 'undefined') {
-      livePrice = liveTickQuote;
+        livePrice = liveTickQuote;
     } else {
-      // --- INSTANT TICK FETCH ---
-      livePrice = await Promise.resolve(waitForFirstTick(symbol));
+        // --- INSTANT TICK FETCH ---
+        livePrice = await Promise.resolve(waitForFirstTick(symbol));
     }
 
+
     if (!defaultCurrency) {
-      console.warn("⛔ Trade blocked — account currency not detected");
-      return;
+        console.warn("⛔ Trade blocked — account currency not detected");
+        alert("Account currency not detected. Please re-login or contact support.");
+        return;
     }
 
     const balResp = await sendJson({ balance: 1 });
     const bal = balResp?.balance?.balance;
 
     if (!bal || Number(bal) <= 0) {
-      console.warn(`⛔ Zero balance detected in ${defaultCurrency}`);
+        console.warn(`⛔ Zero balance detected in ${defaultCurrency}`);
+        alert("Your account balance is zero. Please deposit funds to trade.");
+        return;
     }
 
     
+
     // 2) Build PROPOSAL object
     const proposal = {
       proposal: 1,
@@ -475,128 +490,134 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
 
     // Digit-specific
     if (tradeType.startsWith("DIGIT")) {
-        if (["DIGITMATCH", "DIGITDIFF", "DIGITOVER", "DIGITUNDER"].includes(tradeType)) {
-            proposal.barrier = String(prediction ?? 0);
-        }
+      if (["DIGITMATCH", "DIGITDIFF", "DIGITOVER", "DIGITUNDER"].includes(tradeType)) {
+        proposal.barrier = String(prediction ?? 0);
+      }
     }
 
     // 3) SEND PROPOSAL
     let proposalResp;
     try {
-        proposalResp = await sendJson(proposal);
+      console.log("[TRACK] Sending proposal to Deriv API", proposal);
+      proposalResp = await sendJson(proposal);
+      console.log("[TRACK] Proposal response from Deriv API", proposalResp);
     } catch (err) {
-        console.error("❌ Proposal request failed:", err);
-        return;
+      console.error("❌ Proposal request failed:", err);
+      alert("Proposal request failed: " + err.message);
+      return;
     }
 
     if (proposalResp.error) {
-        console.error("❌ Proposal error:", proposalResp.error);
-        return;
+      console.error("❌ Proposal error:", proposalResp.error);
+      alert("Proposal error: " + (proposalResp.error.message || "Unknown error"));
+      return;
     }
 
     // Extract correct proposal info
     const prop = proposalResp.proposal;
     if (!prop || !prop.id) {
       console.error("❌ Proposal missing id:", proposalResp);
+      alert("Proposal missing id. Cannot proceed with buy.");
       return;
     }
     const propId = prop.id;
     const askPrice = prop.ask_price ?? prop.ask_price; // use ask_price if present
 
-// 4) BUY CONTRACT - Optimized for speed
+
+    // 4) BUY CONTRACT - Optimized for speed
     let buyResp;
     let startingBalance = null;
     try {
-      const balResp = await sendJson({ balance: 1 });
-      startingBalance = Number(balResp?.balance?.balance ?? null);
+        const balResp = await sendJson({ balance: 1 });
+        startingBalance = Number(balResp?.balance?.balance ?? null);
 
-      buyResp = await sendJson({ buy: propId, price: askPrice });
-        
-        
+        console.log("[TRACK] Sending buy request to Deriv API", { buy: propId, price: askPrice });
+        buyResp = await sendJson({ buy: propId, price: askPrice });
+        console.log("[TRACK] Buy response from Deriv API", buyResp);
     } catch (err) {
         console.error("❌ Buy call failed:", err);
-        
+        alert("Buy request failed: " + err.message);
         if (!suppressPopup) {
-          try {
-            const overlay = document.createElement('div');
-            overlay.className = 'trade-popup-overlay';
-            const popup = document.createElement('div');
-            popup.className = 'trade-popup';
-            const title = document.createElement('h3');
-            title.textContent = 'Buy Failed';
-            popup.appendChild(title);
-            const msgP = document.createElement('p');
-            msgP.textContent = err.message || 'Failed to execute buy request.';
-            popup.appendChild(msgP);
-            const closeBtn = document.createElement('a');
-            closeBtn.className = 'close-btn';
-            closeBtn.href = '#';
-            closeBtn.textContent = 'Close';
-            closeBtn.addEventListener('click', (ev) => { ev.preventDefault(); overlay.remove(); });
-            popup.appendChild(closeBtn);
-            overlay.appendChild(popup);
-            try { document.body.appendChild(overlay); } catch (e) { console.warn('Could not show error popup:', e); }
-            setTimeout(() => { try { overlay.remove(); } catch (e) {} }, 10000);
-          } catch (e) {
-            console.warn('Failed to build error popup:', e);
-          }
+            try {
+                const overlay = document.createElement('div');
+                overlay.className = 'trade-popup-overlay';
+                const popup = document.createElement('div');
+                popup.className = 'trade-popup';
+                const title = document.createElement('h3');
+                title.textContent = 'Buy Failed';
+                popup.appendChild(title);
+                const msgP = document.createElement('p');
+                msgP.textContent = err.message || 'Failed to execute buy request.';
+                popup.appendChild(msgP);
+                const closeBtn = document.createElement('a');
+                closeBtn.className = 'close-btn';
+                closeBtn.href = '#';
+                closeBtn.textContent = 'Close';
+                closeBtn.addEventListener('click', (ev) => { ev.preventDefault(); overlay.remove(); });
+                popup.appendChild(closeBtn);
+                overlay.appendChild(popup);
+                try { document.body.appendChild(overlay); } catch (e) { console.warn('Could not show error popup:', e); }
+                setTimeout(() => { try { overlay.remove(); } catch (e) {} }, 10000);
+            } catch (e) {
+                console.warn('Failed to build error popup:', e);
+            }
         }
         return;
     }
 
     if (buyResp.error) {
         console.error("❌ Buy error:", buyResp.error);
-
+        alert("Buy error: " + (buyResp.error.message || "Unknown error"));
         // Show a user-friendly popup describing the error (e.g., insufficient balance)
         try {
-          const err = buyResp.error;
-          if (!suppressPopup) {
-            const overlay = document.createElement('div');
-            overlay.className = 'trade-popup-overlay';
+            const err = buyResp.error;
+            if (!suppressPopup) {
+                const overlay = document.createElement('div');
+                overlay.className = 'trade-popup-overlay';
 
-            const popup = document.createElement('div');
-            popup.className = 'trade-popup';
+                const popup = document.createElement('div');
+                popup.className = 'trade-popup';
 
-            const title = document.createElement('h3');
-            title.textContent = 'Trade Failed';
-            popup.appendChild(title);
+                const title = document.createElement('h3');
+                title.textContent = 'Trade Failed';
+                popup.appendChild(title);
 
-            const msgP = document.createElement('p');
-            msgP.textContent = err.message || 'Unable to complete buy request.';
-            popup.appendChild(msgP);
+                const msgP = document.createElement('p');
+                msgP.textContent = err.message || 'Unable to complete buy request.';
+                popup.appendChild(msgP);
 
-            // Try to extract suggested stake / price from echo_req or response
-            const echo = buyResp.echo_req || {};
-            const echoBuy = echo.buy || echo;
-            const reqPrice = echoBuy.price ?? echo.price ?? null;
-            if (reqPrice !== null && reqPrice !== undefined) {
-              const reqP = document.createElement('p');
-              reqP.innerHTML = `Required stake: <span class="amount">$${Number(reqPrice).toFixed(2)}</span>`;
-              popup.appendChild(reqP);
+                // Try to extract suggested stake / price from echo_req or response
+                const echo = buyResp.echo_req || {};
+                const echoBuy = echo.buy || echo;
+                const reqPrice = echoBuy.price ?? echo.price ?? null;
+                if (reqPrice !== null && reqPrice !== undefined) {
+                    const reqP = document.createElement('p');
+                    reqP.innerHTML = `Required stake: <span class="amount">$${Number(reqPrice).toFixed(2)}</span>`;
+                    popup.appendChild(reqP);
+                }
+
+                // If error code indicates insufficient balance, add highlighted note
+                if (err.code === 'InsufficientBalance' || /insufficient/i.test(err.message || '')) {
+                    const low = document.createElement('p');
+                    low.className = 'low-balance';
+                    low.textContent = `Insufficient balance to buy this contract. Please top up your account.`;
+                    popup.appendChild(low);
+                }
+
+                const closeBtn = document.createElement('a');
+                closeBtn.className = 'close-btn';
+                closeBtn.href = '#';
+                closeBtn.textContent = 'Close';
+                closeBtn.addEventListener('click', (ev) => { ev.preventDefault(); overlay.remove(); });
+                popup.appendChild(closeBtn);
+
+                overlay.appendChild(popup);
+                try { document.body.appendChild(overlay); } catch (e) { console.warn('Could not show error popup:', e); }
+                // Auto-dismiss after 10 seconds
+                setTimeout(() => { try { overlay.remove(); } catch (e) {} }, 10000);
             }
-
-            // If error code indicates insufficient balance, add highlighted note
-            if (err.code === 'InsufficientBalance' || /insufficient/i.test(err.message || '')) {
-              const low = document.createElement('p');
-              low.className = 'low-balance';
-              low.textContent = `Insufficient balance to buy this contract. Please top up your account.`;
-              popup.appendChild(low);
-            }
-
-            const closeBtn = document.createElement('a');
-            closeBtn.className = 'close-btn';
-            closeBtn.href = '#';
-            closeBtn.textContent = 'Close';
-            closeBtn.addEventListener('click', (ev) => { ev.preventDefault(); overlay.remove(); });
-            popup.appendChild(closeBtn);
-
-            overlay.appendChild(popup);
-            try { document.body.appendChild(overlay); } catch (e) { console.warn('Could not show error popup:', e); }
-            // Auto-dismiss after 10 seconds
-            setTimeout(() => { try { overlay.remove(); } catch (e) {} }, 10000);
-          }
         } catch (e) {
-          console.warn('Failed to build error popup:', e);
+            console.warn('Failed to build error popup:', e);
         }
 
         return buyResp;
