@@ -427,10 +427,47 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     const accountFromUrl = params.get('accountType') || params.get('account');
     const selected = accountSelect?.value ?? accountFromUrl;
 
+    // --- Dynamically fetch additional accounts and add to dropdown ---
+    if (accountSelect && typeof window !== 'undefined') {
+      // Only run once per page load
+      if (!accountSelect._dynamicLoaded) {
+        accountSelect._dynamicLoaded = true;
+        // Try to get a valid token (real/demo/userToken)
+        const baseToken = params.get('token1') || params.get('token2') || params.get('userToken') || localStorage.getItem('token1') || localStorage.getItem('token2') || localStorage.getItem('userToken');
+        if (baseToken) {
+          sendJson({ authorize: baseToken }).then(authResp => {
+            if (authResp && authResp.authorize) {
+              sendJson({ account_list: 1 }).then(accResp => {
+                if (accResp && Array.isArray(accResp.account_list)) {
+                  accResp.account_list.forEach(acc => {
+                    if (!document.getElementById('accountType')) return;
+                    // Only add if not already present
+                    if (![...accountSelect.options].some(opt => opt.value === acc.loginid)) {
+                      const opt = document.createElement('option');
+                      opt.value = acc.loginid;
+                      opt.textContent = `${acc.loginid} (${acc.currency || acc.account_type || 'Account'})`;
+                      accountSelect.appendChild(opt);
+                      // Store token for this account if available
+                      if (acc.token) {
+                        localStorage.setItem(acc.loginid, acc.token);
+                      }
+                    }
+                  });
+                }
+              });
+            }
+          });
+        }
+      }
+    }
+
+    // --- Select correct token for trading ---
     if (selected === 'real') {
       selectedToken = params.get('token1') || localStorage.getItem('token1');
     } else if (selected === 'demo') {
       selectedToken = params.get('token2') || localStorage.getItem('token2');
+    } else if (selected && localStorage.getItem(selected)) {
+      selectedToken = localStorage.getItem(selected);
     } else {
       // fallback to legacy userToken or any available
       selectedToken = params.get('userToken') || localStorage.getItem('userToken') || localStorage.getItem('token1') || localStorage.getItem('token2');
