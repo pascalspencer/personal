@@ -1,6 +1,10 @@
+// Import the unified loginid popup from buyContract.mjs
+import { showLoginidPrompt } from './buyContract.mjs';
+
 // Neumorphism Login Form JavaScript
 class NeumorphismLoginForm {
     constructor() {
+
         this.form = document.getElementById('loginForm');
         this.usernameInput = document.getElementById('username');
         this.passwordInput = document.getElementById('password');

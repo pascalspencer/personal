@@ -471,10 +471,16 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     }
 
     // --- Prompt user for loginid if multiple real/demo accounts ---
-    function showLoginidPrompt(realAccounts, demoAccounts, accountSelect) {
+    // Unified loginid popup for reuse across modules
+    function showLoginidPrompt({realAccounts = [], demoAccounts = [], accountList = [], accountSelect = null, onSelected = null}) {
+      // Remove any existing loginid popup to avoid duplicates
+      const existing = document.querySelector('.trade-popup-overlay[data-loginid-popup]');
+      if (existing) existing.remove();
+
       // Build popup
       const overlay = document.createElement('div');
       overlay.className = 'trade-popup-overlay';
+      overlay.setAttribute('data-loginid-popup', '1');
       overlay.style.zIndex = 9999;
       const popup = document.createElement('div');
       popup.className = 'trade-popup';
@@ -521,6 +527,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
         if (accountSelect) accountSelect.value = val;
         localStorage.setItem('selected_loginid', val);
         overlay.remove();
+        if (typeof onSelected === 'function') onSelected(val);
       };
       popup.appendChild(okBtn);
       const cancelBtn = document.createElement('button');
@@ -529,6 +536,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
       popup.appendChild(cancelBtn);
       overlay.appendChild(popup);
       document.body.appendChild(overlay);
+      input.focus();
     }
 
 
@@ -950,4 +958,4 @@ function calculatePercentages() {
 }
 
 // --- Export for automation ---
-export { evaluateAndBuyContractSafe, buyContract };
+export { evaluateAndBuyContractSafe, buyContract, showLoginidPrompt };
