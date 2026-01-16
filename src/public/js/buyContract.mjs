@@ -427,7 +427,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     const accountFromUrl = params.get('accountType') || params.get('account');
     const selected = accountSelect?.value ?? accountFromUrl;
 
-    // --- Dynamically fetch additional accounts and add to dropdown ---
+    // --- Use accounts from URL (from /redirect endpoint) ---
     let accountList = [];
     let realAccounts = [];
     let demoAccounts = [];
@@ -435,37 +435,35 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     if (accountSelect && typeof window !== 'undefined') {
       if (!accountSelect._dynamicLoaded) {
         accountSelect._dynamicLoaded = true;
-        const baseToken = params.get('token1') || params.get('token2') || params.get('userToken') || localStorage.getItem('token1') || localStorage.getItem('token2') || localStorage.getItem('userToken');
-        if (baseToken) {
-          sendJson({ authorize: baseToken }).then(authResp => {
-            if (authResp && authResp.authorize) {
-              sendJson({ account_list: 1 }).then(accResp => {
-                if (accResp && Array.isArray(accResp.account_list)) {
-                  accountList = accResp.account_list;
-                  realAccounts = accountList.filter(acc => acc.is_virtual === 0);
-                  demoAccounts = accountList.filter(acc => acc.is_virtual === 1);
-                  // Add all accounts to dropdown if not present
-                  accountList.forEach(acc => {
-                    if (!document.getElementById('accountType')) return;
-                    if (![...accountSelect.options].some(opt => opt.value === acc.loginid)) {
-                      const opt = document.createElement('option');
-                      opt.value = acc.loginid;
-                      opt.textContent = `${acc.loginid} (${acc.currency || acc.account_type || 'Account'})`;
-                      accountSelect.appendChild(opt);
-                      if (acc.token) {
-                        localStorage.setItem(acc.loginid, acc.token);
-                      }
-                    }
-                  });
-                  // If multiple real or demo accounts, prompt for loginid
-                  if ((realAccounts.length > 1 || demoAccounts.length > 1) && !loginidPrompted) {
-                    loginidPrompted = true;
-                    showLoginidPrompt(realAccounts, demoAccounts, accountSelect);
-                  }
+        // Expect accounts in URL as JSON string in 'accounts' param, e.g. ?accounts=[{...},{...}]
+        let accountsParam = params.get('accounts');
+        if (accountsParam) {
+          try {
+            // Decode URI and parse JSON
+            accountList = JSON.parse(decodeURIComponent(accountsParam));
+            realAccounts = accountList.filter(acc => acc.is_virtual === 0);
+            demoAccounts = accountList.filter(acc => acc.is_virtual === 1);
+            // Add all accounts to dropdown if not present
+            accountList.forEach(acc => {
+              if (!document.getElementById('accountType')) return;
+              if (![...accountSelect.options].some(opt => opt.value === acc.loginid)) {
+                const opt = document.createElement('option');
+                opt.value = acc.loginid;
+                opt.textContent = `${acc.loginid} (${acc.currency || acc.account_type || 'Account'})`;
+                accountSelect.appendChild(opt);
+                if (acc.token) {
+                  localStorage.setItem(acc.loginid, acc.token);
                 }
-              });
+              }
+            });
+            // If multiple real or demo accounts, prompt for loginid
+            if ((realAccounts.length > 1 || demoAccounts.length > 1) && !loginidPrompted) {
+              loginidPrompted = true;
+              showLoginidPrompt({ realAccounts, demoAccounts, accountList, accountSelect });
             }
-          });
+          } catch (e) {
+            console.warn('Could not parse accounts from URL:', e);
+          }
         }
       }
     }
