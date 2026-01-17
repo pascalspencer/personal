@@ -16,19 +16,21 @@ export function handleAccountSelectionAndPopup() {
       if (accountsParam) {
         try {
           accountList = JSON.parse(decodeURIComponent(accountsParam));
-          realAccounts = accountList.filter(acc => acc.is_virtual === 0);
-          demoAccounts = accountList.filter(acc => acc.is_virtual === 1);
-          // Add all accounts to dropdown if not present
+          // Use type field to distinguish real/demo
+          realAccounts = accountList.filter(acc => acc.type === 'real');
+          demoAccounts = accountList.filter(acc => acc.type === 'demo');
+          // Add all accounts to dropdown if not present and store token by loginid
           accountList.forEach(acc => {
             if (!document.getElementById('accountType')) return;
             if (![...accountSelect.options].some(opt => opt.value === acc.loginid)) {
               const opt = document.createElement('option');
               opt.value = acc.loginid;
-              opt.textContent = `${acc.loginid} (${acc.currency || acc.account_type || 'Account'})`;
+              opt.textContent = `${acc.loginid} (${acc.currency || acc.type || 'Account'})`;
               accountSelect.appendChild(opt);
-              if (acc.token) {
-                localStorage.setItem(acc.loginid, acc.token);
-              }
+            }
+            // Store token for each loginid
+            if (acc.token) {
+              localStorage.setItem(acc.loginid, acc.token);
             }
           });
           // If multiple real or demo accounts, prompt for loginid

@@ -434,14 +434,10 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     let loginidToUse = localStorage.getItem('selected_loginid') || selected;
     if (loginidToUse && localStorage.getItem(loginidToUse)) {
       selectedToken = localStorage.getItem(loginidToUse);
-    } else if (selected === 'real') {
-      selectedToken = params.get('token1') || localStorage.getItem('token1');
-    } else if (selected === 'demo') {
-      selectedToken = params.get('token2') || localStorage.getItem('token2');
     } else if (selected && localStorage.getItem(selected)) {
       selectedToken = localStorage.getItem(selected);
     } else {
-      selectedToken = params.get('userToken') || localStorage.getItem('userToken') || localStorage.getItem('token1') || localStorage.getItem('token2');
+      selectedToken = params.get('userToken');
     }
 
     if (!selectedToken) {

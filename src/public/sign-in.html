@@ -18,21 +18,7 @@
       gtag('config', 'G-XXXX', { cookie_domain: 'auto' });
 
     </script>
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const params = new URLSearchParams(window.location.search);
-            const token1 = params.get("token1");
-            const token2 = params.get("token2");
-
-            if (token1 && token2) {
-                localStorage.setItem("token1", token1);
-                localStorage.setItem("token2", token2);
-                console.log("Saved tokens from URL:", token1, token2);
-            } else {
-                console.warn("No userToken found in URL.");
-            }
-        });
-    </script>
+    <!-- Token handling is now done via accounts param and sign-in.mjs -->
   
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
