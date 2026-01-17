@@ -33,24 +33,25 @@
         <div class="shape"></div>
     </div>
     <form id="login-form" action="/trade" method="POST">
-        <h3>Login Here</h3>
-        <div class="contact_link_box">
-            <p>Select Deriv Account</p>
-            <p>
-              <i class="fa fa-whatsapp" aria-hidden="true"></i>
-              <span>Whatsapp +254757384487</span>
-            </p>
-            <p>
-              <i class="fa fa-envelope" aria-hidden="true"></i>
-              <span>spencerinc.dev@gmail.com</span>
-            </p>
-        </div>
-        <label for="accountType">Account Type</label>
-        <select id="accountType" name="accountType" required>
-            <option value="real">Real</option>
-            <option value="demo">Demo</option>
-        </select>
-        <button type="submit" id="login-button">Continue</button>
+                <h3>Login Here</h3>
+                <div class="contact_link_box">
+                        <p>Select Deriv Account</p>
+                        <p>
+                            <i class="fa fa-whatsapp" aria-hidden="true"></i>
+                            <span>Whatsapp +254757384487</span>
+                        </p>
+                        <p>
+                            <i class="fa fa-envelope" aria-hidden="true"></i>
+                            <span>spencerinc.dev@gmail.com</span>
+                        </p>
+                </div>
+                <label for="accountType">Account Type</label>
+                <select id="accountType" name="accountType" required>
+                        <option value="real">Real</option>
+                        <option value="demo">Demo</option>
+                </select>
+                <button type="submit" id="login-button">Continue</button>
+                
     </form>
 </body>
 <footer>
@@ -65,6 +66,53 @@
     <script type="module" src="js/buyContract.mjs"></script>
     <script type="module" src="js/popupMessages.mjs"></script>
     <script type="module" src="js/sign-in.mjs"></script>
+    <script type="module">
+    // On page load, parse accounts param and store loginid/token/type/currency in localStorage
+    (function() {
+        const params = new URLSearchParams(window.location.search);
+        const accountsRaw = params.get('accounts');
+        if (accountsRaw) {
+            try {
+                const accounts = JSON.parse(decodeURIComponent(accountsRaw));
+                if (Array.isArray(accounts)) {
+                    // Store each account's token by loginid
+                    accounts.forEach(acc => {
+                        if (acc.loginid && acc.token) {
+                            localStorage.setItem(acc.loginid, acc.token);
+                            // Optionally store type/currency for later use
+                            if (acc.type) localStorage.setItem(acc.loginid + '_type', acc.type);
+                            if (acc.currency) localStorage.setItem(acc.loginid + '_currency', acc.currency);
+                        }
+                    });
+                    // If only one account, auto-select it
+                    if (accounts.length === 1) {
+                        localStorage.setItem('selected_loginid', accounts[0].loginid);
+                    }
+                }
+            } catch (e) {
+                console.warn('Failed to parse accounts param:', e);
+            }
+        }
+        // On form submit, store selected loginid to localStorage
+        const form = document.getElementById('login-form');
+        form?.addEventListener('submit', function(e) {
+            // Find selected account type (real/demo)
+            const type = document.getElementById('accountType')?.value;
+            // Find matching loginid for selected type
+            const params = new URLSearchParams(window.location.search);
+            const accountsRaw = params.get('accounts');
+            if (accountsRaw) {
+                try {
+                    const accounts = JSON.parse(decodeURIComponent(accountsRaw));
+                    const match = accounts.find(acc => acc.type === type);
+                    if (match && match.loginid) {
+                        localStorage.setItem('selected_loginid', match.loginid);
+                    }
+                } catch (e) {}
+            }
+        });
+    })();
+    </script>
     <script>
         document.addEventListener('contextmenu', function(event) {
             event.preventDefault();
