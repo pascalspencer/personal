@@ -33,13 +33,11 @@ export function handleAccountSelectionAndPopup() {
               localStorage.setItem(acc.loginid, acc.token);
             }
           });
-          // If user has more than just demo and real trading (USD) accounts, and multiple real accounts (wallets and trading), prompt for real account selection
+          // Only show popup after user makes a selection (not on page load)
           const realTradingAccounts = realAccounts.filter(a => a.currency === 'USD');
           const realWallets = realAccounts.filter(a => a.currency !== 'USD');
-          // If more than 2 real accounts (trading + at least one wallet), and user selects 'real', prompt for which real account to use
           if ((realAccounts.length > 1 && (realTradingAccounts.length > 0 && realWallets.length > 0)) && !loginidPrompted) {
             loginidPrompted = true;
-            // Only prompt if user selects 'real' in dropdown
             accountSelect.addEventListener('change', function realChangeHandler(e) {
               if (accountSelect.value === 'real') {
                 showLoginidPrompt({
@@ -48,28 +46,21 @@ export function handleAccountSelectionAndPopup() {
                   accountList,
                   accountSelect,
                   onSelected: (loginid) => {
-                    // Set dropdown to the selected loginid
                     accountSelect.value = loginid;
                   }
                 });
               }
             });
-            // If already set to 'real' on load, show immediately
-            if (accountSelect.value === 'real') {
-              showLoginidPrompt({
-                realAccounts,
-                demoAccounts,
-                accountList,
-                accountSelect,
-                onSelected: (loginid) => {
-                  accountSelect.value = loginid;
-                }
-              });
-            }
           } else if ((realAccounts.length > 1 || demoAccounts.length > 1) && !loginidPrompted) {
-            // Fallback: if multiple real or demo accounts (but not wallets), prompt as before
             loginidPrompted = true;
-            showLoginidPrompt({ realAccounts, demoAccounts, accountList, accountSelect });
+            accountSelect.addEventListener('change', function demoOrRealChangeHandler(e) {
+              if (
+                (realAccounts.length > 1 && accountSelect.value === realAccounts[0].loginid) ||
+                (demoAccounts.length > 1 && accountSelect.value === demoAccounts[0].loginid)
+              ) {
+                showLoginidPrompt({ realAccounts, demoAccounts, accountList, accountSelect });
+              }
+            });
           }
         } catch (e) {
           console.warn('Could not parse accounts from URL:', e);
