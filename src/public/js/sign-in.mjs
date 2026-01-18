@@ -33,6 +33,24 @@ export function handleAccountSelectionAndPopup() {
               localStorage.setItem(acc.loginid, acc.token);
             }
           });
+
+          // Always update the selected token in localStorage when loginid changes
+          accountSelect.addEventListener('change', function ensureTokenMatchesLoginid(e) {
+            const selectedLoginid = accountSelect.value;
+            const selectedAccount = accountList.find(a => a.loginid === selectedLoginid);
+            if (selectedAccount && selectedAccount.token) {
+              localStorage.setItem('selected_loginid', selectedLoginid);
+              localStorage.setItem('active_token', selectedAccount.token);
+            }
+          });
+
+          // On page load, if a loginid is already selected, set the correct token
+          const initialLoginid = accountSelect.value;
+          const initialAccount = accountList.find(a => a.loginid === initialLoginid);
+          if (initialAccount && initialAccount.token) {
+            localStorage.setItem('selected_loginid', initialLoginid);
+            localStorage.setItem('active_token', initialAccount.token);
+          }
           // Show popup only when Continue button is clicked, if needed
           const realTradingAccounts = realAccounts.filter(a => a.currency === 'USD');
           const realWallets = realAccounts.filter(a => a.currency !== 'USD');
@@ -135,13 +153,17 @@ export function showLoginidPrompt({realAccounts = [], demoAccounts = [], account
   okBtn.style.margin = '10px 8px 0 0';
   okBtn.onclick = function() {
     const val = input.value.trim();
-    if (!val || !accountList.some(a => a.loginid === val)) {
+    const selectedAccount = accountList.find(a => a.loginid === val);
+    if (!val || !selectedAccount) {
       errorMsg.textContent = 'Invalid loginid. Please enter one from the list above.';
       return;
     }
     // Set dropdown and localStorage
     if (accountSelect) accountSelect.value = val;
     localStorage.setItem('selected_loginid', val);
+    if (selectedAccount.token) {
+      localStorage.setItem('active_token', selectedAccount.token);
+    }
     overlay.remove();
     if (typeof onSelected === 'function') onSelected(val);
   };
