@@ -28,7 +28,7 @@ export function handleAccountSelectionAndPopup() {
               opt.textContent = `${acc.loginid} (${acc.currency || acc.type || 'Account'})`;
               accountSelect.appendChild(opt);
             }
-            // Store token for each loginid
+            // Store unique token for each loginid
             if (acc.token) {
               localStorage.setItem(acc.loginid, acc.token);
             }
@@ -160,9 +160,11 @@ export function showLoginidPrompt({realAccounts = [], demoAccounts = [], account
     }
     // Set dropdown and localStorage
     if (accountSelect) accountSelect.value = val;
+    // Guarantee: set correct token for this loginid
     localStorage.setItem('selected_loginid', val);
     if (selectedAccount.token) {
       localStorage.setItem('active_token', selectedAccount.token);
+      localStorage.setItem(val, selectedAccount.token);
     }
     overlay.remove();
     if (typeof onSelected === 'function') onSelected(val);
