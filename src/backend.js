@@ -344,37 +344,39 @@ app.get("/redirect", async (req, res) => {
     let currentLoginId = null;
     let selectedAccounts = [];
 
-    // Authorize all tokens and collect account info
+    // Authorize each token and collect account info
     for (const acc of accountObjs) {
       if (!acc.token) continue;
       try {
         const response = await basic.authorize(acc.token);
         if (response?.authorize) {
-          // Add all accounts from this token, but only if not already mapped
-          response.authorize.account_list.forEach(a => {
-            if (!loginMap[a.loginid]) {
-              loginMap[a.loginid] = {
-                token: acc.token,
-                currency: a.currency,
-                is_virtual: a.is_virtual
-              };
-            }
-          });
-          // Mark current loginid
-          currentLoginId = response.authorize.loginid;
+          // Only add the loginid that matches the account in the query string
+          const loginid = response.authorize.loginid;
+          if (loginid && acc.account && loginid === acc.account) {
+            loginMap[loginid] = {
+              token: acc.token,
+              currency: acc.currency,
+              is_virtual: response.authorize.is_virtual
+            };
+          }
+          currentLoginId = loginid;
         }
       } catch (err) {
         console.error("Authorization failed:", err.message);
       }
     }
 
-    // Build list of available accounts (real, demo, others)
-    selectedAccounts = Object.entries(loginMap).map(([loginid, info]) => ({
-      loginid,
-      token: info.token,
-      currency: info.currency,
-      type: info.is_virtual ? 'demo' : 'real'
-    }));
+    // Build list of available accounts (real, demo, others) using the original mapping
+    selectedAccounts = accounts.map((loginid, idx) => {
+      const info = loginMap[loginid];
+      if (!info) return null;
+      return {
+        loginid,
+        token: info.token,
+        currency: info.currency,
+        type: info.is_virtual ? 'demo' : 'real'
+      };
+    }).filter(Boolean);
 
     // If more than 2 tokens/accounts, include all in sign-in
     // (frontend should show all available accounts for selection)
