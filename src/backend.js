@@ -297,15 +297,30 @@ app.get("/redirect", async (req, res) => {
   let accounts = req.query.accounts;
   let currencies = req.query.currencies;
 
-  // Support legacy token1/token2 if arrays not provided
+  // Dynamically collect all tokenN/acctN/curN parameters (token1, token2, ...)
   if (!Array.isArray(tokens)) {
-    tokens = [req.query.token1, req.query.token2].filter(Boolean);
+    tokens = [];
+    let i = 1;
+    while (req.query[`token${i}`]) {
+      tokens.push(req.query[`token${i}`]);
+      i++;
+    }
   }
   if (!Array.isArray(accounts)) {
-    accounts = [req.query.acct1, req.query.acct2].filter(Boolean);
+    accounts = [];
+    let i = 1;
+    while (req.query[`acct${i}`]) {
+      accounts.push(req.query[`acct${i}`]);
+      i++;
+    }
   }
   if (!Array.isArray(currencies)) {
-    currencies = [req.query.cur1, req.query.cur2].filter(Boolean);
+    currencies = [];
+    let i = 1;
+    while (req.query[`cur${i}`]) {
+      currencies.push(req.query[`cur${i}`]);
+      i++;
+    }
   }
 
   // Build account objects
