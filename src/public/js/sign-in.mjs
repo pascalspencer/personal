@@ -146,7 +146,10 @@ export function showLoginidPrompt({realAccounts = [], demoAccounts = [], account
   input.focus();
 }
 
-// Auto-run on sign-in.html
-if (window.location.pathname.endsWith('sign-in.html')) {
+// Auto-run on sign-in.html or /sign-in
+if (
+  window.location.pathname.endsWith('sign-in.html') ||
+  window.location.pathname.endsWith('sign-in')
+) {
   document.addEventListener('DOMContentLoaded', handleAccountSelectionAndPopup);
 }
