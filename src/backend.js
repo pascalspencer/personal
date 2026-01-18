@@ -350,13 +350,15 @@ app.get("/redirect", async (req, res) => {
       try {
         const response = await basic.authorize(acc.token);
         if (response?.authorize) {
-          // Add all accounts from this token
+          // Add all accounts from this token, but only if not already mapped
           response.authorize.account_list.forEach(a => {
-            loginMap[a.loginid] = {
-              token: acc.token,
-              currency: a.currency,
-              is_virtual: a.is_virtual
-            };
+            if (!loginMap[a.loginid]) {
+              loginMap[a.loginid] = {
+                token: acc.token,
+                currency: a.currency,
+                is_virtual: a.is_virtual
+              };
+            }
           });
           // Mark current loginid
           currentLoginId = response.authorize.loginid;
