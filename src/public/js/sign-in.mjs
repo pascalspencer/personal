@@ -33,13 +33,19 @@ export function handleAccountSelectionAndPopup() {
               localStorage.setItem(acc.loginid, acc.token);
             }
           });
-          // Only show popup after user makes a selection (not on page load)
+          // Show popup only when Continue button is clicked, if needed
           const realTradingAccounts = realAccounts.filter(a => a.currency === 'USD');
           const realWallets = realAccounts.filter(a => a.currency !== 'USD');
-          if ((realAccounts.length > 1 && (realTradingAccounts.length > 0 && realWallets.length > 0)) && !loginidPrompted) {
-            loginidPrompted = true;
-            accountSelect.addEventListener('change', function realChangeHandler(e) {
-              if (accountSelect.value === 'real') {
+          const continueBtn = document.getElementById('continueBtn');
+          if (continueBtn) {
+            continueBtn.addEventListener('click', function(e) {
+              // If real is selected and multiple real accounts, show popup
+              if (
+                accountSelect.value === 'real' &&
+                realAccounts.length > 1 &&
+                (realTradingAccounts.length > 0 && realWallets.length > 0)
+              ) {
+                e.preventDefault();
                 showLoginidPrompt({
                   realAccounts,
                   demoAccounts,
@@ -47,19 +53,31 @@ export function handleAccountSelectionAndPopup() {
                   accountSelect,
                   onSelected: (loginid) => {
                     accountSelect.value = loginid;
+                    // After selection, trigger the original continue action
+                    continueBtn.form ? continueBtn.form.submit() : window.location.assign('/trade.html');
                   }
                 });
+                return;
               }
-            });
-          } else if ((realAccounts.length > 1 || demoAccounts.length > 1) && !loginidPrompted) {
-            loginidPrompted = true;
-            accountSelect.addEventListener('change', function demoOrRealChangeHandler(e) {
+              // If demo is selected and multiple demo accounts, show popup
               if (
-                (realAccounts.length > 1 && accountSelect.value === realAccounts[0].loginid) ||
-                (demoAccounts.length > 1 && accountSelect.value === demoAccounts[0].loginid)
+                accountSelect.value === 'demo' &&
+                demoAccounts.length > 1
               ) {
-                showLoginidPrompt({ realAccounts, demoAccounts, accountList, accountSelect });
+                e.preventDefault();
+                showLoginidPrompt({
+                  realAccounts,
+                  demoAccounts,
+                  accountList,
+                  accountSelect,
+                  onSelected: (loginid) => {
+                    accountSelect.value = loginid;
+                    continueBtn.form ? continueBtn.form.submit() : window.location.assign('/trade.html');
+                  }
+                });
+                return;
               }
+              // Otherwise, allow normal continue
             });
           }
         } catch (e) {
