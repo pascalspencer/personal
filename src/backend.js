@@ -293,9 +293,9 @@ app.get("/api/data", async (req, res) => {
 
 app.get("/redirect", async (req, res) => {
   // Accept tokens/accounts as arrays for flexibility
-  let tokens = [];
-  let accounts = [];
-  let currencies = [];
+  let tokens = req.query.tokens;
+  let accounts = req.query.accounts;
+  let currencies = req.query.currencies;
 
   // Dynamically collect all tokenN/acctN/curN parameters (token1, token2, ...)
   if (!Array.isArray(tokens)) {
