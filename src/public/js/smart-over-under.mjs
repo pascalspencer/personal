@@ -351,33 +351,87 @@ async function runBulkOnce(symbol) {
 
       if (!tradeType) return; // no trigger on this tick
 
-      // execute N buys concurrently using the known tick quote to avoid
-      // duplicate subscriptions inside buyContract
+      // --- SINGLE PROPOSAL, MULTIPLE BUYS ---
       tradeLock = true;
       const n = Math.max(1, Number(tickCount.value) || 1);
       const stake = stakeInput.value;
-      // --- INSTANT BUY EXECUTION ---
-      Promise.resolve().then(async () => {
-        const buys = Array.from({ length: n }, () => buyContract(symbol, tradeType, 1, stake, barrier, quote, true));
-        let results = [];
+
+      // Send a single proposal to get contract details
+      let proposalResponse = null;
+      try {
+        const token = getCurrentToken && getCurrentToken();
+        const wsProposal = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=61696");
+        await new Promise((res, rej) => {
+          wsProposal.onopen = () => {
+            if (token) {
+              try { wsProposal.send(JSON.stringify({ authorize: token })); } catch (e) {}
+            }
+            try {
+              wsProposal.send(JSON.stringify({
+                proposal: 1,
+                subscribe: 0,
+                amount: stake,
+                basis: "stake",
+                contract_type: tradeType,
+                currency: "USD",
+                symbol: symbol,
+                barrier: barrier,
+                duration: 1,
+                duration_unit: "t",
+                passthrough: { smartBulk: true },
+                price: quote
+              }));
+            } catch (e) {}
+          };
+          wsProposal.onmessage = (ev) => {
+            let data;
+            try { data = JSON.parse(ev.data); } catch (e) { return; }
+            if (data && data.proposal) {
+              proposalResponse = data.proposal;
+              try { wsProposal.close(); } catch (e) {}
+              res();
+            } else if (data && data.error) {
+              try { wsProposal.close(); } catch (e) {}
+              res();
+            }
+          };
+          wsProposal.onerror = () => {
+            try { wsProposal.close(); } catch (e) {}
+            res();
+          };
+        });
+      } catch (e) {
+        // ignore
+      }
+
+      // Now execute N buys using the proposal details
+      let results = [];
+      if (proposalResponse && proposalResponse.id) {
+        const buys = Array.from({ length: n }, () => buyContract(symbol, tradeType, 1, stake, barrier, quote, true, proposalResponse.id));
         try {
           results = await Promise.allSettled(buys);
         } catch (e) {
           // shouldn't happen since we use allSettled, but guard anyway
         }
+      } else {
+        // fallback: try to buy anyway, but may error
+        const buys = Array.from({ length: n }, () => buyContract(symbol, tradeType, 1, stake, barrier, quote, true));
+        try {
+          results = await Promise.allSettled(buys);
+        } catch (e) {}
+      }
 
-        let success = 0, failed = 0;
-        results.forEach(r => {
-          if (r.status === 'fulfilled' && !(r.value && r.value.error)) success++; else failed++;
-        });
-
-        const details = `Executed ${n} buys: <strong>${success} succeeded</strong>, <strong>${failed} failed</strong>`;
-        popup('Bulk trade executed', details, 6000);
-        tradeLock = false;
-
-        try { tickWs.close(); } catch (e) {}
-        resolve();
+      let success = 0, failed = 0;
+      results.forEach(r => {
+        if (r.status === 'fulfilled' && !(r.value && r.value.error)) success++; else failed++;
       });
+
+      const details = `Executed ${n} buys: <strong>${success} succeeded</strong>, <strong>${failed} failed</strong>`;
+      popup('Bulk trade executed', details, 6000);
+      tradeLock = false;
+
+      try { tickWs.close(); } catch (e) {}
+      resolve();
     };
 
     tickWs.onerror = () => {
