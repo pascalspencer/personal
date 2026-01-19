@@ -841,6 +841,60 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
 }
 
 
+// Unified Bulk Buy using buy_contract_for_multiple_accounts
+async function buyContractBulk(symbol, tradeType, duration, stake, barrier, count, tokens) {
+  if (!connection || connection.readyState !== WebSocket.OPEN) {
+    console.error("❌ WebSocket not connected.");
+    alert("Trading connection not established. Please refresh the page.");
+    return { error: { message: "WebSocket not connected" } };
+  }
+
+  // Construct parameter object for the contract
+  const parameters = {
+    symbol: symbol,
+    contract_type: tradeType,
+    currency: defaultCurrency || "USD",
+    basis: "stake",
+    amount: stake,
+    duration: duration,
+    duration_unit: "t",
+  };
+
+  // Digit-specific barriers
+  if (tradeType.startsWith("DIGIT")) {
+    if (["DIGITMATCH", "DIGITDIFF", "DIGITOVER", "DIGITUNDER"].includes(tradeType)) {
+      parameters.barrier = String(barrier ?? 0);
+    }
+  }
+
+  // Construct payload
+  const maxPrice = Number(stake) + 1;
+
+  const payload = {
+    buy_contract_for_multiple_accounts: 1,
+    tokens: tokens, // Array of tokens
+    parameters: parameters,
+    price: maxPrice
+  };
+
+  try {
+    console.log("[TRACK] Sending bulk buy request", { count: tokens.length, symbol, tradeType });
+    const resp = await sendJson(payload);
+
+    if (resp.error) {
+      console.error("❌ Bulk buy error:", resp.error);
+      return { error: resp.error };
+    }
+
+    console.log("🎉 Bulk buy executed:", resp);
+    return resp;
+  } catch (err) {
+    console.error("❌ Bulk buy exception:", err);
+    return { error: { message: err.message } };
+  }
+}
+
+
 // --- Helper to calculate sentiment percentages ---
 function calculatePercentages() {
   const percentages = [];
@@ -853,4 +907,4 @@ function calculatePercentages() {
 }
 
 // --- Export for automation ---
-export { evaluateAndBuyContractSafe, buyContract, showLoginidPrompt };
+export { evaluateAndBuyContractSafe, buyContract, buyContractBulk, showLoginidPrompt };

@@ -1,4 +1,4 @@
-import { buyContract } from "./buyContract.mjs";
+import { buyContract, buyContractBulk } from "./buyContract.mjs";
 import { getCurrentToken } from './popupMessages.mjs';
 
 let running = false;
@@ -73,11 +73,11 @@ document.addEventListener("DOMContentLoaded", () => {
   underDigit = document.getElementById("under-digit");
   tickCount = document.getElementById("tick-count");
   stakeInput = document.getElementById("stake");
-singleToggle = document.getElementById("single-toggle");
+  singleToggle = document.getElementById("single-toggle");
   bulkToggle = document.getElementById("bulk-toggle");
   resultsBox = document.getElementById("smart-results");
 
-  
+
 
   for (let i = 0; i <= 9; i++) {
     overDigit.innerHTML += `<option value="${i}">${i}</option>`;
@@ -103,7 +103,7 @@ singleToggle = document.getElementById("single-toggle");
 
   singleToggle.addEventListener('change', updateToggles);
   bulkToggle.addEventListener('change', updateToggles);
-// ensure initial state
+  // ensure initial state
   updateToggles();
 
   // Preserve references to original market/submarket parents so we can
@@ -200,13 +200,13 @@ function popup(msg, details = null, timeout = 2000) {
     closeBtn.className = 'close-btn';
     closeBtn.href = '#';
     closeBtn.textContent = 'Close';
-    closeBtn.addEventListener('click', (ev) => { ev.preventDefault(); try { overlay.remove(); } catch (e) {} });
+    closeBtn.addEventListener('click', (ev) => { ev.preventDefault(); try { overlay.remove(); } catch (e) { } });
     popup.appendChild(closeBtn);
 
     overlay.appendChild(popup);
     try { document.body.appendChild(overlay); } catch (e) { console.warn('Could not show popup:', e); }
 
-    if (timeout > 0) setTimeout(() => { try { overlay.remove(); } catch (e) {} }, timeout);
+    if (timeout > 0) setTimeout(() => { try { overlay.remove(); } catch (e) { } }, timeout);
   } catch (e) {
     console.warn('Popup render failed:', e);
   }
@@ -256,12 +256,12 @@ async function runSingleSequential(symbol) {
     }
 
     tickWs.onopen = () => {
-      try { tickWs.send(JSON.stringify({ ticks: symbol, subscribe: 1 })); } catch (e) {}
+      try { tickWs.send(JSON.stringify({ ticks: symbol, subscribe: 1 })); } catch (e) { }
     };
 
     tickWs.onmessage = async (e) => {
       if (!running) {
-        try { tickWs.close(); } catch (e) {}
+        try { tickWs.close(); } catch (e) { }
         resolve();
         return;
       }
@@ -295,13 +295,13 @@ async function runSingleSequential(symbol) {
       }
 
       if (ticksSeen >= Number(tickCount.value) || !running) {
-        try { tickWs.close(); } catch (e) {}
+        try { tickWs.close(); } catch (e) { }
         resolve();
       }
     };
 
     tickWs.onerror = () => {
-      try { tickWs.close(); } catch (e) {}
+      try { tickWs.close(); } catch (e) { }
       resolve();
     };
   });
@@ -320,12 +320,12 @@ async function runBulkOnce(symbol) {
     }
 
     tickWs.onopen = () => {
-      try { tickWs.send(JSON.stringify({ ticks: symbol, subscribe: 1 })); } catch (e) {}
+      try { tickWs.send(JSON.stringify({ ticks: symbol, subscribe: 1 })); } catch (e) { }
     };
 
     tickWs.onmessage = async (e) => {
       if (!running) {
-        try { tickWs.close(); } catch (e) {}
+        try { tickWs.close(); } catch (e) { }
         resolve();
         return;
       }
@@ -352,90 +352,46 @@ async function runBulkOnce(symbol) {
       if (!tradeType) return; // no trigger on this tick
 
       // --- SINGLE PROPOSAL, MULTIPLE BUYS ---
+      // --- SINGLE PROPOSAL NOT NEEDED FOR BULK API (it generates them) ---
       tradeLock = true;
       const n = Math.max(1, Number(tickCount.value) || 1);
       const stake = stakeInput.value;
 
-      // Send a single proposal to get contract details
-      let proposalResponse = null;
-      try {
-        const token = getCurrentToken && getCurrentToken();
-        const wsProposal = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=61696");
-        await new Promise((res, rej) => {
-          wsProposal.onopen = () => {
-            if (token) {
-              try { wsProposal.send(JSON.stringify({ authorize: token })); } catch (e) {}
-            }
-            try {
-              wsProposal.send(JSON.stringify({
-                proposal: 1,
-                subscribe: 0,
-                amount: stake,
-                basis: "stake",
-                contract_type: tradeType,
-                currency: "USD",
-                symbol: symbol,
-                barrier: barrier,
-                duration: 1,
-                duration_unit: "t",
-                passthrough: { smartBulk: true },
-                price: quote
-              }));
-            } catch (e) {}
-          };
-          wsProposal.onmessage = (ev) => {
-            let data;
-            try { data = JSON.parse(ev.data); } catch (e) { return; }
-            if (data && data.proposal) {
-              proposalResponse = data.proposal;
-              try { wsProposal.close(); } catch (e) {}
-              res();
-            } else if (data && data.error) {
-              try { wsProposal.close(); } catch (e) {}
-              res();
-            }
-          };
-          wsProposal.onerror = () => {
-            try { wsProposal.close(); } catch (e) {}
-            res();
-          };
-        });
-      } catch (e) {
-        // ignore
+      // Get current token to repeat n times
+      const token = getCurrentToken ? getCurrentToken() : null;
+      if (!token) {
+        popup('Error', 'No active token found', 3000);
+        tradeLock = false;
+        return;
       }
 
-      // Now execute N buys using the proposal details
-      let results = [];
-      if (proposalResponse && proposalResponse.id) {
-        const buys = Array.from({ length: n }, () => buyContract(symbol, tradeType, 1, stake, barrier, quote, true, proposalResponse.id));
-        try {
-          results = await Promise.allSettled(buys);
-        } catch (e) {
-          // shouldn't happen since we use allSettled, but guard anyway
-        }
-      } else {
-        // fallback: try to buy anyway, but may error
-        const buys = Array.from({ length: n }, () => buyContract(symbol, tradeType, 1, stake, barrier, quote, true));
-        try {
-          results = await Promise.allSettled(buys);
-        } catch (e) {}
-      }
+      const tokens = Array(n).fill(token);
+
+      // Execute Bulk API Call
+      const bulkResp = await buyContractBulk(symbol, tradeType, 1, stake, barrier, n, tokens);
 
       let success = 0, failed = 0;
-      results.forEach(r => {
-        if (r.status === 'fulfilled' && !(r.value && r.value.error)) success++; else failed++;
-      });
+      if (bulkResp && bulkResp.buy_contract_for_multiple_accounts) {
+        const results = bulkResp.buy_contract_for_multiple_accounts.result || [];
+        results.forEach(r => {
+          if (r.buy) success++;
+          else failed++;
+        });
+      } else {
+        failed = n;
+      }
 
-      const details = `Executed ${n} buys: <strong>${success} succeeded</strong>, <strong>${failed} failed</strong>`;
-      popup('Bulk trade executed', details, 6000);
+      const details = `Executed ${n} bulk trades via API:<br><strong>${success} succeeded</strong>, <strong>${failed} failed</strong>`;
+      popup('Bulk API executed', details, 6000);
       tradeLock = false;
 
-      try { tickWs.close(); } catch (e) {}
+      try { tickWs.close(); } catch (e) { }
       resolve();
     };
 
+
     tickWs.onerror = () => {
-      try { tickWs.close(); } catch (e) {}
+      try { tickWs.close(); } catch (e) { }
       resolve();
     };
   });
@@ -492,7 +448,7 @@ async function executeTrade(symbol, type = "DIGITOVER", barrier = 0, liveQuote =
       let resolved = false;
       let ws;
       const timer = setTimeout(() => {
-        try { if (ws) ws.close(); } catch (e) {}
+        try { if (ws) ws.close(); } catch (e) { }
         if (!resolved) { resolved = true; resolve(null); }
       }, timeoutMs);
 
@@ -506,9 +462,9 @@ async function executeTrade(symbol, type = "DIGITOVER", barrier = 0, liveQuote =
       ws.onopen = () => {
         const token = getCurrentToken();
         if (token) {
-          try { ws.send(JSON.stringify({ authorize: token })); } catch (e) {}
+          try { ws.send(JSON.stringify({ authorize: token })); } catch (e) { }
         }
-        try { ws.send(JSON.stringify({ balance: 1 })); } catch (e) {}
+        try { ws.send(JSON.stringify({ balance: 1 })); } catch (e) { }
       };
 
       ws.onmessage = (ev) => {
@@ -517,7 +473,7 @@ async function executeTrade(symbol, type = "DIGITOVER", barrier = 0, liveQuote =
         try { msg = JSON.parse(ev.data); } catch (e) { return; }
         if (msg && (msg.balance !== undefined || msg.account_balance !== undefined)) {
           clearTimeout(timer);
-          try { ws.close(); } catch (e) {}
+          try { ws.close(); } catch (e) { }
           resolved = true;
           resolve(msg);
         }
@@ -526,7 +482,7 @@ async function executeTrade(symbol, type = "DIGITOVER", barrier = 0, liveQuote =
       ws.onerror = () => {
         if (!resolved) {
           clearTimeout(timer);
-          try { ws.close(); } catch (e) {}
+          try { ws.close(); } catch (e) { }
           resolved = true;
           resolve(null);
         }
@@ -567,7 +523,7 @@ async function executeTrade(symbol, type = "DIGITOVER", barrier = 0, liveQuote =
       const n = Number(v);
       return Number.isNaN(n) ? null : n;
     };
-    
+
 
     // Prefer metadata computed inside buyContract where possible (ensures same delays/reads)
     const meta = resp && resp._meta ? resp._meta : null;
@@ -579,7 +535,7 @@ async function executeTrade(symbol, type = "DIGITOVER", barrier = 0, liveQuote =
 
       // If buyContract didn't supply a final endingBalance, try to fetch one now
       let endingBalanceLocal = (meta.endingBalance !== null && typeof meta.endingBalance !== 'undefined') ? meta.endingBalance : null;
-      
+
       if (endingBalanceLocal !== null) {
         const refStart = (meta.startingBalance !== null && typeof meta.startingBalance !== 'undefined') ? meta.startingBalance : startingBalance;
         if (refStart !== null) profit = +(endingBalanceLocal - refStart).toFixed(2);
@@ -687,7 +643,7 @@ function stopSmart() {
   running = false;
   tradeLock = false;
   if (tickWs) {
-    try { tickWs.close(); } catch (e) {}
+    try { tickWs.close(); } catch (e) { }
     tickWs = null;
   }
   popup("Stopped");
@@ -697,25 +653,25 @@ function stopSmart() {
 
 function updateTickDisplay() {
   tickGridEO.innerHTML = '';
-  
+
   // Display last 50 ticks (or fewer if we don't have that many yet)
   const displayTicks = tickHistory.slice(-50);
-  
+
   displayTicks.forEach((tick, index) => {
     const tickEl = document.createElement('div');
     tickEl.className = 'tick-item';
     tickEl.textContent = tick;
-    
+
     // Color based on even/odd
     if (tick % 2 === 0) {
       tickEl.classList.add('even');
     } else {
       tickEl.classList.add('odd');
     }
-    
+
     tickGridEO.appendChild(tickEl);
   });
-  
+
   totalTicksEO.textContent = tickHistory.length;
 }
 
@@ -752,7 +708,7 @@ async function runEvenOdd() {
 
   const tradeType = allEven ? "DIGITODD" : "DIGITEVEN";
   const pattern = allEven ? "Even" : "Odd";
-  
+
   evenOddResults.innerHTML = `Found 5 consecutive ${pattern} ticks<br>Placing ${numTrades} ${tradeType} trades...`;
 
   // Place the trades
@@ -761,12 +717,12 @@ async function runEvenOdd() {
     try {
       const result = await buyContract(symbol, tradeType, 1, stake, null, null, true);
       trades.push(result);
-      
+
       // Update results display
       const success = trades.filter(t => !t.error).length;
       const failed = trades.filter(t => t.error).length;
       evenOddResults.innerHTML = `Placing ${tradeType} trades...<br>Completed: ${success + failed}/${numTrades}<br>Success: ${success}, Failed: ${failed}`;
-      
+
       // Small delay between trades
       await new Promise(resolve => setTimeout(resolve, 500));
     } catch (error) {
@@ -778,7 +734,7 @@ async function runEvenOdd() {
   // Final results
   const success = trades.filter(t => !t.error).length;
   const failed = trades.filter(t => t.error).length;
-  
+
   evenOddResults.innerHTML = `
     <strong>Execution Complete</strong><br>
     Pattern: ${pattern} (5 consecutive)<br>
@@ -796,7 +752,7 @@ async function runEvenOdd() {
 function stopEvenOdd() {
   runningEO = false;
   if (tickWsEO) {
-    try { tickWsEO.close(); } catch (e) {}
+    try { tickWsEO.close(); } catch (e) { }
     tickWsEO = null;
   }
   document.getElementById("run-even-odd").textContent = "RUN";
@@ -806,7 +762,7 @@ function stopEvenOdd() {
 async function collectTicks(symbol, count = 50) {
   return new Promise((resolve) => {
     let collected = 0;
-    
+
     try {
       tickWsEO = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=61696");
     } catch (err) {
@@ -815,12 +771,12 @@ async function collectTicks(symbol, count = 50) {
     }
 
     tickWsEO.onopen = () => {
-      try { tickWsEO.send(JSON.stringify({ ticks: symbol, subscribe: 1 })); } catch (e) {}
+      try { tickWsEO.send(JSON.stringify({ ticks: symbol, subscribe: 1 })); } catch (e) { }
     };
 
     tickWsEO.onmessage = (e) => {
       if (!runningEO && collected >= count) {
-        try { tickWsEO.close(); } catch (e) {}
+        try { tickWsEO.close(); } catch (e) { }
         resolve();
         return;
       }
@@ -834,14 +790,14 @@ async function collectTicks(symbol, count = 50) {
         updateTickDisplay();
 
         if (collected >= count) {
-          try { tickWsEO.close(); } catch (e) {}
+          try { tickWsEO.close(); } catch (e) { }
           resolve();
         }
       }
     };
 
     tickWsEO.onerror = () => {
-      try { tickWsEO.close(); } catch (e) {}
+      try { tickWsEO.close(); } catch (e) { }
       resolve();
     };
   });
