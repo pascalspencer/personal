@@ -358,7 +358,10 @@ async function runBulkOnce(symbol) {
       const stake = stakeInput.value;
 
       // Get current token to repeat n times
-      const token = getCurrentToken ? getCurrentToken() : null;
+      let token = localStorage.getItem('active_token');
+      if (!token && getCurrentToken) {
+        token = getCurrentToken();
+      }
       if (!token) {
         popup('Error', 'No active token found', 3000);
         tradeLock = false;
