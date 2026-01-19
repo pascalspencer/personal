@@ -386,7 +386,7 @@ async function runBulkOnce(symbol) {
       }
 
       const details = `Executed ${n} bulk trades:<br><strong>${success} succeeded</strong>, <strong>${failed} failed</strong>`;
-      popup('Bulk API executed', details, 6000);
+      popup('Bulk Trade executed', details, 6000);
       tradeLock = false;
 
       try { tickWs.close(); } catch (e) { }
