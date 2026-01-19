@@ -374,11 +374,12 @@ async function runBulkOnce(symbol) {
       const bulkResp = await buyContractBulk(symbol, tradeType, 1, stake, barrier, n, tokens);
 
       let success = 0, failed = 0;
+      console.log("Bulk response debug:", bulkResp);
       if (bulkResp && bulkResp.buy_contract_for_multiple_accounts) {
         const results = bulkResp.buy_contract_for_multiple_accounts.result || [];
         results.forEach(r => {
-          if (r.buy) success++;
-          else failed++;
+          if (r.error) failed++;
+          else success++;
         });
       } else {
         failed = n;
