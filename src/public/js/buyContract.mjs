@@ -849,6 +849,28 @@ async function buyContractBulk(symbol, tradeType, duration, stake, barrier, coun
     return { error: { message: "WebSocket not connected" } };
   }
 
+  // Ensure authorized using the first token (assuming all tokens in bulk batch are same/authorized)
+  const tokenToUse = tokens && tokens.length > 0 ? tokens[0] : null;
+  if (tokenToUse) {
+    if (lastAuthorizedToken !== tokenToUse) {
+      try {
+        console.log("[TRACK] Authorizing for Bulk API", { token: tokenToUse.slice(0, 8) + '...' });
+        const authResp = await sendJson({ authorize: tokenToUse });
+        if (authResp?.error) {
+          console.warn("Bulk authorization failed:", authResp.error);
+          return { error: authResp.error };
+        }
+        lastAuthorizedToken = tokenToUse;
+      } catch (err) {
+        console.warn("Bulk authorize request error:", err);
+        return { error: { message: err.message } };
+      }
+    }
+  } else {
+    console.warn("No token provided for bulk trade authorization");
+    return { error: { message: "No token provided" } };
+  }
+
   // Construct parameter object for the contract
   const parameters = {
     symbol: symbol,
