@@ -84,7 +84,7 @@ document.addEventListener("DOMContentLoaded", () => {
     underDigit.innerHTML += `<option value="${i}">${i}</option>`;
   }
   // Make single and bulk toggles mutually exclusive: when one is checked,
-  // disable the other; when unchecked, re-enable the counterpart.
+  // disable the other; when unchecked, re-enable the counterpart. 
   function updateToggles() {
     if (singleToggle.checked) {
       bulkToggle.checked = false;
