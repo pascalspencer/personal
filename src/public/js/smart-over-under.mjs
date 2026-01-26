@@ -289,10 +289,14 @@ async function runSingleSequential(symbol) {
         Promise.resolve().then(async () => {
           // Execute the appropriate trade based on which condition was met
           let result;
-          if (isOverTrigger) {
+          if (isOverTrigger && !isUnderTrigger) {
             result = await executeTrade(symbol, "DIGITOVER", overDigit.value, quote);
-          } else if (isUnderTrigger) {
+          } else if (isUnderTrigger && !isOverTrigger) {
             result = await executeTrade(symbol, "DIGITUNDER", underDigit.value, quote);
+          } else if (isOverTrigger && isUnderTrigger) {
+            // Both conditions met - execute based on which is actually triggered by this specific digit
+            // This should rarely happen unless ranges overlap
+            result = await executeTrade(symbol, "DIGITOVER", overDigit.value, quote);
           }
 
           // Martingale Logic
@@ -363,16 +367,17 @@ async function runBulkOnce(symbol) {
       let tradeType = null;
       let barrier = 0;
 
-      // If over condition is met, trigger OVER trade
-      if (isOverTrigger) {
+      // Check which condition is actually met by this digit
+      if (isOverTrigger && !isUnderTrigger) {
         tradeType = "DIGITOVER";
         barrier = overDigit.value;
-      }
-      // If under condition is met, trigger UNDER trade
-      // Note: if both conditions are met (overlapping ranges), OVER takes priority
-      else if (isUnderTrigger) {
+      } else if (isUnderTrigger && !isOverTrigger) {
         tradeType = "DIGITUNDER";
         barrier = underDigit.value;
+      } else if (isOverTrigger && isUnderTrigger) {
+        // Both conditions met (overlapping ranges) - execute OVER
+        tradeType = "DIGITOVER";
+        barrier = overDigit.value;
       }
 
       if (!tradeType) return; // no trigger on this tick
