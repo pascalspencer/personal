@@ -279,19 +279,25 @@ async function runSingleSequential(symbol) {
 
       // --- INSTANT BUY EXECUTION ---
       if (digit < Number(overDigit.value)) {
-        tradeLock = true;
-        Promise.resolve().then(async () => {
-          await executeTrade(symbol, "DIGITOVER", overDigit.value, quote);
-          tradeLock = false;
-          ticksSeen++;
-        });
-      } else if (digit > Number(underDigit.value)) {
-        tradeLock = true;
-        Promise.resolve().then(async () => {
-          await executeTrade(symbol, "DIGITUNDER", underDigit.value, quote);
-          tradeLock = false;
-          ticksSeen++;
-        });
+        if (!tradeLock) {
+          tradeLock = true;
+          Promise.resolve().then(async () => {
+            await executeTrade(symbol, "DIGITOVER", overDigit.value, quote);
+            tradeLock = false;
+            ticksSeen++;
+          });
+        }
+      }
+
+      if (digit > Number(underDigit.value)) {
+        if (!tradeLock) {
+          tradeLock = true;
+          Promise.resolve().then(async () => {
+            await executeTrade(symbol, "DIGITUNDER", underDigit.value, quote);
+            tradeLock = false;
+            ticksSeen++;
+          });
+        }
       }
 
       if (ticksSeen >= Number(tickCount.value) || !running) {
@@ -341,12 +347,37 @@ async function runBulkOnce(symbol) {
       // Determine whether to open DIGITOVER or DIGITUNDER based on tick
       let tradeType = null;
       let barrier = 0;
-      if (digit < Number(overDigit.value)) {
+
+      // Independent checks - whichever is detected first (in code flow) will be set,
+      // but logic effectively handles "concurrent" opportunity.
+      // Since tradeLock is checked before, we just need to identify the valid trigger.
+
+      const isOver = digit < Number(overDigit.value);
+      const isUnder = digit > Number(underDigit.value);
+
+      if (isOver) {
         tradeType = "DIGITOVER";
         barrier = overDigit.value;
-      } else if (digit > Number(underDigit.value)) {
-        tradeType = "DIGITUNDER";
-        barrier = underDigit.value;
+      }
+
+      // If both conditions are met, this logic prioritizes the one that sets tradeType first 
+      // OR we can allow overwrite? "Whichever comes first triggers".
+      // Since we can't trigger both simultaneously in a single bulk op easily without complex logic:
+      // The user asked "whichever comes first triggers... Switch immediately any of these conditions are met".
+      // If `isOver` is true, we have a trigger. If `isUnder` is ALSO true (overlapped ranges), 
+      // we need to pick one. The original "else if" picked over clearly.
+      // Removing "else" means we check both. If we just use two ifs, the second one might overwrite the first.
+
+      if (isUnder) {
+        // If we haven't already triggered OR if we want to prioritize 'under' (unclear).
+        // But simplest interpretation of "concurrent... whichever comes first" is to check both.
+        // If both break, we just need a valid tradeType.
+        if (!tradeType) {
+          tradeType = "DIGITUNDER";
+          barrier = underDigit.value;
+        }
+        // Note: If both are true, the first one (Over) wins here because we only set if !tradeType.
+        // This is effectively 'priority' but code-wise they are independent checks.
       }
 
       if (!tradeType) return; // no trigger on this tick
@@ -419,16 +450,22 @@ async function checkTick(symbol) {
   const digit = Number(String(tick).slice(-1));
 
   if (digit < Number(overDigit.value)) {
-    tradeLock = true;
-    await executeTrade(symbol, "DIGITOVER", overDigit.value, tick);
+    if (!tradeLock) {
+      tradeLock = true;
+      await executeTrade(symbol, "DIGITOVER", overDigit.value, tick);
+      tradeLock = false;
+    }
   }
 
   if (digit > Number(underDigit.value)) {
-    tradeLock = true;
-    await executeTrade(symbol, "DIGITUNDER", underDigit.value, tick);
+    if (!tradeLock) {
+      tradeLock = true;
+      await executeTrade(symbol, "DIGITUNDER", underDigit.value, tick);
+      tradeLock = false; // ensure lock is released
+    }
   }
 
-  tradeLock = false;
+  // tradeLock = false; // logic moved inside to specific blocks to avoid premature unlock or overwrite
 }
 
 async function executeTrade(symbol, type = "DIGITOVER", barrier = 0, liveQuote = null) {
