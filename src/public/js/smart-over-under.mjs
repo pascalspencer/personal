@@ -280,50 +280,35 @@ async function runSingleSequential(symbol) {
       if (tradeLock) return;
 
       // --- INSTANT BUY EXECUTION ---
-      if (digit < Number(overDigit.value)) {
-        if (!tradeLock) {
-          tradeLock = true;
-          Promise.resolve().then(async () => {
-            const result = await executeTrade(symbol, "DIGITOVER", overDigit.value, quote);
+      // Check both conditions independently - whichever triggers first executes
+      const isOverTrigger = digit < Number(overDigit.value);
+      const isUnderTrigger = digit > Number(underDigit.value);
 
-            // Martingale Logic
-            if (result && result._meta) {
-              const profit = Number(result._meta.profit);
-              if (profit < 0) {
-                const newStake = (Number(stakeInput.value) * 2.1).toFixed(2);
-                stakeInput.value = newStake;
-              } else if (profit > 0) {
-                stakeInput.value = baseStake;
-              }
+      if (isOverTrigger || isUnderTrigger) {
+        tradeLock = true;
+        Promise.resolve().then(async () => {
+          // Execute the appropriate trade based on which condition was met
+          let result;
+          if (isOverTrigger) {
+            result = await executeTrade(symbol, "DIGITOVER", overDigit.value, quote);
+          } else if (isUnderTrigger) {
+            result = await executeTrade(symbol, "DIGITUNDER", underDigit.value, quote);
+          }
+
+          // Martingale Logic
+          if (result && result._meta) {
+            const profit = Number(result._meta.profit);
+            if (profit < 0) {
+              const newStake = (Number(stakeInput.value) * 2.1).toFixed(2);
+              stakeInput.value = newStake;
+            } else if (profit > 0) {
+              stakeInput.value = baseStake;
             }
+          }
 
-            tradeLock = false;
-            ticksSeen++;
-          });
-        }
-      }
-
-      if (digit > Number(underDigit.value)) {
-        if (!tradeLock) {
-          tradeLock = true;
-          Promise.resolve().then(async () => {
-            const result = await executeTrade(symbol, "DIGITUNDER", underDigit.value, quote);
-
-            // Martingale Logic
-            if (result && result._meta) {
-              const profit = Number(result._meta.profit);
-              if (profit < 0) {
-                const newStake = (Number(stakeInput.value) * 2.1).toFixed(2);
-                stakeInput.value = newStake;
-              } else if (profit > 0) {
-                stakeInput.value = baseStake;
-              }
-            }
-
-            tradeLock = false;
-            ticksSeen++;
-          });
-        }
+          tradeLock = false;
+          ticksSeen++;
+        });
       }
 
       if (ticksSeen >= Number(tickCount.value) || !running) {
@@ -370,40 +355,24 @@ async function runBulkOnce(symbol) {
 
       if (tradeLock) return;
 
-      // Determine whether to open DIGITOVER or DIGITUNDER based on tick
+      // Check both conditions independently and simultaneously
+      // Whichever condition is met first triggers the appropriate trade
+      const isOverTrigger = digit < Number(overDigit.value);
+      const isUnderTrigger = digit > Number(underDigit.value);
+
       let tradeType = null;
       let barrier = 0;
 
-      // Independent checks - whichever is detected first (in code flow) will be set,
-      // but logic effectively handles "concurrent" opportunity.
-      // Since tradeLock is checked before, we just need to identify the valid trigger.
-
-      const isOver = digit < Number(overDigit.value);
-      const isUnder = digit > Number(underDigit.value);
-
-      if (isOver) {
+      // If over condition is met, trigger OVER trade
+      if (isOverTrigger) {
         tradeType = "DIGITOVER";
         barrier = overDigit.value;
       }
-
-      // If both conditions are met, this logic prioritizes the one that sets tradeType first 
-      // OR we can allow overwrite? "Whichever comes first triggers".
-      // Since we can't trigger both simultaneously in a single bulk op easily without complex logic:
-      // The user asked "whichever comes first triggers... Switch immediately any of these conditions are met".
-      // If `isOver` is true, we have a trigger. If `isUnder` is ALSO true (overlapped ranges), 
-      // we need to pick one. The original "else if" picked over clearly.
-      // Removing "else" means we check both. If we just use two ifs, the second one might overwrite the first.
-
-      if (isUnder) {
-        // If we haven't already triggered OR if we want to prioritize 'under' (unclear).
-        // But simplest interpretation of "concurrent... whichever comes first" is to check both.
-        // If both break, we just need a valid tradeType.
-        if (!tradeType) {
-          tradeType = "DIGITUNDER";
-          barrier = underDigit.value;
-        }
-        // Note: If both are true, the first one (Over) wins here because we only set if !tradeType.
-        // This is effectively 'priority' but code-wise they are independent checks.
+      // If under condition is met, trigger UNDER trade
+      // Note: if both conditions are met (overlapping ranges), OVER takes priority
+      else if (isUnderTrigger) {
+        tradeType = "DIGITUNDER";
+        barrier = underDigit.value;
       }
 
       if (!tradeType) return; // no trigger on this tick
