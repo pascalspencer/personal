@@ -247,6 +247,8 @@ async function runSmart() {
 // Sequential buys driven by ticks: subscribe and trigger a buy on each incoming tick
 async function runSingleSequential(symbol) {
   ticksSeen = 0;
+  const baseStake = Number(stakeInput.value); // Store initial stake
+
   return new Promise((resolve) => {
     try {
       tickWs = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=61696");
@@ -282,7 +284,19 @@ async function runSingleSequential(symbol) {
         if (!tradeLock) {
           tradeLock = true;
           Promise.resolve().then(async () => {
-            await executeTrade(symbol, "DIGITOVER", overDigit.value, quote);
+            const result = await executeTrade(symbol, "DIGITOVER", overDigit.value, quote);
+
+            // Martingale Logic
+            if (result && result._meta) {
+              const profit = Number(result._meta.profit);
+              if (profit < 0) {
+                const newStake = (Number(stakeInput.value) * 2.1).toFixed(2);
+                stakeInput.value = newStake;
+              } else if (profit > 0) {
+                stakeInput.value = baseStake;
+              }
+            }
+
             tradeLock = false;
             ticksSeen++;
           });
@@ -293,7 +307,19 @@ async function runSingleSequential(symbol) {
         if (!tradeLock) {
           tradeLock = true;
           Promise.resolve().then(async () => {
-            await executeTrade(symbol, "DIGITUNDER", underDigit.value, quote);
+            const result = await executeTrade(symbol, "DIGITUNDER", underDigit.value, quote);
+
+            // Martingale Logic
+            if (result && result._meta) {
+              const profit = Number(result._meta.profit);
+              if (profit < 0) {
+                const newStake = (Number(stakeInput.value) * 2.1).toFixed(2);
+                stakeInput.value = newStake;
+              } else if (profit > 0) {
+                stakeInput.value = baseStake;
+              }
+            }
+
             tradeLock = false;
             ticksSeen++;
           });
