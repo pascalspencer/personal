@@ -129,28 +129,41 @@ function stopStrategy(msg) {
 function startTickStream() {
   if (tickWs) return;
 
-  const submarket = document.getElementById("submarket").value;
+  const submarket = document.getElementById("submarket")?.value;
   if (!submarket) return;
 
-  tickWs = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${derivAppID}`);
+  try {
+    tickWs = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${derivAppID}`);
 
-  tickWs.onopen = () => {
-    tickWs.send(JSON.stringify({ ticks: submarket, subscribe: 1 }));
-  };
+    tickWs.onopen = () => {
+      console.log(`[SuperMatch] Tick stream connected for ${submarket}`);
+      tickWs.send(JSON.stringify({ ticks: submarket, subscribe: 1 }));
+    };
 
-  tickWs.onmessage = (msg) => {
-    const data = JSON.parse(msg.data);
-    if (data.tick) {
-      processTick(data.tick);
-    }
-  };
+    tickWs.onmessage = (msg) => {
+      const data = JSON.parse(msg.data);
+      if (data.tick) {
+        processTick(data.tick);
+      }
+    };
 
-  tickWs.onclose = () => {
-    tickWs = null;
-    if (document.getElementById("super-matches-panel").style.display !== "none") {
-      setTimeout(startTickStream, 2000);
-    }
-  };
+    tickWs.onerror = (err) => {
+      console.error("[SuperMatch] Tick stream error:", err);
+    };
+
+    tickWs.onclose = () => {
+      console.warn("[SuperMatch] Tick stream closed. Reconnecting...");
+      tickWs = null;
+      // Only reconnect if the panel is visible or strategy is running
+      const smPanel = document.getElementById("super-matches-panel");
+      if (smPanel && smPanel.style.display !== "none") {
+        setTimeout(startTickStream, 2000);
+      }
+    };
+  } catch (e) {
+    console.error("[SuperMatch] Failed to start tick stream:", e);
+    setTimeout(startTickStream, 5000);
+  }
 }
 
 function restartTickStream() {
@@ -284,36 +297,60 @@ async function executeMatch(digit) {
 async function handleTradeExecution(contractId) {
   awaitingHedge = true;
 
-  // Simplified result check for strategy flow
-  // In a real scenario, we'd listen to the WS from buyContract or livePopup
-  // For this pattern, we'll poll proposal_open_contract once
+  const token = getCurrentToken();
+  if (!token) {
+    awaitingHedge = false;
+    return;
+  }
 
-  const checkStatus = setInterval(async () => {
-    const token = getCurrentToken();
-    const ws = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${derivAppID}`);
+  const ws = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${derivAppID}`);
+  let resolved = false;
 
-    ws.onopen = () => {
-      ws.send(JSON.stringify({ authorize: token }));
-      ws.send(JSON.stringify({ proposal_open_contract: 1, contract_id: contractId }));
-    };
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ authorize: token }));
+  };
 
-    ws.onmessage = async (msg) => {
-      const data = JSON.parse(msg.data);
-      if (data.proposal_open_contract && data.proposal_open_contract.is_sold) {
-        const contract = data.proposal_open_contract;
-        clearInterval(checkStatus);
-        ws.close();
+  ws.onmessage = async (msg) => {
+    const data = JSON.parse(msg.data);
 
-        if (contract.profit > 0) {
-          stopStrategy("✅ WIN - Session Complete");
-          sessionWon = true;
-        } else {
-          statusDisplay.innerHTML = `❌ Match Lost. Deploying HEDGE...`;
-          await executeHedge(lastMatchDigit);
-        }
+    if (data.msg_type === 'authorize' && !data.error) {
+      ws.send(JSON.stringify({ proposal_open_contract: 1, contract_id: contractId, subscribe: 1 }));
+    }
+
+    if (data.proposal_open_contract && data.proposal_open_contract.is_sold) {
+      const contract = data.proposal_open_contract;
+      if (resolved) return;
+      resolved = true;
+      ws.close();
+
+      if (contract.profit > 0) {
+        stopStrategy("✅ WIN - Session Complete");
+        sessionWon = true;
+      } else {
+        statusDisplay.innerHTML = `❌ Match Lost. Deploying HEDGE...`;
+        await executeHedge(lastMatchDigit);
       }
-    };
-  }, 2000);
+    }
+  };
+
+  ws.onerror = (err) => {
+    console.error("[SuperMatch] Contract monitor error:", err);
+    if (!resolved) {
+      resolved = true;
+      ws.close();
+      awaitingHedge = false;
+    }
+  };
+
+  // Safety timeout: if no result after 60 seconds, unlock
+  setTimeout(() => {
+    if (!resolved) {
+      console.warn("[SuperMatch] Contract monitor timed out.");
+      resolved = true;
+      ws.close();
+      awaitingHedge = false;
+    }
+  }, 60000);
 }
 
 async function executeHedge(digit) {

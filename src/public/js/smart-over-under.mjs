@@ -160,12 +160,37 @@ function stopSmart(msg) {
 function startTickStream() {
   if (tickWs) return;
   const submarket = document.getElementById("submarket")?.value || "R_100";
-  tickWs = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${derivAppID}`);
-  tickWs.onopen = () => tickWs.send(JSON.stringify({ ticks: submarket, subscribe: 1 }));
-  tickWs.onmessage = (msg) => {
-    const data = JSON.parse(msg.data);
-    if (data.tick) processTick(data.tick);
-  };
+
+  try {
+    tickWs = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${derivAppID}`);
+
+    tickWs.onopen = () => {
+      console.log(`[Smart] Tick stream connected for ${submarket}`);
+      tickWs.send(JSON.stringify({ ticks: submarket, subscribe: 1 }));
+    };
+
+    tickWs.onmessage = (msg) => {
+      const data = JSON.parse(msg.data);
+      if (data.tick) processTick(data.tick);
+    };
+
+    tickWs.onerror = (err) => {
+      console.error("[Smart] Tick stream error:", err);
+    };
+
+    tickWs.onclose = () => {
+      console.warn("[Smart] Tick stream closed. Reconnecting...");
+      tickWs = null;
+      // Only reconnect if the panel is visible or strategy is running
+      const panel = document.getElementById("smart-over-under");
+      if (panel && panel.style.display !== "none") {
+        setTimeout(startTickStream, 2000);
+      }
+    };
+  } catch (e) {
+    console.error("[Smart] Failed to start tick stream:", e);
+    setTimeout(startTickStream, 5000);
+  }
 }
 
 function restartTickStream() {
