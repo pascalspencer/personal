@@ -39,7 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
 
             <div class="tick-header" style="margin-bottom: 8px; font-size: 0.9rem; color: #666;">Live Tick Stream</div>
-            <div id="tick-grid-sou" style="display: flex; gap: 4px; overflow-x: hidden; height: 35px; align-items: center; background: #f9f9f9; padding: 5px; border-radius: 4px; border: 1px solid #eee; width: 100%; box-sizing: border-box;">
+            <div class="tick-grid" id="tick-grid-sou" style="display: flex; gap: 4px; overflow-x: hidden; height: 35px; align-items: center; background: #f9f9f9; padding: 5px; border-radius: 4px; border: 1px solid #eee;">
               <!-- Ticks flow here -->
             </div>
           </div>
@@ -308,21 +308,46 @@ function updateUI() {
     digitStatsDisplay.appendChild(card);
   });
 
-  tickGrid.innerHTML = "";
-  // Show a fixed window of 20 ticks to prevent stretching
-  const viewTicks = tickHistory.slice(-20);
-  viewTicks.forEach((t, i) => {
-    const div = document.createElement("div");
-    const isLast = i === viewTicks.length - 1;
-    div.style.cssText = `
-            min-width: 25px; max-width: 25px; height: 25px; 
-            display: flex; align-items: center; justify-content: center;
-            font-size: 0.85rem; border-radius: 4px; flex-shrink: 0;
-            background: ${isLast ? '#2196f3' : '#fff'}; color: ${isLast ? '#fff' : '#333'};
-            border: 1px solid ${isLast ? '#2196f3' : '#ddd'}; font-weight: ${isLast ? 'bold' : 'normal'};
-        `;
-    div.textContent = t;
-    tickGrid.appendChild(div);
-  });
-  tickGrid.scrollLeft = tickGrid.scrollWidth;
+  // 2. Update Tick Stream (maintain static display)
+  const maxSlots = 25;
+  const recentTicks = tickHistory.slice(-maxSlots);
+
+  // Initialize slots if not already present
+  if (tickGrid.children.length !== maxSlots) {
+    tickGrid.innerHTML = "";
+    for (let i = 0; i < maxSlots; i++) {
+      const slot = document.createElement("div");
+      slot.className = "tick-item";
+      slot.style.cssText = `
+        width: 25px; height: 25px; display: flex; align-items: center; justify-content: center;
+        font-size: 0.85rem; border-radius: 4px; flex-shrink: 0;
+        transition: all 0.2s ease; border: 1px solid #eee; background: #fff;
+      `;
+      tickGrid.appendChild(slot);
+    }
+  }
+
+  // Update content of existing nodes
+  const slots = tickGrid.children;
+  for (let i = 0; i < maxSlots; i++) {
+    const slot = slots[i];
+    // Offset for filling from right if history < maxSlots
+    const tickIdx = i - (maxSlots - recentTicks.length);
+    const val = recentTicks[tickIdx];
+
+    if (val !== undefined) {
+      const isLast = i === maxSlots - 1;
+      slot.textContent = val;
+      slot.style.background = isLast ? '#2196f3' : '#fff';
+      slot.style.color = isLast ? '#fff' : '#333';
+      slot.style.borderColor = isLast ? '#2196f3' : '#ddd';
+      slot.style.fontWeight = isLast ? 'bold' : 'normal';
+      slot.style.visibility = "visible";
+    } else {
+      slot.textContent = "";
+      slot.style.background = "transparent";
+      slot.style.borderColor = "transparent";
+      slot.style.visibility = "hidden";
+    }
+  }
 }
