@@ -1,7 +1,6 @@
 /**
  * Live Popup Component
- * Displays real-time contract updates using WebSocket subscriptions
- * Based on the pattern from Example/packages/bot-skeleton/src/services/tradeEngine/trade/OpenContract.js
+ * Displays simplified contract info: trade type, stake, and payout only
  */
 
 import { getCurrentToken } from './popupMessages.mjs';
@@ -10,9 +9,9 @@ const derivAppID = 61696;
 const activePopups = new Map(); // Track active contract subscriptions
 
 /**
- * Show a live-updating popup for a contract
+ * Show a simplified popup for a contract
  * @param {string} contractId - The contract ID to subscribe to
- * @param {object} initialData - Initial contract data (stake, buyPrice, payout, etc.)
+ * @param {object} initialData - Initial contract data (stake, payout, tradeType)
  */
 export function showLivePopup(contractId, initialData = {}) {
     // Don't create duplicate popups for the same contract
@@ -42,23 +41,15 @@ export function showLivePopup(contractId, initialData = {}) {
 
     popup.appendChild(header);
 
-    // Body with trade details
+    // Body with ONLY stake and payout
     const body = document.createElement('div');
     body.className = 'popup-body';
 
     const stakeRow = createRow('Stake', `$${Number(initialData.stake || 0).toFixed(2)}`);
-    const buyPriceRow = createRow('Buy Price', `$${Number(initialData.buyPrice || 0).toFixed(2)}`);
-    const currentPriceRow = createRow('Current Price', `$${Number(initialData.buyPrice || 0).toFixed(2)}`, 'current-price');
     const payoutRow = createRow('Payout', `$${Number(initialData.payout || 0).toFixed(2)}`);
-    const profitRow = createRow('Profit/Loss', '$0.00', 'profit-loss');
-    const balanceRow = createRow('Balance', initialData.balance ? `$${Number(initialData.balance).toFixed(2)}` : '...', 'balance');
 
     body.appendChild(stakeRow);
-    body.appendChild(buyPriceRow);
-    body.appendChild(currentPriceRow);
     body.appendChild(payoutRow);
-    body.appendChild(profitRow);
-    body.appendChild(balanceRow);
 
     popup.appendChild(body);
 
@@ -80,7 +71,7 @@ export function showLivePopup(contractId, initialData = {}) {
     overlay.appendChild(popup);
     document.body.appendChild(overlay);
 
-    // WebSocket subscription for live updates
+    // WebSocket subscription for status updates only
     let ws = null;
     let reconnectAttempts = 0;
     const maxReconnects = 3;
@@ -100,7 +91,7 @@ export function showLivePopup(contractId, initialData = {}) {
                 ws.send(JSON.stringify({ authorize: token }));
             }
 
-            // Subscribe to contract updates
+            // Subscribe to contract updates (for status only)
             ws.send(JSON.stringify({
                 proposal_open_contract: 1,
                 contract_id: contractId,
@@ -113,15 +104,7 @@ export function showLivePopup(contractId, initialData = {}) {
                 const msg = JSON.parse(evt.data);
 
                 if (msg.proposal_open_contract) {
-                    updatePopupWithContractData(popup, msg.proposal_open_contract, initialData);
-                }
-
-                // Also listen for balance updates
-                if (msg.balance) {
-                    const balanceValue = balanceRow.querySelector('.row-value');
-                    if (balanceValue) {
-                        balanceValue.textContent = `$${Number(msg.balance.balance).toFixed(2)}`;
-                    }
+                    updatePopupStatus(popup, msg.proposal_open_contract);
                 }
             } catch (err) {
                 console.error('Error parsing live popup message:', err);
@@ -153,39 +136,14 @@ export function showLivePopup(contractId, initialData = {}) {
 }
 
 /**
- * Update popup content with live contract data
+ * Update popup status badge only
  */
-function updatePopupWithContractData(popup, contract, initialData) {
+function updatePopupStatus(popup, contract) {
     const statusBadge = popup.querySelector('.status-badge');
-    const currentPriceValue = popup.querySelector('.current-price .row-value');
-    const profitLossRow = popup.querySelector('.profit-loss');
-    const profitLossValue = profitLossRow.querySelector('.row-value');
 
-    // Update current price (bid_price or current_spot)
-    const currentPrice = contract.bid_price || contract.current_spot || contract.buy_price;
-    if (currentPriceValue && currentPrice !== undefined) {
-        currentPriceValue.textContent = `$${Number(currentPrice).toFixed(2)}`;
-    }
-
-    // Update profit/loss
-    const profit = contract.profit !== undefined ? Number(contract.profit) : 0;
-    if (profitLossValue) {
-        if (profit > 0) {
-            profitLossValue.innerHTML = `<span class="profit">+$${profit.toFixed(2)}</span>`;
-            profitLossRow.classList.remove('negative');
-            profitLossRow.classList.add('positive');
-        } else if (profit < 0) {
-            profitLossValue.innerHTML = `<span class="loss">-$${Math.abs(profit).toFixed(2)}</span>`;
-            profitLossRow.classList.remove('positive');
-            profitLossRow.classList.add('negative');
-        } else {
-            profitLossValue.textContent = '$0.00';
-            profitLossRow.classList.remove('positive', 'negative');
-        }
-    }
-
-    // Update status badge
+    // Update status badge based on contract state
     if (contract.is_sold || contract.is_expired) {
+        const profit = contract.profit !== undefined ? Number(contract.profit) : 0;
         const isWin = profit >= 0;
         statusBadge.textContent = isWin ? 'WON' : 'LOST';
         statusBadge.className = `status-badge ${isWin ? 'status-won' : 'status-lost'}`;
