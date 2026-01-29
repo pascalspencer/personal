@@ -1,5 +1,6 @@
 import { buyContract, buyContractBulk } from "./buyContract.mjs";
 import { getCurrentToken } from './popupMessages.mjs';
+import { showLivePopup } from './livePopup.mjs';
 
 let running = false;
 let ticksSeen = 0;
@@ -84,7 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
     underDigit.innerHTML += `<option value="${i}">${i}</option>`;
   }
   // Make single and bulk toggles mutually exclusive: when one is checked,
-  // disable the other; when unchecked, re-enable the counterpart. 
+  // disable the other; when unchecked, re-enable the counterpart.
   function updateToggles() {
     if (singleToggle.checked) {
       bulkToggle.checked = false;
@@ -556,125 +557,32 @@ async function executeTrade(symbol, type = "DIGITOVER", barrier = 0, liveQuote =
     return resp;
   }
 
+  // Show LIVE popup with real-time updates (using metadata from buyContract)
   try {
-    // helpers mirrored from buyContract.mjs for consistent parsing
-    const parseNumeric = (v) => {
-      if (v === null || typeof v === 'undefined') return null;
-      if (typeof v === 'number') return v;
-      const n = Number(v);
-      return Number.isNaN(n) ? null : n;
-    };
-
-
-    // Prefer metadata computed inside buyContract where possible (ensures same delays/reads)
     const meta = resp && resp._meta ? resp._meta : null;
-    if (meta) {
-      const stakeAmt = Number(meta.stakeAmount || stakeInput.value || 0).toFixed(2);
-      const buyPrice = Number(meta.buyPrice || 0).toFixed(2);
-      const payout = Number(meta.payout || 0).toFixed(2);
-      let profit = Number(typeof meta.profit !== 'undefined' ? meta.profit : 0);
+    const buyInfo = resp.buy || resp || {};
 
-      // If buyContract didn't supply a final endingBalance, try to fetch one now
-      let endingBalanceLocal = (meta.endingBalance !== null && typeof meta.endingBalance !== 'undefined') ? meta.endingBalance : null;
-
-      if (endingBalanceLocal !== null) {
-        const refStart = (meta.startingBalance !== null && typeof meta.startingBalance !== 'undefined') ? meta.startingBalance : startingBalance;
-        if (refStart !== null) profit = +(endingBalanceLocal - refStart).toFixed(2);
-      }
-
-      const profitStr = Number(profit).toFixed(2);
-      const bal = (endingBalanceLocal !== null) ? `<br>Account balance: $${Number(endingBalanceLocal).toFixed(2)}` : ((meta.endingBalance !== null && typeof meta.endingBalance !== 'undefined') ? `<br>Account balance: $${Number(meta.endingBalance).toFixed(2)}` : '');
-
-      let resultHtml = '';
-      if (Number(profitStr) > 0) {
-        resultHtml = `Result: <span class="profit">+ $${Number(profitStr).toFixed(2)}</span>`;
-      } else if (Number(profitStr) < 0) {
-        const lossDisplay = (meta.lossToDisplay && Number(meta.lossToDisplay) > 0) ? Number(meta.lossToDisplay) : Math.abs(Number(profitStr));
-        resultHtml = `Result: <span class="loss">- $${Number(lossDisplay).toFixed(2)}</span>`;
-      } else {
-        resultHtml = `Result: <span class="amount">$0.00</span>`;
-      }
-
-      const details = `Type: ${type}<br>Stake: $${stakeAmt}${barrier ? `<br>Barrier: ${barrier}` : ''}<br>Buy price: $${buyPrice}<br>Payout: $${payout}<br>${resultHtml}${bal}`;
-      popup('Trade Result', details, 8000);
-    } else {
-      // fallback: reproduce buyContract's balance/profit heuristics locally
-      const buyInfo = resp.buy || resp || {};
-      const stakeAmt = Number(stakeInput.value || 0) || 0;
-      const buyPrice = Number(buyInfo.buy_price ?? buyInfo.price ?? buyInfo.ask_price ?? 0) || 0;
-      const payout = Number(buyInfo.payout ?? buyInfo.payout_amount ?? buyInfo.payoutValue ?? 0) || 0;
-
-      // attempt to get starting balance from response fields if we didn't capture it before buy
-      if (startingBalance === null) {
-        startingBalance = firstNumeric([
-          buyInfo.balance_before,
-          resp.balance_before,
-          resp.buy?.balance_before,
-          resp.buy?.balance,
-          resp.balance
-        ]);
-      }
-
-      // ending balance: try response fields first; if not present, try fetching balance with small delays
-      let endingBalance = firstNumeric([
-        resp.buy?.balance_after,
-        resp.balance,
-        resp.account_balance,
-        resp.buy?.account_balance,
-      ]);
-
-      if (endingBalance === null) {
-        // wait a bit and try to fetch balance from WS (one or two attempts)
-        await new Promise(r => setTimeout(r, 1000));
-        const bal1 = await fetchBalanceOnce(2500);
-        if (bal1) endingBalance = firstNumeric([bal1.balance?.balance, bal1.account_balance, bal1.balance_after, bal1.buy?.balance]);
-
-        if (endingBalance === null) {
-          // one more delayed attempt (mirrors buyContract extra attempt)
-          await new Promise(r => setTimeout(r, 1000));
-          const bal2 = await fetchBalanceOnce(2500);
-          if (bal2) endingBalance = firstNumeric([bal2.balance?.balance, bal2.account_balance, bal2.balance_after, bal2.buy?.balance]);
-        }
-      }
-
-      let profit = null;
-      if (startingBalance !== null && endingBalance !== null) {
-        profit = endingBalance - startingBalance;
-      } else if (endingBalance !== null && startingBalance === null) {
-        // best-effort: use payout - stake when balance delta not available
-        profit = payout - stakeAmt;
-      } else if (!Number.isNaN(payout)) {
-        profit = payout - stakeAmt;
-      } else {
-        profit = 0;
-      }
-      profit = +Number(profit || 0).toFixed(2);
-
-      // Determine loss display similar to buyContract
-      let lossToDisplay = null;
-      const referenceBalance = (startingBalance !== null) ? startingBalance : null;
-      if (referenceBalance !== null && endingBalance !== null && endingBalance + 1e-9 < referenceBalance) {
-        lossToDisplay = Number(stakeAmt);
-        profit = -Math.abs(+(referenceBalance - endingBalance).toFixed(2));
-      }
-
-      let resultHtml = '';
-      if (profit > 0) {
-        resultHtml = `Result: <span class="profit">+ $${profit.toFixed(2)}</span>`;
-      } else if (lossToDisplay > 0 || profit < 0) {
-        const displayLoss = (lossToDisplay && Number(lossToDisplay) > 0) ? Number(lossToDisplay) : Math.abs(profit);
-        resultHtml = `Result: <span class="loss">- $${Number(displayLoss).toFixed(2)}</span>`;
-      } else {
-        resultHtml = `Result: <span class="amount">$0.00</span>`;
-      }
-
-      const bal = endingBalance !== null ? `<br>Account balance: $${Number(endingBalance).toFixed(2)}` : '';
-
-      const details = `Type: ${type}<br>Stake: $${Number(stakeAmt).toFixed(2)}${barrier ? `<br>Digit: ${barrier}` : ''}<br>Buy price: $${Number(buyPrice).toFixed(2)}`;
-      popup('Trade Result', details, 8000);
+    if (meta && buyInfo.contract_id) {
+      // Use live popup for real-time updates
+      showLivePopup(buyInfo.contract_id, {
+        tradeType: type,
+        stake: Number(meta.stakeAmount || stakeInput.value || 0),
+        buyPrice: Number(meta.buyPrice || 0),
+        payout: Number(meta.payout || 0),
+        balance: meta.endingBalance || meta.startingBalance
+      });
+    } else if (buyInfo.contract_id) {
+      // Fallback: use live popup with basic data
+      showLivePopup(buyInfo.contract_id, {
+        tradeType: type,
+        stake: Number(stakeInput.value || 0),
+        buyPrice: Number(buyInfo.buy_price || buyInfo.price || 0),
+        payout: Number(buyInfo.payout || 0),
+        balance: null
+      });
     }
   } catch (e) {
-    popup('Trade Result', `Type: ${type}<br>Stake: $${Number(stakeInput.value || 0).toFixed(2)}`, 5000);
+    console.warn('Failed to show live popup:', e);
   }
 
   return resp;

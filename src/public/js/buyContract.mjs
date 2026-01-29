@@ -1,5 +1,6 @@
 import { getCurrentToken } from './popupMessages.mjs';
 import { showLoginidPrompt } from './sign-in.mjs';
+import { showLivePopup } from './livePopup.mjs';
 
 // --- WebSocket connection setup ---
 const derivAppID = 61696;
@@ -701,12 +702,9 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     }
   }
 
-  // Capture ending balance after buy
-  await new Promise(r => setTimeout(r, 1000));
-
+  // Capture ending balance after buy - INSTANT (no delays)
   let endingBalance = null;
   if (buyResp.buy && (buyResp.buy.balance_after !== undefined || buyResp.buy.account_balance !== undefined)) {
-    await new Promise(r => setTimeout(r, 1000));
     const finalBal = await sendJson({ balance: 1 });
     if (finalBal) {
       endingBalance = firstNumeric([finalBal.balance.balance, finalBal.account_balance, finalBal.buy?.balance, finalBal.buy?.account_balance]);
@@ -718,22 +716,16 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
   // If we have both balances and the ending balance decreased by at least a tiny epsilon, treat as a loss
   const isBalanceLoss = (startingBalance !== null && endingBalance !== null && endingBalance + 1e-9 < startingBalance);
 
-  // --- Show popup with profit / loss and low-balance info ---
+  // --- Show LIVE popup with real-time balance and profit/loss updates ---
   try {
     const buyInfo = buyResp.buy || buyResp || {};
-    // stake is the amount the user attempted to place
     const stakeAmount = Number(price) || 0;
-
-    // buy price (amount charged) — prefer explicit fields, fall back to askPrice
     const buyPrice = Number(
       buyInfo.buy_price ?? buyInfo.price ?? buyInfo.buy_price ?? askPrice ?? 0
     ) || 0;
-
-    // payout — total return if contract wins (usually includes stake)
     const payout = Number(buyInfo.payout ?? buyInfo.payout_amount ?? buyInfo.payoutValue ?? 0) || 0;
 
-    // Compute profit as balance delta when possible (ending - starting).
-    // Fallback to comparing endingBalance with balanceCandidate, then to payout-stake.
+    // Compute initial profit
     let profit = null;
     if (startingBalance !== null && endingBalance !== null) {
       profit = endingBalance - startingBalance;
@@ -746,80 +738,25 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     }
     profit = +profit.toFixed(2);
 
-    // Determine lossToDisplay: if endingBalance is lower than a reference
-    // (prefer startingBalance, otherwise balanceCandidate) then display the
-    // stake as the loss per user's request.
     let lossToDisplay = null;
     const referenceBalance = (startingBalance !== null) ? startingBalance : balanceCandidate;
     if (referenceBalance !== null && endingBalance !== null && endingBalance + 1e-9 < referenceBalance) {
       lossToDisplay = Number(stakeAmount);
-      // Ensure profit reflects the negative delta for internal logic
       profit = -Math.abs(+(referenceBalance - endingBalance).toFixed(2));
     }
 
-    // Build popup content (skip if caller requested suppression)
-    if (!suppressPopup) {
-      const overlay = document.createElement('div');
-      overlay.className = 'trade-popup-overlay';
-
-      const popup = document.createElement('div');
-      popup.className = 'trade-popup';
-
-      const title = document.createElement('h3');
-      title.textContent = 'Trade Result';
-      popup.appendChild(title);
-
-      const stakeP = document.createElement('p');
-      stakeP.innerHTML = `Stake: <span class="amount">$${Number(price).toFixed(2)}</span>`;
-      popup.appendChild(stakeP);
-
-      const buyP = document.createElement('p');
-      buyP.innerHTML = `Buy price: <span class="amount">$${Number(buyPrice).toFixed(2)}</span>`;
-      popup.appendChild(buyP);
-
-      const payoutP = document.createElement('p');
-      payoutP.innerHTML = `Payout: <span class="amount">$${Number(payout).toFixed(2)}</span>`;
-      popup.appendChild(payoutP);
-
-      const profitP = document.createElement('p');
-
-      if (profit > 0) {
-        profitP.innerHTML = `Result: <span class="profit">+ $${profit.toFixed(2)}</span>`;
-      } else if (lossToDisplay > 0) {
-        profitP.innerHTML = `Result: <span class="loss">- $${Number(stakeAmount).toFixed(2)}</span>`;
-      } else {
-        profitP.innerHTML = `Result: <span class="amount">$0.00</span>`;
-      }
-      popup.appendChild(profitP);
-
-      if (balanceCandidate !== null) {
-        const balP = document.createElement('p');
-        balP.innerHTML = `Account balance: <span class="amount">$${Number(endingBalance).toFixed(2)}</span>`;
-        popup.appendChild(balP);
-
-        if (Number(balanceCandidate) < Number(price)) {
-          const low = document.createElement('p');
-          low.className = 'low-balance';
-          low.textContent = `Low balance compared with stake ($${Number(price).toFixed(2)}). Please top up.`;
-          popup.appendChild(low);
-        }
-      }
-
-      const closeBtn = document.createElement('a');
-      closeBtn.className = 'close-btn';
-      closeBtn.href = '#';
-      closeBtn.textContent = 'Close';
-      closeBtn.addEventListener('click', (ev) => { ev.preventDefault(); overlay.remove(); });
-      popup.appendChild(closeBtn);
-
-      overlay.appendChild(popup);
-      try { document.body.appendChild(overlay); } catch (e) { console.warn('Could not show popup:', e); }
-
-      // Auto-dismiss after 8 seconds
-      setTimeout(() => { try { overlay.remove(); } catch (e) { } }, 10000);
+    // Show LIVE popup (skip if caller requested suppression)
+    if (!suppressPopup && buyInfo.contract_id) {
+      showLivePopup(buyInfo.contract_id, {
+        tradeType: tradeType,
+        stake: stakeAmount,
+        buyPrice: buyPrice,
+        payout: payout,
+        balance: endingBalance || balanceCandidate
+      });
     }
   } catch (err) {
-    console.warn('Could not build trade popup:', err);
+    console.warn('Could not show live popup:', err);
   }
 
   // Attach computed metadata so callers can render identical popups
