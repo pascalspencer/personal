@@ -39,7 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
 
             <div class="tick-header" style="margin-bottom: 8px; font-size: 0.9rem; color: #666;">Live Tick Stream</div>
-            <div class="tick-grid" id="tick-grid-sou" style="display: flex; gap: 4px; overflow-x: hidden; height: 35px; align-items: center; background: #f9f9f9; padding: 5px; border-radius: 4px; border: 1px solid #eee;">
+            <div id="tick-grid-sou" style="display: flex; gap: 4px; overflow-x: hidden; height: 35px; align-items: center; background: #f9f9f9; padding: 5px; border-radius: 4px; border: 1px solid #eee; width: 100%; box-sizing: border-box;">
               <!-- Ticks flow here -->
             </div>
           </div>
@@ -309,11 +309,14 @@ function updateUI() {
   });
 
   tickGrid.innerHTML = "";
-  tickHistory.slice(-25).forEach((t, i, arr) => {
+  // Show a fixed window of 20 ticks to prevent stretching
+  const viewTicks = tickHistory.slice(-20);
+  viewTicks.forEach((t, i) => {
     const div = document.createElement("div");
-    const isLast = i === arr.length - 1;
+    const isLast = i === viewTicks.length - 1;
     div.style.cssText = `
-            min-width: 25px; height: 25px; display: flex; align-items: center; justify-content: center;
+            min-width: 25px; max-width: 25px; height: 25px; 
+            display: flex; align-items: center; justify-content: center;
             font-size: 0.85rem; border-radius: 4px; flex-shrink: 0;
             background: ${isLast ? '#2196f3' : '#fff'}; color: ${isLast ? '#fff' : '#333'};
             border: 1px solid ${isLast ? '#2196f3' : '#ddd'}; font-weight: ${isLast ? 'bold' : 'normal'};
