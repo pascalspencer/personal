@@ -31,7 +31,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="smart-form">
           <div class="analysis-section" style="margin-bottom: 20px;">
             <div class="tick-header" style="margin-bottom: 10px; font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 5px;">
-              Digit Heat Map (Weighted last ${HISTORY_LIMIT} ticks)
+              (Last ${HISTORY_LIMIT} ticks)
             </div>
             
             <div id="sou-digit-stats" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px;">

@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="smart-card">
                 <div class="smart-header">
                     <h2 class="smart-title">Super Matches</h2>
-                    <p class="smart-sub">Digit Match + Hedge Strategy</p>
+                    <p class="smart-sub">Digit Match</p>
                 </div>
 
                 <div class="smart-form">
