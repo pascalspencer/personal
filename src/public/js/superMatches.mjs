@@ -207,22 +207,48 @@ function isVolatile() {
 
 function selectMatchDigit() {
   const minFrequency = Number(absenceInput.value);
-  if (tickHistory.length < 50) return null; // Wait for some data
+  const dataSize = tickHistory.length;
 
-  const stats = [...Array(10).keys()].map(d => {
-    const count = tickHistory.filter(x => x === d).length;
-    const freq = (count / tickHistory.length) * 100;
-    return { digit: d, freq };
+  // Need at least a small sample (reduced from 50 to 15 for faster start)
+  if (dataSize < 15) return null;
+
+  // 1. Calculate weighted frequency
+  // Newer ticks contribute more to the "Hot" score
+  const scores = Array(10).fill(0);
+
+  tickHistory.forEach((digit, index) => {
+    // Weight increases linearly from 0.5 (oldest) to 1.5 (newest)
+    const weight = 0.5 + (index / dataSize);
+    scores[digit] += weight;
   });
 
-  // Sort by frequency descending
-  stats.sort((a, b) => b.freq - a.freq);
+  // Convert scores to a relative "Heat" percentage for UI display consistency
+  const totalScore = scores.reduce((a, b) => a + b, 0);
+  const heatStats = scores.map((score, digit) => ({
+    digit,
+    heat: (score / totalScore) * 100,
+    // Check if appeared in the very last 5 ticks (Trend detection)
+    recentCount: tickHistory.slice(-5).filter(x => x === digit).length
+  }));
 
-  const best = stats[0];
+  // Sort by Heat descending
+  heatStats.sort((a, b) => b.heat - a.heat);
 
-  // Return best if it meets the frequency threshold
-  if (best.freq >= minFrequency) {
-    return best.digit;
+  const best = heatStats[0];
+
+  // Best Judgment Criteria:
+  // 1. Must exceed the Min Frequency (user setting)
+  // 2. Stronger preference if it appeared in the last 5 ticks (momentum)
+  if (best.heat >= minFrequency) {
+    // Prediction logic: if it's hot AND has appeared recently, it's a high probability "Repeat"
+    if (best.recentCount >= 1) {
+      return best.digit;
+    }
+
+    // Fallback: If it's EXTREMELY hot (e.g., > 25%), trade it anyway
+    if (best.heat > 25) {
+      return best.digit;
+    }
   }
 
   return null;
@@ -319,32 +345,44 @@ function updateUI() {
   // 1. Update Digit Stats Grid (Symmetrical 2x5)
   absenceDisplay.innerHTML = "";
   const minFrequency = Number(absenceInput.value);
+  const dataSize = tickHistory.length;
 
-  const stats = [...Array(10).keys()].map(d => {
-    const count = tickHistory.filter(x => x === d).length;
-    const freq = tickHistory.length > 0 ? (count / tickHistory.length) * 100 : 0;
-    return { digit: d, freq };
+  const scores = Array(10).fill(0);
+  tickHistory.forEach((digit, index) => {
+    const weight = 0.5 + (index / dataSize);
+    scores[digit] += weight;
+  });
+
+  const totalScore = scores.reduce((a, b) => a + b, 0) || 1;
+  const stats = scores.map((score, digit) => {
+    const heat = (score / totalScore) * 100;
+    const isRecent = tickHistory.slice(-5).includes(digit);
+    return { digit, heat, isRecent };
   });
 
   stats.forEach(s => {
     const card = document.createElement("div");
+    const isHot = s.heat >= minFrequency;
+    const hasMomentum = s.isRecent && isHot;
+
     card.style.cssText = `
             border: 1px solid #eee;
             border-radius: 6px;
             padding: 8px 4px;
             text-align: center;
-            background: ${s.freq >= minFrequency ? '#e8f5e9' : '#fff'};
-            border-bottom: 3px solid ${s.freq >= minFrequency ? '#4caf50' : '#ddd'};
+            background: ${hasMomentum ? '#e8f5e9' : isHot ? '#fffde7' : '#fff'};
+            border-bottom: 3px solid ${hasMomentum ? '#4caf50' : isHot ? '#fbc02d' : '#ddd'};
+            box-shadow: ${hasMomentum ? 'inset 0 0 5px rgba(76,175,80,0.2)' : 'none'};
             transition: all 0.3s ease;
         `;
 
     const digitLabel = document.createElement("div");
-    digitLabel.style.cssText = "font-weight: bold; font-size: 1.1rem; color: #333; margin-bottom: 2px;";
+    digitLabel.style.cssText = `font-weight: bold; font-size: 1.1rem; color: #333; margin-bottom: 2px; ${hasMomentum ? 'text-shadow: 0 0 2px rgba(0,0,0,0.1);' : ''}`;
     digitLabel.textContent = s.digit;
 
     const freqLabel = document.createElement("div");
-    freqLabel.style.cssText = "font-size: 0.75rem; color: #666;";
-    freqLabel.textContent = s.freq.toFixed(1) + "%";
+    freqLabel.style.cssText = "font-size: 0.75rem; color: #666; font-weight: 500;";
+    freqLabel.textContent = s.heat.toFixed(1) + "%";
 
     card.appendChild(digitLabel);
     card.appendChild(freqLabel);
