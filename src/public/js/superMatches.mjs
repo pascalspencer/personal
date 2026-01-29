@@ -24,44 +24,49 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="smart-card">
                 <div class="smart-header">
                     <h2 class="smart-title">Super Matches</h2>
-                    <p class="smart-sub">Digit Match + Differs Hedge Strategy</p>
+                    <p class="smart-sub">Digit Match + Hedge Strategy</p>
                 </div>
 
                 <div class="smart-form">
-                    <div class="tick-display">
-                        <div class="tick-header">Digit Analysis (Last ${HISTORY_LIMIT} ticks)</div>
-                        <div class="tick-grid" id="tick-grid-sm" style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px;">
-                            <!-- Digits will be shown here -->
+                    <div class="analysis-section" style="margin-bottom: 20px;">
+                        <div class="tick-header" style="margin-bottom: 10px; font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                            Digit Analysis (Last ${HISTORY_LIMIT} ticks)
                         </div>
-                        <div id="sm-absent-stats" style="font-size: 0.85rem; color: #666; margin-bottom: 15px;">
-                            Waiting for ticks...
+                        
+                        <!-- Digit Statistics Grid (Symmetrical 2x5) -->
+                        <div id="sm-digit-stats" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px;">
+                            <!-- Digits 0-9 indicators will be here -->
+                        </div>
+
+                        <div class="tick-header" style="margin-bottom: 8px; font-size: 0.9rem; color: #666;">Live Tick Stream</div>
+                        <div class="tick-grid" id="tick-grid-sm" style="display: flex; gap: 4px; overflow-x: hidden; height: 35px; align-items: center; background: #f9f9f9; padding: 5px; border-radius: 4px; border: 1px solid #eee;">
+                            <!-- Ticks will flow here -->
                         </div>
                     </div>
 
-                    <div class="field">
-                        <label for="sm-absence">Required Absence (ticks)</label>
-                        <input type="number" id="sm-absence" min="10" value="70">
-                    </div>
-
-                    <div class="field">
-                        <label for="sm-max-attempts">Max Match Attempts</label>
-                        <input type="number" id="sm-max-attempts" min="1" value="5">
-                    </div>
-
-                    <div class="field">
-                        <label for="sm-volatility">Volatility Threshold</label>
-                        <input type="number" id="sm-volatility" step="0.01" value="0.35">
-                    </div>
-
-                    <div class="stake-row">
-                        <button id="run-super-matches" class="run-btn">RUN</button>
-                        <div class="field stake-field">
-                            <label for="sm-stake">(Minimum 0.35)</label>
+                    <div class="settings-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                        <div class="field">
+                            <label for="sm-absence">Required Absence</label>
+                            <input type="number" id="sm-absence" min="10" value="70">
+                        </div>
+                        <div class="field">
+                            <label for="sm-max-attempts">Max Attempts</label>
+                            <input type="number" id="sm-max-attempts" min="1" value="5">
+                        </div>
+                        <div class="field">
+                            <label for="sm-volatility">Volatility Limit</label>
+                            <input type="number" id="sm-volatility" step="0.01" value="0.35">
+                        </div>
+                        <div class="field">
+                            <label for="sm-stake">Stake (Min 0.35)</label>
                             <input type="number" id="sm-stake" min="0.35" step="0.01" value="0.35">
                         </div>
                     </div>
 
-                    <div id="sm-status" class="smart-results" style="margin-top: 15px; font-weight: bold; text-align: center;"></div>
+                    <div class="action-area" style="text-align: center;">
+                        <button id="run-super-matches" class="run-btn" style="width: 100%; height: 50px; font-size: 1.2rem;">RUN STRATEGY</button>
+                        <div id="sm-status" class="smart-results" style="margin-top: 15px; font-weight: bold; min-height: 24px;">Strategy Ready</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -73,7 +78,7 @@ document.addEventListener("DOMContentLoaded", () => {
   absenceInput = document.getElementById("sm-absence");
   volatilityInput = document.getElementById("sm-volatility");
   tickGrid = document.getElementById("tick-grid-sm");
-  absenceDisplay = document.getElementById("sm-absent-stats");
+  absenceDisplay = document.getElementById("sm-digit-stats"); // Now using the grid container
   statusDisplay = document.getElementById("sm-status");
 
   document.getElementById("run-super-matches").onclick = toggleStrategy;
