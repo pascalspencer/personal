@@ -316,21 +316,64 @@ async function executeHedge(digit) {
 }
 
 function updateUI() {
-  // Update Grid
+  // 1. Update Digit Stats Grid (Symmetrical 2x5)
+  absenceDisplay.innerHTML = "";
+  const requiredAbsence = Number(absenceInput.value);
+
+  for (let d = 0; d <= 9; d++) {
+    const lastSeen = [...tickHistory].reverse().indexOf(d);
+    const absence = lastSeen === -1 ? tickHistory.length : lastSeen;
+
+    const card = document.createElement("div");
+    card.style.cssText = `
+            border: 1px solid #eee;
+            border-radius: 6px;
+            padding: 8px 4px;
+            text-align: center;
+            background: ${absence >= requiredAbsence ? '#e8f5e9' : '#fff'};
+            border-bottom: 3px solid ${absence >= requiredAbsence ? '#4caf50' : '#ddd'};
+            transition: all 0.3s ease;
+        `;
+
+    const digitLabel = document.createElement("div");
+    digitLabel.style.cssText = "font-weight: bold; font-size: 1.1rem; color: #333; margin-bottom: 2px;";
+    digitLabel.textContent = d;
+
+    const absenceLabel = document.createElement("div");
+    absenceLabel.style.cssText = "font-size: 0.75rem; color: #666;";
+    absenceLabel.textContent = absence;
+
+    card.appendChild(digitLabel);
+    card.appendChild(absenceLabel);
+    absenceDisplay.appendChild(card);
+  }
+
+  // 2. Update Tick Stream (Horizontal)
   tickGrid.innerHTML = "";
-  const displayTicks = tickHistory.slice(-20);
-  displayTicks.forEach(t => {
+  // Show only as many as fit (approx 15-20)
+  const displayTicks = tickHistory.slice(-25);
+  displayTicks.forEach((t, i) => {
     const div = document.createElement("div");
     div.className = "tick-item";
-    div.style.cssText = "width: 25px; height: 25px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; border-radius: 3px;";
+    const isLast = i === displayTicks.length - 1;
+
+    div.style.cssText = `
+            min-width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            border-radius: 4px;
+            background: ${isLast ? '#2196f3' : '#fff'};
+            color: ${isLast ? '#fff' : '#333'};
+            border: 1px solid ${isLast ? '#2196f3' : '#ddd'};
+            font-weight: ${isLast ? 'bold' : 'normal'};
+            flex-shrink: 0;
+        `;
     div.textContent = t;
     tickGrid.appendChild(div);
   });
-
-  // Update Stats
-  const stats = [...Array(10).keys()].map(d => {
-    const lastSeen = [...tickHistory].reverse().indexOf(d);
-    return `${d}: ${lastSeen === -1 ? '?' : lastSeen}`;
-  });
-  absenceDisplay.textContent = "Ticks since last seen | " + stats.join(" | ");
+  // Ensure last tick is visible
+  tickGrid.scrollLeft = tickGrid.scrollWidth;
 }
