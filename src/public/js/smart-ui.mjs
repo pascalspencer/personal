@@ -70,10 +70,13 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       } else if (btn.dataset.tab === "smart") {
         document.getElementById("smart-over-under").style.display = "block";
-        // Smart Over/Under gets all form elements
-        document.querySelectorAll("form > *").forEach(el => {
-          if (el.id !== "market" && el.id !== "submarket") {
+        // ONLY market and submarket, hide everything else (parity with Super Matches)
+        const formElements = document.querySelectorAll("#trade-form > *");
+        formElements.forEach(el => {
+          if (el.id === "market" || el.id === "submarket") {
             el.style.display = "";
+          } else {
+            el.style.display = "none";
           }
         });
       } else if (btn.dataset.tab === "even-odd") {
