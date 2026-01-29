@@ -38,9 +38,9 @@ document.addEventListener("DOMContentLoaded", () => {
               <!-- Digits 0-9 indicators -->
             </div>
 
-            <div class="tick-header" style="margin-bottom: 8px; font-size: 0.9rem; color: #666;">Live Tick Stream</div>
-            <div class="tick-grid" id="tick-grid-sou" style="display: flex; gap: 4px; overflow-x: hidden; height: 35px; align-items: center; background: #f9f9f9; padding: 5px; border-radius: 4px; border: 1px solid #eee;">
-              <!-- Ticks flow here -->
+            <div class="tick-header" style="margin-bottom: 8px; font-size: 0.9rem; color: #666;">Latest Tick</div>
+            <div class="tick-grid" id="tick-grid-sou" style="display: flex; gap: 4px; overflow-x: hidden; height: 35px; align-items: center; justify-content: center; background: #f9f9f9; padding: 5px; border-radius: 4px; border: 1px solid #eee;">
+              <!-- Latest tick here -->
             </div>
           </div>
 
@@ -308,46 +308,22 @@ function updateUI() {
     digitStatsDisplay.appendChild(card);
   });
 
-  // 2. Update Tick Stream (maintain static display)
-  const maxSlots = 25;
-  const recentTicks = tickHistory.slice(-maxSlots);
+  // 2. Update Latest Tick Display (Single prominent slot)
+  const lastTick = tickHistory.length > 0 ? tickHistory[tickHistory.length - 1] : null;
 
-  // Initialize slots if not already present
-  if (tickGrid.children.length !== maxSlots) {
-    tickGrid.innerHTML = "";
-    for (let i = 0; i < maxSlots; i++) {
-      const slot = document.createElement("div");
-      slot.className = "tick-item";
-      slot.style.cssText = `
-        width: 25px; height: 25px; display: flex; align-items: center; justify-content: center;
-        font-size: 0.85rem; border-radius: 4px; flex-shrink: 0;
-        transition: all 0.2s ease; border: 1px solid #eee; background: #fff;
-      `;
-      tickGrid.appendChild(slot);
-    }
-  }
+  tickGrid.innerHTML = "";
+  if (lastTick !== null) {
+    const div = document.createElement("div");
+    div.style.cssText = `
+      width: 40px; height: 30px; display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; border-radius: 6px; flex-shrink: 0;
+      background: #2196f3; color: #fff; font-weight: bold; border: 1px solid #2196f3;
+      margin: 0 auto; transition: transform 0.1s ease;
+    `;
+    div.textContent = lastTick;
+    tickGrid.appendChild(div);
 
-  // Update content of existing nodes
-  const slots = tickGrid.children;
-  for (let i = 0; i < maxSlots; i++) {
-    const slot = slots[i];
-    // Offset for filling from right if history < maxSlots
-    const tickIdx = i - (maxSlots - recentTicks.length);
-    const val = recentTicks[tickIdx];
-
-    if (val !== undefined) {
-      const isLast = i === maxSlots - 1;
-      slot.textContent = val;
-      slot.style.background = isLast ? '#2196f3' : '#fff';
-      slot.style.color = isLast ? '#fff' : '#333';
-      slot.style.borderColor = isLast ? '#2196f3' : '#ddd';
-      slot.style.fontWeight = isLast ? 'bold' : 'normal';
-      slot.style.visibility = "visible";
-    } else {
-      slot.textContent = "";
-      slot.style.background = "transparent";
-      slot.style.borderColor = "transparent";
-      slot.style.visibility = "hidden";
-    }
+    // Ensure the container centers the single item
+    tickGrid.style.justifyContent = "center";
   }
 }
