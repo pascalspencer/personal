@@ -43,7 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
     menuBtn.style.display = '';
   };
 
-tabs.forEach(btn => {
+  tabs.forEach(btn => {
     btn.onclick = () => {
       tabs.forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
@@ -53,8 +53,12 @@ tabs.forEach(btn => {
       document.getElementById("smart-over-under").style.display = "none";
       document.getElementById("even-odd-panel").style.display = "none";
 
+      const resultsContainer = document.getElementById("results-container");
+      if (resultsContainer) resultsContainer.style.display = "none";
+
       if (btn.dataset.tab === "auto") {
         document.getElementById("auto-analysis").style.display = "block";
+        if (resultsContainer) resultsContainer.style.display = "block";
         // Auto Analysis gets all form elements
         document.querySelectorAll("form > *").forEach(el => {
           if (el.id !== "market" && el.id !== "submarket") {

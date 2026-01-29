@@ -105,79 +105,79 @@ const ping = () => {
   }, 20000); // 20s interval for better reliability
 };
 
-// --- LOGIN PAGE ---
-app.get("/login", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "login.html"));
-});
+// // --- LOGIN PAGE ---
+// app.get("/login", (req, res) => {
+//   res.sendFile(path.join(__dirname, "public", "login.html"));
+// });
 
-// --- LOGIN AUTH ---
-app.post("/login", (req, res) => {
-  try {
-    const { username, password } = req.body;
+// // --- LOGIN AUTH ---
+// app.post("/login", (req, res) => {
+//   try {
+//     const { username, password } = req.body;
 
-    const clientsPath = path.join(__dirname, "public", "clients.json");
-    const clientsData = JSON.parse(fs.readFileSync(clientsPath, "utf8"));
+//     const clientsPath = path.join(__dirname, "public", "clients.json");
+//     const clientsData = JSON.parse(fs.readFileSync(clientsPath, "utf8"));
 
-    const user = clientsData.customers.find(
-      c =>
-        c.clientUsername === username &&
-        c.clientPassword === password
-    );
+//     const user = clientsData.customers.find(
+//       c =>
+//         c.clientUsername === username &&
+//         c.clientPassword === password
+//     );
 
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid username or password"
-      });
-    }
+//     if (!user) {
+//       return res.status(401).json({
+//         success: false,
+//         message: "Invalid username or password"
+//       });
+//     }
 
-    // Enforce max 2 devices per username (skip exempt users)
-    try {
-      const usernameKey = user.clientUsername;
-      if (!deviceSessions.isExempt(usernameKey)) {
-        const sessions = deviceSessions.getSessions(usernameKey);
-        const alreadyHas = sessions.some(s => s.sessionId === req.sessionID);
-        if (!alreadyHas && sessions.length >= 2) {
-          return res.status(403).json({
-            success: false,
-            message: "Maximum 2 devices allowed for this account. Please logout from another device."
-          });
-        }
-      }
-    } catch (err) {
-      console.error('Device session check failed:', err);
-    }
+//     // Enforce max 2 devices per username (skip exempt users)
+//     try {
+//       const usernameKey = user.clientUsername;
+//       if (!deviceSessions.isExempt(usernameKey)) {
+//         const sessions = deviceSessions.getSessions(usernameKey);
+//         const alreadyHas = sessions.some(s => s.sessionId === req.sessionID);
+//         if (!alreadyHas && sessions.length >= 2) {
+//           return res.status(403).json({
+//             success: false,
+//             message: "Maximum 2 devices allowed for this account. Please logout from another device."
+//           });
+//         }
+//       }
+//     } catch (err) {
+//       console.error('Device session check failed:', err);
+//     }
 
-    // Save session
-    req.session.user = {
-      username: user.clientUsername,
-      loginTime: Date.now()
-    };
+//     // Save session
+//     req.session.user = {
+//       username: user.clientUsername,
+//       loginTime: Date.now()
+//     };
 
-    // record device/session
-    try {
-      deviceSessions.addSession(user.clientUsername, req.sessionID, {
-        ip: req.ip || req.connection?.remoteAddress,
-        ua: req.get('User-Agent') || ''
-      });
-    } catch (err) {
-      console.error('Failed to record device session:', err);
-    }
+//     // record device/session
+//     try {
+//       deviceSessions.addSession(user.clientUsername, req.sessionID, {
+//         ip: req.ip || req.connection?.remoteAddress,
+//         ua: req.get('User-Agent') || ''
+//       });
+//     } catch (err) {
+//       console.error('Failed to record device session:', err);
+//     }
 
-    // Redirect to Deriv OAuth
-    return res.json({
-      success: true,
-      redirect: `https://oauth.deriv.com/oauth2/authorize?app_id=${app_id}`
-    });
+//     // Redirect to Deriv OAuth
+//     return res.json({
+//       success: true,
+//       redirect: `https://oauth.deriv.com/oauth2/authorize?app_id=${app_id}`
+//     });
 
-  } catch (err) {
-    console.error("Login error:", err);
-    res.status(500).json({
-      success: false,
-      message: "Server error"
-    });
-  }
-});
+//   } catch (err) {
+//     console.error("Login error:", err);
+//     res.status(500).json({
+//       success: false,
+//       message: "Server error"
+//     });
+//   }
+// });
 
 
 app.get("/sign-in", (req, res) => {
