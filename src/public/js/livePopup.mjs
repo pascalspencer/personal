@@ -14,10 +14,8 @@ const activePopups = new Map(); // Track active contract subscriptions
  * @param {object} initialData - Initial contract data (stake, payout, tradeType)
  */
 export function showLivePopup(contractId, initialData = {}) {
-    // Don't create duplicate popups for the same contract
-    if (activePopups.has(contractId)) {
-        return;
-    }
+    // SINGLETON PATTERN: Close any existing popups before showing a new one
+    closeAllLivePopups();
 
     const overlay = document.createElement('div');
     overlay.className = 'trade-popup-overlay live-popup';
