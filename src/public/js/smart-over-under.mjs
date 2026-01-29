@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="smart-card">
         <div class="smart-header">
           <h2 class="smart-title">Smart Over / Under</h2>
-          <p class="smart-sub">Digit Analysis & Strategy</p>
+          <p class="smart-sub">Digit Analysis</p>
         </div>
 
         <div class="smart-form">
@@ -46,11 +46,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
           <div class="settings-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
             <div class="field">
-              <label for="over-digit">Trigger OVER if <</label>
+              <label for="over-digit">OVER <</label>
               <select id="over-digit"></select>
             </div>
             <div class="field">
-              <label for="under-digit">Trigger UNDER if ></label>
+              <label for="under-digit">UNDER ></label>
               <select id="under-digit"></select>
             </div>
             <div class="field">
@@ -64,19 +64,19 @@ document.addEventListener("DOMContentLoaded", () => {
             
             <div class="toggle-container" style="grid-column: span 2; display: flex; justify-content: space-around; background: #f5f5f5; padding: 8px; border-radius: 6px;">
               <label class="small-toggle">
-                <span>Single (Sequential)</span>
+                <span>Single</span>
                 <input type="checkbox" id="single-toggle-sou" checked>
               </label>
               <label class="small-toggle">
-                <span>Bulk (Concurrent)</span>
+                <span>Bulk</span>
                 <input type="checkbox" id="bulk-toggle-sou">
               </label>
             </div>
           </div>
 
           <div class="action-area" style="text-align: center;">
-            <button id="run-smart" class="run-btn" style="width: 100%; height: 50px; font-size: 1.2rem;">RUN STRATEGY</button>
-            <div id="smart-results" class="smart-results" style="margin-top: 15px; font-weight: bold; min-height: 24px;">Strategy Ready</div>
+            <button id="run-smart" class="run-btn" style="width: 100%; height: 50px; font-size: 1.2rem;">RUN</button>
+            <div id="smart-results" class="smart-results" style="margin-top: 15px; font-weight: bold; min-height: 24px;">Ready</div>
           </div>
         </div>
       </div>
@@ -142,19 +142,19 @@ function runSmart() {
   baseStake = Number(stakeInput.value);
 
   const btn = document.getElementById("run-smart");
-  btn.textContent = "STOP STRATEGY";
+  btn.textContent = "STOP";
   btn.classList.add("stop");
-  resultsBox.textContent = "Strategy Scanning...";
+  resultsBox.textContent = "Scanning...";
 }
 
 function stopSmart(msg) {
   running = false;
   const btn = document.getElementById("run-smart");
   if (btn) {
-    btn.textContent = "RUN STRATEGY";
+    btn.textContent = "RUN";
     btn.classList.remove("stop");
   }
-  if (resultsBox) resultsBox.textContent = msg || "Strategy Ready";
+  if (resultsBox) resultsBox.textContent = msg || "Ready";
 }
 
 function startTickStream() {

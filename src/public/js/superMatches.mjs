@@ -64,8 +64,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
 
                     <div class="action-area" style="text-align: center;">
-                        <button id="run-super-matches" class="run-btn" style="width: 100%; height: 50px; font-size: 1.2rem;">RUN STRATEGY</button>
-                        <div id="sm-status" class="smart-results" style="margin-top: 15px; font-weight: bold; min-height: 24px;">Strategy Ready</div>
+                        <button id="run-super-matches" class="run-btn" style="width: 100%; height: 50px; font-size: 1.2rem;">RUN</button>
+                        <div id="sm-status" class="smart-results" style="margin-top: 15px; font-weight: bold; min-height: 24px;">Ready</div>
                     </div>
                 </div>
             </div>
@@ -116,14 +116,14 @@ function startStrategy() {
 
   document.getElementById("run-super-matches").textContent = "STOP";
   document.getElementById("run-super-matches").classList.add("stop");
-  statusDisplay.textContent = "Strategy Scanning...";
+  statusDisplay.textContent = "Scanning...";
 }
 
 function stopStrategy(msg) {
   running = false;
   document.getElementById("run-super-matches").textContent = "RUN";
   document.getElementById("run-super-matches").classList.remove("stop");
-  statusDisplay.textContent = msg || "Strategy Ready";
+  statusDisplay.textContent = msg || "Ready";
 }
 
 function startTickStream() {
