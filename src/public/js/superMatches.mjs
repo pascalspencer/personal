@@ -46,8 +46,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     <div class="settings-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
                         <div class="field">
-                            <label for="sm-absence">Required Absence</label>
-                            <input type="number" id="sm-absence" min="10" value="70">
+                            <label for="sm-absence">Min Frequency (%)</label>
+                            <input type="number" id="sm-absence" min="1" max="100" value="15">
                         </div>
                         <div class="field">
                             <label for="sm-max-attempts">Max Attempts</label>
@@ -188,7 +188,7 @@ function processTick(tick) {
   if (matchDigit !== null) {
     executeMatch(matchDigit);
   } else {
-    statusDisplay.textContent = "Scanning for absent digit...";
+    statusDisplay.textContent = "Scanning for hot digit...";
   }
 }
 
@@ -206,26 +206,26 @@ function isVolatile() {
 }
 
 function selectMatchDigit() {
-  const requiredAbsence = Number(absenceInput.value);
-  if (tickHistory.length < requiredAbsence) return null;
+  const minFrequency = Number(absenceInput.value);
+  if (tickHistory.length < 50) return null; // Wait for some data
 
-  const stats = [...Array(10).keys()].map(d => ({
-    digit: d,
-    lastSeen: [...tickHistory].reverse().indexOf(d),
-    freq: tickHistory.filter(x => x === d).length
-  }));
+  const stats = [...Array(10).keys()].map(d => {
+    const count = tickHistory.filter(x => x === d).length;
+    const freq = (count / tickHistory.length) * 100;
+    return { digit: d, freq };
+  });
 
-  // Find digits not seen for >= requiredAbsence
-  const candidates = stats.filter(
-    d => d.lastSeen === -1 || d.lastSeen >= requiredAbsence
-  );
+  // Sort by frequency descending
+  stats.sort((a, b) => b.freq - a.freq);
 
-  if (!candidates.length) return null;
+  const best = stats[0];
 
-  // Pick most absent (largest lastSeen) or lowest frequency
-  candidates.sort((a, b) => b.lastSeen - a.lastSeen || a.freq - b.freq);
+  // Return best if it meets the frequency threshold
+  if (best.freq >= minFrequency) {
+    return best.digit;
+  }
 
-  return candidates[0].digit;
+  return null;
 }
 
 async function executeMatch(digit) {
@@ -318,35 +318,38 @@ async function executeHedge(digit) {
 function updateUI() {
   // 1. Update Digit Stats Grid (Symmetrical 2x5)
   absenceDisplay.innerHTML = "";
-  const requiredAbsence = Number(absenceInput.value);
+  const minFrequency = Number(absenceInput.value);
 
-  for (let d = 0; d <= 9; d++) {
-    const lastSeen = [...tickHistory].reverse().indexOf(d);
-    const absence = lastSeen === -1 ? tickHistory.length : lastSeen;
+  const stats = [...Array(10).keys()].map(d => {
+    const count = tickHistory.filter(x => x === d).length;
+    const freq = tickHistory.length > 0 ? (count / tickHistory.length) * 100 : 0;
+    return { digit: d, freq };
+  });
 
+  stats.forEach(s => {
     const card = document.createElement("div");
     card.style.cssText = `
             border: 1px solid #eee;
             border-radius: 6px;
             padding: 8px 4px;
             text-align: center;
-            background: ${absence >= requiredAbsence ? '#e8f5e9' : '#fff'};
-            border-bottom: 3px solid ${absence >= requiredAbsence ? '#4caf50' : '#ddd'};
+            background: ${s.freq >= minFrequency ? '#e8f5e9' : '#fff'};
+            border-bottom: 3px solid ${s.freq >= minFrequency ? '#4caf50' : '#ddd'};
             transition: all 0.3s ease;
         `;
 
     const digitLabel = document.createElement("div");
     digitLabel.style.cssText = "font-weight: bold; font-size: 1.1rem; color: #333; margin-bottom: 2px;";
-    digitLabel.textContent = d;
+    digitLabel.textContent = s.digit;
 
-    const absenceLabel = document.createElement("div");
-    absenceLabel.style.cssText = "font-size: 0.75rem; color: #666;";
-    absenceLabel.textContent = absence;
+    const freqLabel = document.createElement("div");
+    freqLabel.style.cssText = "font-size: 0.75rem; color: #666;";
+    freqLabel.textContent = s.freq.toFixed(1) + "%";
 
     card.appendChild(digitLabel);
-    card.appendChild(absenceLabel);
+    card.appendChild(freqLabel);
     absenceDisplay.appendChild(card);
-  }
+  });
 
   // 2. Update Tick Stream (Horizontal)
   tickGrid.innerHTML = "";
