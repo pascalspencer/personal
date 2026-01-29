@@ -1,91 +1,194 @@
-// ==================================
-// DERIV MATCHES + HEDGE STRATEGY
-// ==================================
+import { buyContract } from "./buyContract.mjs";
+import { getCurrentToken } from './popupMessages.mjs';
+import { showLivePopup } from './livePopup.mjs';
 
-const WS_URL = "wss://ws.deriv.com/websockets/v3?app_id=1089";
-const API_TOKEN = "PUT_YOUR_API_TOKEN_HERE";
-const SYMBOL = "R_25";
-
-// ---- RISK CONFIG ----
-const STAKE = 1;
-const MAX_MATCH_ATTEMPTS = 5;
-const REQUIRED_ABSENCE = 70;
-const HISTORY_LIMIT = 120;
-const VOLATILITY_THRESHOLD = 0.35; // higher = more chaos
-
-// ---- STATE ----
-let ws;
+let running = false;
+let tickWs = null;
 let tickHistory = [];
+let lastMatchDigit = null;
+let awaitingHedge = false;
 let matchAttempts = 0;
 let sessionWon = false;
-let awaitingHedge = false;
-let lastMatchDigit = null;
 
-// ===============================
-// CONNECT
-// ===============================
-ws = new WebSocket(WS_URL);
+// UI Elements
+let stakeInput, maxAttemptsInput, absenceInput, volatilityInput;
+let tickGrid, absenceDisplay, statusDisplay;
 
-ws.onopen = () => {
-  ws.send(JSON.stringify({ authorize: API_TOKEN }));
-};
+const HISTORY_LIMIT = 120;
+const derivAppID = 61696;
 
-ws.onmessage = (msg) => handleMessage(JSON.parse(msg.data));
+document.addEventListener("DOMContentLoaded", () => {
+  // Inject Super Matches UI
+  document.body.insertAdjacentHTML("beforeend", `
+        <div id="super-matches-panel" style="display: none;">
+            <div class="smart-card">
+                <div class="smart-header">
+                    <h2 class="smart-title">Super Matches</h2>
+                    <p class="smart-sub">Digit Match + Differs Hedge Strategy</p>
+                </div>
 
-// ===============================
-// MESSAGE HANDLER
-// ===============================
-function handleMessage(data) {
-  if (data.msg_type === "authorize") subscribeTicks();
-  if (data.msg_type === "tick") processTick(data.tick);
-  if (data.msg_type === "proposal_open_contract" && data.proposal_open_contract.is_sold) {
-    handleResult(data.proposal_open_contract);
+                <div class="smart-form">
+                    <div class="tick-display">
+                        <div class="tick-header">Digit Analysis (Last ${HISTORY_LIMIT} ticks)</div>
+                        <div class="tick-grid" id="tick-grid-sm" style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px;">
+                            <!-- Digits will be shown here -->
+                        </div>
+                        <div id="sm-absent-stats" style="font-size: 0.85rem; color: #666; margin-bottom: 15px;">
+                            Waiting for ticks...
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="sm-absence">Required Absence (ticks)</label>
+                        <input type="number" id="sm-absence" min="10" value="70">
+                    </div>
+
+                    <div class="field">
+                        <label for="sm-max-attempts">Max Match Attempts</label>
+                        <input type="number" id="sm-max-attempts" min="1" value="5">
+                    </div>
+
+                    <div class="field">
+                        <label for="sm-volatility">Volatility Threshold</label>
+                        <input type="number" id="sm-volatility" step="0.01" value="0.35">
+                    </div>
+
+                    <div class="stake-row">
+                        <button id="run-super-matches" class="run-btn">RUN</button>
+                        <div class="field stake-field">
+                            <label for="sm-stake">(Minimum 0.35)</label>
+                            <input type="number" id="sm-stake" min="0.35" step="0.01" value="0.35">
+                        </div>
+                    </div>
+
+                    <div id="sm-status" class="smart-results" style="margin-top: 15px; font-weight: bold; text-align: center;"></div>
+                </div>
+            </div>
+        </div>
+    `);
+
+  // Get UI elements
+  stakeInput = document.getElementById("sm-stake");
+  maxAttemptsInput = document.getElementById("sm-max-attempts");
+  absenceInput = document.getElementById("sm-absence");
+  volatilityInput = document.getElementById("sm-volatility");
+  tickGrid = document.getElementById("tick-grid-sm");
+  absenceDisplay = document.getElementById("sm-absent-stats");
+  statusDisplay = document.getElementById("sm-status");
+
+  document.getElementById("run-super-matches").onclick = toggleStrategy;
+
+  // Market listeners
+  const marketSelect = document.getElementById("market");
+  const submarketSelect = document.getElementById("submarket");
+
+  if (marketSelect) marketSelect.addEventListener("change", restartTickStream);
+  if (submarketSelect) submarketSelect.addEventListener("change", restartTickStream);
+
+  startTickStream();
+});
+
+function toggleStrategy() {
+  if (running) {
+    stopStrategy("Stopped by user");
+  } else {
+    startStrategy();
   }
 }
 
-// ===============================
-// SUBSCRIBE TICKS
-// ===============================
-function subscribeTicks() {
-  ws.send(JSON.stringify({ ticks: SYMBOL, subscribe: 1 }));
+function startStrategy() {
+  const token = getCurrentToken();
+  if (!token) {
+    alert("Please login first");
+    return;
+  }
+
+  running = true;
+  sessionWon = false;
+  matchAttempts = 0;
+  awaitingHedge = false;
+  lastMatchDigit = null;
+
+  document.getElementById("run-super-matches").textContent = "STOP";
+  document.getElementById("run-super-matches").classList.add("stop");
+  statusDisplay.textContent = "Strategy Scanning...";
 }
 
-// ===============================
-// PROCESS TICK
-// ===============================
+function stopStrategy(msg) {
+  running = false;
+  document.getElementById("run-super-matches").textContent = "RUN";
+  document.getElementById("run-super-matches").classList.remove("stop");
+  statusDisplay.textContent = msg || "Strategy Ready";
+}
+
+function startTickStream() {
+  if (tickWs) return;
+
+  const submarket = document.getElementById("submarket").value;
+  if (!submarket) return;
+
+  tickWs = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${derivAppID}`);
+
+  tickWs.onopen = () => {
+    tickWs.send(JSON.stringify({ ticks: submarket, subscribe: 1 }));
+  };
+
+  tickWs.onmessage = (msg) => {
+    const data = JSON.parse(msg.data);
+    if (data.tick) {
+      processTick(data.tick);
+    }
+  };
+
+  tickWs.onclose = () => {
+    tickWs = null;
+    if (document.getElementById("super-matches-panel").style.display !== "none") {
+      setTimeout(startTickStream, 2000);
+    }
+  };
+}
+
+function restartTickStream() {
+  if (tickWs) {
+    tickWs.close();
+  } else {
+    startTickStream();
+  }
+}
+
 function processTick(tick) {
-  const digit = Number(tick.quote.toString().slice(-1));
+  const quote = tick.quote.toString();
+  const digit = Number(quote.slice(-1));
+
   tickHistory.push(digit);
   if (tickHistory.length > HISTORY_LIMIT) tickHistory.shift();
 
-  renderTickCounter();
+  updateUI();
 
-  if (!canTrade()) return;
-  if (isVolatile()) return;
+  if (!running) return;
+  if (awaitingHedge) return;
+
+  // Volatility check
+  if (isVolatile()) {
+    statusDisplay.innerHTML = '<span style="color: orange;">⚠️ High Volatility - Paused</span>';
+    return;
+  }
+
+  if (matchAttempts >= Number(maxAttemptsInput.value)) {
+    stopStrategy("Max attempts reached");
+    return;
+  }
 
   const matchDigit = selectMatchDigit();
-  if (matchDigit !== null) executeMatch(matchDigit);
+  if (matchDigit !== null) {
+    executeMatch(matchDigit);
+  } else {
+    statusDisplay.textContent = "Scanning for absent digit...";
+  }
 }
 
-// ===============================
-// VISUAL TICK COUNTER
-// ===============================
-function renderTickCounter() {
-  const counts = Array(10).fill(0);
-  tickHistory.forEach(d => counts[d]++);
-
-  console.clear();
-  console.log("📊 DIGIT COUNTER (last", tickHistory.length, "ticks)");
-  counts.forEach((c, d) => {
-    console.log(`Digit ${d}: ${"█".repeat(c)} (${c})`);
-  });
-}
-
-// ===============================
-// VOLATILITY DETECTION
-// ===============================
 function isVolatile() {
-  if (tickHistory.length < 50) return true;
+  if (tickHistory.length < 50) return false;
 
   const counts = Array(10).fill(0);
   tickHistory.forEach(d => counts[d]++);
@@ -94,18 +197,12 @@ function isVolatile() {
   const variance = counts.reduce((s, c) => s + Math.pow(c - mean, 2), 0) / 10;
   const chaos = Math.sqrt(variance) / mean;
 
-  if (chaos > VOLATILITY_THRESHOLD) {
-    console.log("⚠️ Volatility too high — trading paused");
-    return true;
-  }
-  return false;
+  return chaos > Number(volatilityInput.value);
 }
 
-// ===============================
-// DIGIT SELECTION (MATCH)
-// ===============================
 function selectMatchDigit() {
-  if (tickHistory.length < REQUIRED_ABSENCE) return null;
+  const requiredAbsence = Number(absenceInput.value);
+  if (tickHistory.length < requiredAbsence) return null;
 
   const stats = [...Array(10).keys()].map(d => ({
     digit: d,
@@ -113,81 +210,122 @@ function selectMatchDigit() {
     freq: tickHistory.filter(x => x === d).length
   }));
 
+  // Find digits not seen for >= requiredAbsence
   const candidates = stats.filter(
-    d => d.lastSeen === -1 || d.lastSeen >= REQUIRED_ABSENCE
+    d => d.lastSeen === -1 || d.lastSeen >= requiredAbsence
   );
 
   if (!candidates.length) return null;
-  candidates.sort((a, b) => a.freq - b.freq);
+
+  // Pick most absent (largest lastSeen) or lowest frequency
+  candidates.sort((a, b) => b.lastSeen - a.lastSeen || a.freq - b.freq);
 
   return candidates[0].digit;
 }
 
-// ===============================
-// TRADE CONDITIONS
-// ===============================
-function canTrade() {
-  return !sessionWon && matchAttempts < MAX_MATCH_ATTEMPTS;
-}
-
-// ===============================
-// EXECUTE MATCH
-// ===============================
-function executeMatch(digit) {
+async function executeMatch(digit) {
   matchAttempts++;
   lastMatchDigit = digit;
+  statusDisplay.innerHTML = `🎯 Trading MATCH on Digit ${digit} (Attempt ${matchAttempts})`;
 
-  console.log(`🎯 MATCH ${matchAttempts}/${MAX_MATCH_ATTEMPTS} → Digit ${digit}`);
+  try {
+    const symbol = document.getElementById("submarket").value;
+    const stake = stakeInput.value;
 
-  sendTrade("DIGITMATCH", digit);
-}
-
-// ===============================
-// EXECUTE DIFFERS HEDGE
-// ===============================
-function executeHedge(digit) {
-  console.log(`🛡️ HEDGE → DIFFERS ${digit}`);
-  sendTrade("DIGITDIFF", digit);
-}
-
-// ===============================
-// SEND TRADE
-// ===============================
-function sendTrade(type, digit) {
-  ws.send(JSON.stringify({
-    buy: 1,
-    price: STAKE,
-    parameters: {
-      amount: STAKE,
-      basis: "stake",
-      contract_type: type,
-      currency: "USD",
-      duration: 1,
-      duration_unit: "t",
-      symbol: SYMBOL,
-      barrier: digit
-    }
-  }));
-
-  ws.send(JSON.stringify({ proposal_open_contract: 1, subscribe: 1 }));
-}
-
-// ===============================
-// HANDLE RESULT
-// ===============================
-function handleResult(contract) {
-  if (contract.profit > 0) {
-    console.log("✅ WIN → Session complete");
-    sessionWon = true;
-    ws.close();
-  } else {
-    console.log("❌ LOSS");
-
-    if (!awaitingHedge && lastMatchDigit !== null) {
-      awaitingHedge = true;
-      executeHedge(lastMatchDigit);
+    const resp = await buyContract(symbol, "DIGITMATCH", 1, stake, digit);
+    if (resp && resp.buy) {
+      showLivePopup(resp.buy.contract_id, {
+        tradeType: "DIGITMATCH",
+        stake: stake,
+        payout: resp.buy.payout
+      });
+      handleTradeExecution(resp.buy.contract_id);
     } else {
-      awaitingHedge = false;
+      console.error("Match Buy Failed", resp);
+      setTimeout(() => { if (running) awaitingHedge = false; }, 2000);
     }
+  } catch (e) {
+    console.error(e);
+    awaitingHedge = false;
   }
+}
+
+async function handleTradeExecution(contractId) {
+  awaitingHedge = true;
+
+  // Simplified result check for strategy flow
+  // In a real scenario, we'd listen to the WS from buyContract or livePopup
+  // For this pattern, we'll poll proposal_open_contract once
+
+  const checkStatus = setInterval(async () => {
+    const token = getCurrentToken();
+    const ws = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${derivAppID}`);
+
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ authorize: token }));
+      ws.send(JSON.stringify({ proposal_open_contract: 1, contract_id: contractId }));
+    };
+
+    ws.onmessage = async (msg) => {
+      const data = JSON.parse(msg.data);
+      if (data.proposal_open_contract && data.proposal_open_contract.is_sold) {
+        const contract = data.proposal_open_contract;
+        clearInterval(checkStatus);
+        ws.close();
+
+        if (contract.profit > 0) {
+          stopStrategy("✅ WIN - Session Complete");
+          sessionWon = true;
+        } else {
+          statusDisplay.innerHTML = `❌ Match Lost. Deploying HEDGE...`;
+          await executeHedge(lastMatchDigit);
+        }
+      }
+    };
+  }, 2000);
+}
+
+async function executeHedge(digit) {
+  try {
+    const symbol = document.getElementById("submarket").value;
+    const stake = stakeInput.value;
+
+    const resp = await buyContract(symbol, "DIGITDIFF", 1, stake, digit);
+    if (resp && resp.buy) {
+      showLivePopup(resp.buy.contract_id, {
+        tradeType: "DIGITDIFF",
+        stake: stake,
+        payout: resp.buy.payout
+      });
+
+      // After hedge, we continue scanning for the next match
+      setTimeout(() => {
+        awaitingHedge = false;
+        if (running) statusDisplay.textContent = "Scanning for next opportunity...";
+      }, 5000);
+    }
+  } catch (e) {
+    console.error(e);
+    awaitingHedge = false;
+  }
+}
+
+function updateUI() {
+  // Update Grid
+  tickGrid.innerHTML = "";
+  const displayTicks = tickHistory.slice(-20);
+  displayTicks.forEach(t => {
+    const div = document.createElement("div");
+    div.className = "tick-item";
+    div.style.cssText = "width: 25px; height: 25px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; border-radius: 3px;";
+    div.textContent = t;
+    tickGrid.appendChild(div);
+  });
+
+  // Update Stats
+  const stats = [...Array(10).keys()].map(d => {
+    const lastSeen = [...tickHistory].reverse().indexOf(d);
+    return `${d}: ${lastSeen === -1 ? '?' : lastSeen}`;
+  });
+  absenceDisplay.textContent = "Ticks since last seen | " + stats.join(" | ");
 }

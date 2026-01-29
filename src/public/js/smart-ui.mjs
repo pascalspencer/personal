@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <button class="tab-btn active" data-tab="auto">Auto Analysis</button>
         <button class="tab-btn" data-tab="smart">Smart Over/Under</button>
         <button class="tab-btn" data-tab="even-odd">Even/Odd Switch</button>
+        <button class="tab-btn" data-tab="super-matches">Super Matches</button>
       </div>
     </div>
   `);
@@ -52,6 +53,8 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("auto-analysis").style.display = "none";
       document.getElementById("smart-over-under").style.display = "none";
       document.getElementById("even-odd-panel").style.display = "none";
+      const smPanel = document.getElementById("super-matches-panel");
+      if (smPanel) smPanel.style.display = "none";
 
       const resultsContainer = document.getElementById("results-container");
       if (resultsContainer) resultsContainer.style.display = "none";
@@ -76,6 +79,18 @@ document.addEventListener("DOMContentLoaded", () => {
       } else if (btn.dataset.tab === "even-odd") {
         document.getElementById("even-odd-panel").style.display = "block";
         // Even/Odd only gets market and submarket, hide everything else
+        const formElements = document.querySelectorAll("#trade-form > *");
+        formElements.forEach(el => {
+          if (el.id === "market" || el.id === "submarket") {
+            el.style.display = "";
+          } else {
+            el.style.display = "none";
+          }
+        });
+      } else if (btn.dataset.tab === "super-matches") {
+        const smPanel = document.getElementById("super-matches-panel");
+        if (smPanel) smPanel.style.display = "block";
+        // Only gets market and submarket, hide everything else
         const formElements = document.querySelectorAll("#trade-form > *");
         formElements.forEach(el => {
           if (el.id === "market" || el.id === "submarket") {
