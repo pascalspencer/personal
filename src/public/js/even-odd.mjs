@@ -354,7 +354,7 @@ function finishSession() {
   running = false;
   checkingForEntry = false;
   document.getElementById("run-even-odd").textContent = "RUN";
-  resultsDisplay.innerHTML = `<strong>Session Complete</strong><br>Trades: ${completedTrades}<br>Wins: ${resultsDisplay.dataset.success}, Losses: ${resultsDisplay.dataset.failed}`;
+  resultsDisplay.innerHTML = `<strong>Session Complete</strong><br>Trades: ${completedTrades}<br>Success: ${resultsDisplay.dataset.success}, Failed: ${resultsDisplay.dataset.failed}`;
 }
 
 function stopEvenOdd() {
