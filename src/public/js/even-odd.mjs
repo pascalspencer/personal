@@ -9,6 +9,7 @@ let completedTrades = 0;
 let maxTradesPerSession = 100; // safety cap
 let lastTradeTickIndex = -1;
 let baseStake = 0;
+let sessionStats = { wins: 0, losses: 0 };
 let pingInterval = null;
 
 let tickCountInput, stakeInput, tickGrid, resultsDisplay, digitStatsDisplay, martingaleToggle, martingaleFactor;
@@ -58,7 +59,10 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
 
           <div id="martingale-config-eo" style="margin-top: 15px; padding: 12px; background: #fffcf0; border: 1px solid #ffeeba; border-radius: 8px; display: flex; flex-direction: column; gap: 10px;">
-            <div style="font-size: 0.85rem; font-weight: bold; color: #856404; text-transform: uppercase; letter-spacing: 0.5px;">Recovery Strategy</div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="font-size: 0.85rem; font-weight: bold; color: #856404; text-transform: uppercase; letter-spacing: 0.5px;">Recovery Strategy</div>
+              <div id="eo-stats-display" style="font-size: 0.75rem; color: #856404; font-weight: bold;">W: 0 | L: 0</div>
+            </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: center;">
               <label class="small-toggle" style="background: white; border: 1px solid #ffeeba; box-shadow: none;">
                 <span>Martingale</span>
@@ -304,6 +308,8 @@ async function runEvenOdd() {
   running = true;
   checkingForEntry = true;
   baseStake = Number(stakeInput.value);
+  sessionStats = { wins: 0, losses: 0 };
+  updateStatsUI();
 
   resultsDisplay.dataset.success = "0";
   resultsDisplay.dataset.failed = "0";
@@ -351,25 +357,28 @@ async function checkForPatternAndTrade() {
     resultsDisplay.dataset.success = String(Number(resultsDisplay.dataset.success) + (winStatusInitial ? 1 : 0));
     resultsDisplay.dataset.failed = String(Number(resultsDisplay.dataset.failed) + (winStatusInitial ? 0 : 1));
 
-    // Martingale Accuracy: Wait for the result before proceeding
+    // Martingale Accuracy: TRACK in background, do not await to keep scanning fast
     if (result && result.buy && martingaleToggle.checked) {
-      resultsDisplay.innerHTML += `<br><span style="color:#666; font-size:0.85rem;">⏳ Waiting for settlement...</span>`;
-      try {
-        const settled = await waitForSettlement(result.buy.contract_id);
-        const profit = Number(settled.profit);
-        const win = profit > 0;
+      const contractId = result.buy.contract_id;
+      const martingaleBox = document.getElementById("martingale-config-eo");
+      if (martingaleBox) martingaleBox.style.boxShadow = "0 0 10px rgba(255, 193, 7, 0.4)";
 
-        if (win) {
-          stakeInput.value = baseStake;
-          resultsDisplay.innerHTML += `<br><span style="color:#2e7d32">Win: Stake Reset</span>`;
-        } else {
+      waitForSettlement(contractId).then(settled => {
+        if (martingaleBox) martingaleBox.style.boxShadow = "none";
+        const profit = Number(settled.profit);
+        if (profit < 0) {
+          sessionStats.losses++;
           const factor = Number(martingaleFactor.value) || 2.0;
           stakeInput.value = (Number(stakeInput.value) * factor).toFixed(2);
-          resultsDisplay.innerHTML += `<br><span style="color:#d32f2f">Loss: Stake Multiplied</span>`;
+        } else {
+          sessionStats.wins++;
+          stakeInput.value = baseStake;
         }
-      } catch (e) {
-        console.warn("Settlement wait failed:", e);
-      }
+        updateStatsUI();
+      }).catch(e => {
+        console.warn("Settlement track failed:", e);
+        if (martingaleBox) martingaleBox.style.boxShadow = "none";
+      });
     }
 
     if (completedTrades < numTrades && completedTrades < maxTradesPerSession) {
@@ -387,6 +396,13 @@ async function checkForPatternAndTrade() {
     console.error("Trade failed:", err);
     completedTrades++;
     checkingForEntry = true; // Attempt to recover
+  }
+}
+
+function updateStatsUI() {
+  const display = document.getElementById("eo-stats-display");
+  if (display) {
+    display.textContent = `W: ${sessionStats.wins} | L: ${sessionStats.losses}`;
   }
 }
 
