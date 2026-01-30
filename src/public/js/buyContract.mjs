@@ -803,6 +803,11 @@ async function buyContractBulk(symbol, tradeType, duration, stake, barrier, coun
     }
   }
 
+  // If a single token is used for multiple "Target Trades", expand the array
+  if (tokensToUse && tokensToUse.length === 1 && count > 1) {
+    tokensToUse = Array(count).fill(tokensToUse[0]);
+  }
+
   const tokenToUse = tokensToUse && tokensToUse.length > 0 ? tokensToUse[0] : null;
   if (tokenToUse) {
     if (lastAuthorizedToken !== tokenToUse) {
@@ -847,13 +852,13 @@ async function buyContractBulk(symbol, tradeType, duration, stake, barrier, coun
 
   const payload = {
     buy_contract_for_multiple_accounts: 1,
-    tokens: tokens, // Array of tokens
+    tokens: tokensToUse, // Use the processed and expanded array
     parameters: parameters,
     price: maxPrice
   };
 
   try {
-    console.log("[TRACK] Sending bulk buy request", { count: tokens.length, symbol, tradeType });
+    console.log("[TRACK] Sending bulk buy request", { count: tokensToUse.length, symbol, tradeType });
     const resp = await sendJson(payload);
 
     if (resp.error) {
