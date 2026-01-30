@@ -238,18 +238,15 @@ function startTickStream() {
       if (msg.tick) {
         const quote = msg.tick.quote;
         const digit = Number(String(quote).slice(-1));
+
+        // IMMEDIATE SYNCHRONOUS UPDATE for digit tracking accuracy
         tickHistory.push(digit);
-
-        // Keep only last 100 in memory to prevent memory issues
-        if (tickHistory.length > 100) {
-          tickHistory = tickHistory.slice(-100);
-        }
-
+        if (tickHistory.length > 100) tickHistory = tickHistory.slice(-100);
         updateUI();
 
-        // Check for pattern if we're actively looking for entry
+        // Check for pattern if we're actively looking for entry (ASYNC)
         if (checkingForEntry && tickHistory.length >= 4) {
-          checkForPatternAndTrade();
+          setTimeout(() => checkForPatternAndTrade(), 0);
         }
       }
     } catch (error) {
@@ -325,7 +322,7 @@ async function runEvenOdd() {
 }
 
 async function checkForPatternAndTrade() {
-  if (!running || !checkingForEntry || awaitingRecovery) return;
+  if (!running || !checkingForEntry) return;
 
   const numTrades = parseInt(tickCountInput.value) || 5;
   if (completedTrades >= numTrades) return finishSession();

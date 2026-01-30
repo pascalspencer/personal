@@ -196,7 +196,18 @@ function startTickStream() {
 
     tickWs.onmessage = (msg) => {
       const data = JSON.parse(msg.data);
-      if (data.tick) processTick(data.tick);
+      if (data.tick) {
+        const quote = data.tick.quote.toString();
+        const digit = Number(quote.slice(-1));
+
+        // IMMEDIATE SYNCHRONOUS UPDATE for digit tracking accuracy
+        tickHistory.push(digit);
+        if (tickHistory.length > HISTORY_LIMIT) tickHistory.shift();
+        updateUI();
+
+        // ASYNC TRIGGERING to prevent event loop lag
+        setTimeout(() => processTick(data.tick), 0);
+      }
     };
 
     tickWs.onerror = (err) => {
@@ -253,15 +264,10 @@ function restartTickStream() {
 }
 
 function processTick(tick) {
+  if (!running || tradeLock) return;
+
   const quote = tick.quote.toString();
   const digit = Number(quote.slice(-1));
-
-  tickHistory.push(digit);
-  if (tickHistory.length > HISTORY_LIMIT) tickHistory.shift();
-
-  updateUI();
-
-  if (!running || tradeLock || awaitingRecovery) return;
 
   if (tradesCompleted >= Number(tickCount.value)) {
     stopSmart("Goal Reached");
