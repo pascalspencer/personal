@@ -1,5 +1,4 @@
-import { buyContract } from "./buyContract.mjs";
-import { getCurrentToken } from './popupMessages.mjs';
+import { buyContract, getAuthToken } from "./buyContract.mjs";
 import { showLivePopup } from './livePopup.mjs';
 
 let running = false;
@@ -214,6 +213,12 @@ async function runEvenOdd() {
     return;
   }
 
+  const token = getAuthToken();
+  if (!token) {
+    alert("Please login first");
+    return;
+  }
+
   completedTrades = 0;
   running = true;
   checkingForEntry = true;
@@ -223,8 +228,6 @@ async function runEvenOdd() {
 
   document.getElementById("run-even-odd").textContent = "STOP";
   resultsDisplay.innerHTML = "Monitoring Even / Odd ticks...";
-
-  popup("Checking Stream", "Waiting for entry pattern", 1500);
 
   if (tickHistory.length >= 3) {
     checkForPatternAndTrade();
@@ -245,187 +248,52 @@ async function checkForPatternAndTrade() {
   if (!allEven && !allOdd) return;
 
   checkingForEntry = false;
-
   const tradeType = allEven ? "DIGITEVEN" : "DIGITODD";
   const pattern = allEven ? "Even" : "Odd";
   const stake = Number(stakeInput.value);
   const symbol = document.getElementById("submarket")?.value || "R_100";
-  const lastDigit = last3[2];
 
   resultsDisplay.innerHTML = `Pattern detected: <b>${pattern}</b><br>Executing trade...`;
 
-  // --- INSTANT BUY EXECUTION ---
-  // Use microtask to ensure buy is executed immediately after pattern detection
-  Promise.resolve().then(async () => {
-    try {
-      const result = await buyContract(symbol, tradeType, 1, stake, null, null, true);
-      const payout = Number(result?.buy?.payout || 0);
-      const win = payout > stake;
+  try {
+    const result = await buyContract(symbol, tradeType, 1, stake, null, null, true);
+    const payout = Number(result?.buy?.payout || 0);
+    const win = payout > stake;
 
-      completedTrades++;
+    completedTrades++;
+    resultsDisplay.dataset.success = String(Number(resultsDisplay.dataset.success) + (win ? 1 : 0));
+    resultsDisplay.dataset.failed = String(Number(resultsDisplay.dataset.failed) + (win ? 0 : 1));
 
-      resultsDisplay.dataset.success = String(
-        Number(resultsDisplay.dataset.success) + (win ? 1 : 0)
-      );
-      resultsDisplay.dataset.failed = String(
-        Number(resultsDisplay.dataset.failed) + (win ? 0 : 1)
-      );
-
-      // Show LIVE popup for real-time updates
-      const buyInfo = result?.buy || result || {};
-      if (buyInfo.contract_id) {
-        showLivePopup(buyInfo.contract_id, {
-          tradeType: tradeType,
-          stake: stake,
-          buyPrice: Number(buyInfo.buy_price || buyInfo.price || 0),
-          payout: payout,
-          balance: null
-        });
-      }
-
+    if (completedTrades < numTrades && completedTrades < maxTradesPerSession) {
+      checkingForEntry = true;
       resultsDisplay.innerHTML = `
         <strong>Trading Active</strong><br>
         Pattern: ${pattern}<br>
         Completed: ${completedTrades}/${numTrades}<br>
         Wins: ${resultsDisplay.dataset.success}, Losses: ${resultsDisplay.dataset.failed}
       `;
-
-    } catch (err) {
-      completedTrades++;
-      popup("Trade Error", err.message, 1000);
-    }
-
-    // Instantly re-enable entry checking for next trade if needed
-    if (completedTrades < numTrades && completedTrades < maxTradesPerSession) {
-      checkingForEntry = true;
-      // No delay, check immediately
     } else {
       finishSession();
     }
-  });
+  } catch (err) {
+    console.error("Trade failed:", err);
+    completedTrades++;
+    checkingForEntry = true; // Attempt to recover
+  }
 }
 
 function finishSession() {
   running = false;
   checkingForEntry = false;
   document.getElementById("run-even-odd").textContent = "RUN";
-
-  popup(
-    "Even / Odd Complete",
-    `Trades: ${completedTrades}<br>
-     Wins: ${resultsDisplay.dataset.success}<br>
-     Losses: ${resultsDisplay.dataset.failed}`,
-    4000
-  );
-}
-
-// Check last 3 ticks for consecutive even or odd
-const last3Ticks = tickHistory.slice(-3);
-const allEven = last3Ticks.every(tick => tick % 2 === 0);
-const tradeType = allEven ? "DIGITODD" : "DIGITEVEN";
-const pattern = allEven ? "Odd" : "Even";
-
-// Close checking popup
-const checkingPopup = document.querySelector('.trade-popup-overlay');
-if (checkingPopup) {
-  checkingPopup.remove();
-}
-
-// Initialize results tracking
-if (!resultsDisplay.dataset.success) resultsDisplay.dataset.success = "0";
-if (!resultsDisplay.dataset.failed) resultsDisplay.dataset.failed = "0";
-
-resultsDisplay.innerHTML = `Found entry for ${pattern} ticks<br>Placing ${tradeType} trades...`;
-
-// Place single trade and check pattern again before next trade
-try {
-  const result = await buyContract(symbol, tradeType, 1, stake, null, null, true);
-
-  // Get the last digit for popup display
-  const lastDigit = last3Ticks[last3Ticks.length - 1];
-  const digitType = lastDigit % 2 === 0 ? "Even" : "Odd";
-
-  // Show trade confirmation popup with stake and digit type
-  let tradeResult = 'Failed';
-  if (!result.error) {
-    const buyInfo = result.buy || result;
-    const payout = Number(buyInfo?.payout ?? buyInfo?.payout_amount ?? 0) || 0;
-    const stakeAmt = Number(stake) || 0;
-
-    if (payout > stakeAmt) {
-      tradeResult = 'Won';
-    } else {
-      tradeResult = 'Lost';
-    }
-  }
-
-  popup(`Trade Executed`, `Type: ${tradeType}<br>Stake: $${Number(stake).toFixed(2)}<br>Last Digit: ${lastDigit} (${digitType})<br>Result: ${tradeResult}`, 2000);
-
-  // Update results
-  const currentSuccess = parseInt(resultsDisplay.dataset.success) || 0;
-  const currentFailed = parseInt(resultsDisplay.dataset.failed) || 0;
-  const newSuccess = !result.error ? currentSuccess + 1 : currentSuccess;
-  const newFailed = result.error ? currentFailed + 1 : currentFailed;
-
-  resultsDisplay.dataset.success = newSuccess;
-  resultsDisplay.dataset.failed = newFailed;
-
-  resultsDisplay.innerHTML = `
-      <strong>Trading Active</strong><br>
-      Pattern: ${pattern} (3 consecutive)<br>
-      Trades: ${tradeType}<br>
-      Completed: ${newSuccess + newFailed}/${numTrades}<br>
-      Success: ${newSuccess}, Failed: ${newFailed}
-    `;
-
-  // Check if we need more trades
-  if (newSuccess + newFailed < numTrades) {
-    // INSTANT execution (no delay for speed)
-    if (checkingForEntry) {
-      checkForPatternAndTrade();
-    }
-  } else {
-    // All trades completed
-    checkingForEntry = false;
-    running = false;
-    document.getElementById("run-even-odd").textContent = "RUN";
-
-    popup(`Even/Odd Complete`, `Completed ${numTrades} trades<br>Success: ${newSuccess}, Failed: ${newFailed}`, 5000);
-  }
-
-} catch (error) {
-  console.error('Trade failed:', error);
-
-  const lastDigit = last3Ticks[last3Ticks.length - 1];
-  const digitType = lastDigit % 2 === 0 ? "Even" : "Odd";
-
-  popup(`Trade Failed`, `Type: ${tradeType}<br>Stake: $${Number(stake).toFixed(2)}<br>Last Digit: ${lastDigit} (${digitType})<br>Error: ${error.message}`, 3000);
-
-  // Continue with next trade if needed
-  const currentFailed = parseInt(resultsDisplay.dataset.failed) || 0;
-  const currentSuccess = parseInt(resultsDisplay.dataset.success) || 0;
-  const totalTrades = currentSuccess + currentFailed + 1;
-
-  if (totalTrades < numTrades) {
-    // INSTANT execution (no delay for speed)
-    if (checkingForEntry) {
-      checkForPatternAndTrade();
-    }
-  } else {
-    checkingForEntry = false;
-    running = false;
-    document.getElementById("run-even-odd").textContent = "RUN";
-  }
+  resultsDisplay.innerHTML = `<strong>Session Complete</strong><br>Trades: ${completedTrades}<br>Wins: ${resultsDisplay.dataset.success}, Losses: ${resultsDisplay.dataset.failed}`;
 }
 
 function stopEvenOdd() {
   running = false;
   checkingForEntry = false;
-
-  document.querySelector('.trade-popup-overlay')?.remove();
   document.getElementById("run-even-odd").textContent = "RUN";
-
-  popup("Even / Odd Stopped");
+  resultsDisplay.innerHTML = "Stopped.";
 }
 
 function restartTickStream() {
