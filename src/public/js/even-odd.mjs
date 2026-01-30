@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="smart-card">
         <div class="smart-header">
           <h2 class="smart-title">Even / Odd Switch</h2>
-          <p class="smart-sub">Digit Reversal Strategy</p>
+          <p class="smart-sub">Even/Odd Strategy</p>
         </div>
 
         <div class="smart-form">
