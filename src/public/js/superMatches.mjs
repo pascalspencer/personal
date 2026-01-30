@@ -246,8 +246,8 @@ function selectMatchDigit() {
   // Fast Start: 10 ticks floor
   if (dataSize < 10) return null;
 
-  // Analyze strictly the last 25 ticks (or all we have if < 25)
-  const windowSize = Math.min(dataSize, 25);
+  // Analyze strictly the last 100 ticks (or all we have if < 100)
+  const windowSize = Math.min(dataSize, 100);
   const analysisWindow = tickHistory.slice(-windowSize);
 
   const counts = Array(10).fill(0);
@@ -391,7 +391,7 @@ function updateUI() {
   const minFrequency = Number(absenceInput.value);
   const dataSize = tickHistory.length;
 
-  const windowSize = Math.min(dataSize, 25);
+  const windowSize = Math.min(dataSize, 100);
   const analysisWindow = tickHistory.slice(-windowSize);
   const counts = Array(10).fill(0);
   analysisWindow.forEach(d => counts[d]++);
