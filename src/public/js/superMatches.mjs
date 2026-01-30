@@ -243,9 +243,10 @@ function selectMatchDigit() {
   const minFrequency = Number(absenceInput.value);
   const dataSize = tickHistory.length;
 
-  // Faster start: 15 ticks min
-  if (dataSize < 15) return null;
+  // Fast Start: 10 ticks floor
+  if (dataSize < 10) return null;
 
+  // Weighted frequency: Newer ticks count more
   const scores = Array(10).fill(0);
   tickHistory.forEach((digit, index) => {
     const weight = 0.5 + (index / dataSize);
@@ -256,24 +257,25 @@ function selectMatchDigit() {
   const heatStats = scores.map((score, digit) => ({
     digit,
     heat: (score / totalScore) * 100,
-    // Double Momentum: Count in last 8 ticks
-    recentCluster: tickHistory.slice(-8).filter(x => x === digit).length
+    // Momentum: Appeared in the last 5 ticks
+    recentCount: tickHistory.slice(-5).filter(x => x === digit).length
   }));
 
-  // Sort by Momentum first, then Heat
-  heatStats.sort((a, b) => b.recentCluster - a.recentCluster || b.heat - a.heat);
+  // Sort by Heat descending
+  heatStats.sort((a, b) => b.heat - a.heat);
 
   const best = heatStats[0];
 
-  // Logic: Double Appearance in 8 ticks is a strong signal for "Digit Repeating"
-  // Combined with a 1.5x deviation from mean (15% vs 10%)
-  if (best.recentCluster >= 2 && best.heat >= Math.max(minFrequency, 15)) {
-    return best.digit;
-  }
+  // Accuracy Trigger: Must exceed min freq AND have appeared very recently (momentum)
+  if (best.heat >= minFrequency) {
+    if (best.recentCount >= 1) {
+      return best.digit;
+    }
 
-  // Backup: Extreme Heat remains a valid outlier trigger
-  if (best.heat > 25) {
-    return best.digit;
+    // Fallback for extreme hot zones
+    if (best.heat > 25) {
+      return best.digit;
+    }
   }
 
   return null;
@@ -336,23 +338,11 @@ async function handleTradeExecution(contractId) {
       ws.close();
 
       if (contract.profit > 0) {
-        if (contractId === hedgeContractId) {
-          // It was a hedge win
-          statusDisplay.innerHTML = `✅ Hedge Win. Scanning for next setup...`;
-          awaitingHedge = false;
-        } else {
-          // It was a match win
-          stopStrategy("✅ WIN - Session Complete");
-          sessionWon = true;
-        }
+        stopStrategy("✅ WIN - Session Complete");
+        sessionWon = true;
       } else {
-        if (contractId === hedgeContractId) {
-          statusDisplay.innerHTML = `❌ Hedge Lost. Resetting...`;
-          awaitingHedge = false;
-        } else {
-          statusDisplay.innerHTML = `❌ Match Lost. Deploying HEDGE...`;
-          await executeHedge(lastMatchDigit);
-        }
+        statusDisplay.innerHTML = `❌ Match Lost. Deploying HEDGE...`;
+        await executeHedge(lastMatchDigit);
       }
     }
   };
@@ -377,24 +367,24 @@ async function handleTradeExecution(contractId) {
   }, 60000);
 }
 
-let hedgeContractId = null;
-
 async function executeHedge(digit) {
   try {
     const symbol = document.getElementById("submarket").value;
-    const stake = stakeInput.value;
+    const stake = (Number(stakeInput.value) * 2).toFixed(2);
 
     const resp = await buyContract(symbol, "DIGITDIFF", 1, stake, digit);
     if (resp && resp.buy) {
-      hedgeContractId = resp.buy.contract_id;
-      showLivePopup(hedgeContractId, {
+      showLivePopup(resp.buy.contract_id, {
         tradeType: "DIGITDIFF",
         stake: stake,
         payout: resp.buy.payout
       });
 
-      // Use the unified monitor for the hedge as well (fast recovery)
-      handleTradeExecution(hedgeContractId);
+      // Accuracy over Speed: Wait for 5s fixed delay for market to settle
+      setTimeout(() => {
+        awaitingHedge = false;
+        if (running) statusDisplay.textContent = "Scanning for next opportunity...";
+      }, 5000);
     } else {
       awaitingHedge = false;
     }
@@ -419,14 +409,14 @@ function updateUI() {
   const totalScore = scores.reduce((a, b) => a + b, 0) || 1;
   const stats = scores.map((score, digit) => {
     const heat = (score / totalScore) * 100;
-    const recentCluster = tickHistory.slice(-8).filter(x => x === digit).length;
-    return { digit, heat, recentCluster };
+    const isRecent = tickHistory.slice(-5).includes(digit);
+    return { digit, heat, isRecent };
   });
 
   stats.forEach(s => {
     const card = document.createElement("div");
-    const isHot = s.heat >= Math.max(minFrequency, 15);
-    const hasMomentum = s.recentCluster >= 2 && isHot;
+    const isHot = s.heat >= minFrequency;
+    const hasMomentum = s.isRecent && isHot;
 
     card.style.cssText = `
             border: 1px solid #eee;
