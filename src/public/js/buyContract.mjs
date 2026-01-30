@@ -510,6 +510,53 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
   }
 }
 
+/**
+ * Wait for a contract to be settled (Won/Lost)
+ * @param {number|string} contractId 
+ */
+export async function waitForSettlement(contractId) {
+  if (!connection || connection.readyState !== WebSocket.OPEN) {
+    throw new Error("WebSocket not open");
+  }
+
+  return new Promise((resolve, reject) => {
+    const id = reqCounter++;
+    const subPayload = {
+      proposal_open_contract: 1,
+      contract_id: contractId,
+      subscribe: 1,
+      req_id: id
+    };
+
+    const handler = (evt) => {
+      try {
+        const msg = JSON.parse(evt.data);
+        if (msg.echo_req?.req_id === id && msg.proposal_open_contract) {
+          const poc = msg.proposal_open_contract;
+          if (poc.is_settled) {
+            // Cleanup
+            connection.removeEventListener('message', handler);
+            try { connection.send(JSON.stringify({ forget: poc.id })); } catch (e) { }
+            resolve(poc);
+          }
+        } else if (msg.echo_req?.req_id === id && msg.error) {
+          connection.removeEventListener('message', handler);
+          reject(msg.error);
+        }
+      } catch (err) { }
+    };
+
+    connection.addEventListener('message', handler);
+    connection.send(JSON.stringify(subPayload));
+
+    // Timeout safety
+    setTimeout(() => {
+      connection.removeEventListener('message', handler);
+      reject(new Error("Settlement wait timed out"));
+    }, 30000);
+  });
+}
+
 
 // Unified Bulk Buy using buy_contract_for_multiple_accounts
 async function buyContractBulk(symbol, tradeType, duration, stake, barrier, count, tokens) {
@@ -631,4 +678,4 @@ function calculatePercentages() {
 }
 
 // --- Export for automation ---
-export { evaluateAndBuyContractSafe, buyContract, buyContractBulk, showLoginidPrompt };
+export { evaluateAndBuyContractSafe, buyContract, buyContractBulk, showLoginidPrompt, waitForSettlement };

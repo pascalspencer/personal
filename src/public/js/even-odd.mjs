@@ -1,4 +1,4 @@
-import { buyContract, getAuthToken } from "./buyContract.mjs";
+import { buyContract, getAuthToken, waitForSettlement } from "./buyContract.mjs";
 import { showLivePopup } from './livePopup.mjs';
 
 let running = false;
@@ -50,21 +50,25 @@ document.addEventListener("DOMContentLoaded", () => {
               <label for="stake-eo">Stake (Min 0.35)</label>
               <input type="number" id="stake-eo" min="0.35" step="0.01" value="0.35">
             </div>
-
-            <div class="field" style="grid-column: span 1;">
-              <label style="display: flex; align-items: center; gap: 5px;">
-                <input type="checkbox" id="martingale-eo"> Martingale
-              </label>
-            </div>
-            <div class="field" style="grid-column: span 1;">
-              <label for="martingale-factor-eo">Factor</label>
-              <input type="number" id="martingale-factor-eo" min="1.1" step="0.1" value="2.0">
-            </div>
           </div>
 
           <div class="action-area" style="text-align: center;">
             <button id="run-even-odd" class="run-btn" style="width: 100%; height: 50px; font-size: 1.2rem;">RUN</button>
             <div id="even-odd-results" class="smart-results" style="margin-top: 15px; font-weight: bold; min-height: 24px;">Ready</div>
+          </div>
+
+          <div id="martingale-config-eo" style="margin-top: 15px; padding: 12px; background: #fffcf0; border: 1px solid #ffeeba; border-radius: 8px; display: flex; flex-direction: column; gap: 10px;">
+            <div style="font-size: 0.85rem; font-weight: bold; color: #856404; text-transform: uppercase; letter-spacing: 0.5px;">Recovery Strategy</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: center;">
+              <label class="small-toggle" style="background: white; border: 1px solid #ffeeba; box-shadow: none;">
+                <span>Martingale</span>
+                <input type="checkbox" id="martingale-eo">
+              </label>
+              <div class="field" style="margin-bottom: 0;">
+                <label for="martingale-factor-eo" style="font-size: 0.75rem; color: #666;">Multiplier</label>
+                <input type="number" id="martingale-factor-eo" min="1.1" step="0.1" value="2.0" style="height: 32px; font-size: 0.85rem;">
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -340,12 +344,33 @@ async function checkForPatternAndTrade() {
 
   try {
     const result = await buyContract(symbol, tradeType, 1, stake, null, null, true);
-    const payout = Number(result?.buy?.payout || 0);
-    const win = payout > stake;
+    // Extract win status immediately if possible, but we'll rely on settlement for stake
+    const winStatusInitial = Number(result?.buy?.payout || 0) > stake;
 
     completedTrades++;
-    resultsDisplay.dataset.success = String(Number(resultsDisplay.dataset.success) + (win ? 1 : 0));
-    resultsDisplay.dataset.failed = String(Number(resultsDisplay.dataset.failed) + (win ? 0 : 1));
+    resultsDisplay.dataset.success = String(Number(resultsDisplay.dataset.success) + (winStatusInitial ? 1 : 0));
+    resultsDisplay.dataset.failed = String(Number(resultsDisplay.dataset.failed) + (winStatusInitial ? 0 : 1));
+
+    // Martingale Accuracy: Wait for the result before proceeding
+    if (result && result.buy && martingaleToggle.checked) {
+      resultsDisplay.innerHTML += `<br><span style="color:#666; font-size:0.85rem;">⏳ Waiting for settlement...</span>`;
+      try {
+        const settled = await waitForSettlement(result.buy.contract_id);
+        const profit = Number(settled.profit);
+        const win = profit > 0;
+
+        if (win) {
+          stakeInput.value = baseStake;
+          resultsDisplay.innerHTML += `<br><span style="color:#2e7d32">Win: Stake Reset</span>`;
+        } else {
+          const factor = Number(martingaleFactor.value) || 2.0;
+          stakeInput.value = (Number(stakeInput.value) * factor).toFixed(2);
+          resultsDisplay.innerHTML += `<br><span style="color:#d32f2f">Loss: Stake Multiplied</span>`;
+        }
+      } catch (e) {
+        console.warn("Settlement wait failed:", e);
+      }
+    }
 
     if (completedTrades < numTrades && completedTrades < maxTradesPerSession) {
       checkingForEntry = true;
@@ -357,16 +382,6 @@ async function checkForPatternAndTrade() {
       `;
     } else {
       finishSession();
-    }
-
-    // Martingale
-    if (martingaleToggle.checked) {
-      if (win) {
-        stakeInput.value = baseStake;
-      } else {
-        const factor = Number(martingaleFactor.value) || 2.0;
-        stakeInput.value = (Number(stakeInput.value) * factor).toFixed(2);
-      }
     }
   } catch (err) {
     console.error("Trade failed:", err);

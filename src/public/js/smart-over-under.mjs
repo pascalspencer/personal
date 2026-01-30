@@ -1,4 +1,4 @@
-import { buyContract, buyContractBulk, getAuthToken } from "./buyContract.mjs";
+import { buyContract, buyContractBulk, getAuthToken, waitForSettlement } from "./buyContract.mjs";
 import { getCurrentToken } from './popupMessages.mjs';
 import { showLivePopup } from './livePopup.mjs';
 
@@ -73,21 +73,25 @@ document.addEventListener("DOMContentLoaded", () => {
                 <input type="checkbox" id="bulk-toggle-sou">
               </label>
             </div>
-
-            <div class="field" style="grid-column: span 1;">
-              <label style="display: flex; align-items: center; gap: 5px;">
-                <input type="checkbox" id="martingale-sou"> Martingale
-              </label>
-            </div>
-            <div class="field" style="grid-column: span 1;">
-              <label for="martingale-factor-sou">Factor</label>
-              <input type="number" id="martingale-factor-sou" min="1.1" step="0.1" value="2.0">
-            </div>
           </div>
 
           <div class="action-area" style="text-align: center;">
             <button id="run-smart" class="run-btn" style="width: 100%; height: 50px; font-size: 1.2rem;">RUN</button>
             <div id="smart-results" class="smart-results" style="margin-top: 15px; font-weight: bold; min-height: 24px;">Ready</div>
+          </div>
+
+          <div id="martingale-config-sou" style="margin-top: 15px; padding: 12px; background: #f0f7ff; border: 1px solid #d0e3ff; border-radius: 8px; display: flex; flex-direction: column; gap: 10px;">
+            <div style="font-size: 0.85rem; font-weight: bold; color: #0056b3; text-transform: uppercase; letter-spacing: 0.5px;">Martingale Setup</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: center;">
+              <label class="small-toggle" style="background: white; border: 1px solid #d0e3ff; box-shadow: none;">
+                <span>Auto-Recovery</span>
+                <input type="checkbox" id="martingale-sou">
+              </label>
+              <div class="field" style="margin-bottom: 0;">
+                <label for="martingale-factor-sou" style="font-size: 0.75rem; color: #666;">Multiplier</label>
+                <input type="number" id="martingale-factor-sou" min="1.1" step="0.1" value="2.0" style="height: 32px; font-size: 0.85rem;">
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -293,14 +297,22 @@ async function handleTrigger(quote, isOver, isUnder) {
     const result = await executeTrade(symbol, type, prediction, quote);
     tradesCompleted++;
 
-    // Martingale
-    if (result && result._meta && martingaleToggle.checked) {
-      const profit = Number(result._meta.profit);
-      if (profit < 0) {
-        const factor = Number(martingaleFactor.value) || 2.0;
-        stakeInput.value = (Number(stakeInput.value) * factor).toFixed(2);
-      } else if (profit > 0) {
-        stakeInput.value = baseStake;
+    // Martingale Accuracy: Wait for the result before proceeding or unlocking
+    if (result && result.buy && martingaleToggle.checked) {
+      resultsBox.textContent = "⏳ Waiting for settlement...";
+      try {
+        const settled = await waitForSettlement(result.buy.contract_id);
+        const profit = Number(settled.profit);
+        if (profit < 0) {
+          const factor = Number(martingaleFactor.value) || 2.0;
+          stakeInput.value = (Number(stakeInput.value) * factor).toFixed(2);
+          resultsBox.innerHTML = `<span style="color:#d32f2f">Loss: Applying Martingale</span>`;
+        } else {
+          stakeInput.value = baseStake;
+          resultsBox.innerHTML = `<span style="color:#2e7d32">Win: Resetting Stake</span>`;
+        }
+      } catch (e) {
+        console.warn("Settlement wait failed:", e);
       }
     }
   } catch (e) {
