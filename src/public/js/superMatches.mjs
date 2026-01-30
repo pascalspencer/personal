@@ -444,18 +444,19 @@ function updateUI() {
     const isLast = i === displayTicks.length - 1;
 
     div.style.cssText = `
-            min-width: 25px;
-            height: 25px;
+            width: 40px;
+            height: 30px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.85rem;
-            border-radius: 4px;
+            font-size: 1.1rem;
+            border-radius: 6px;
             background: ${isLast ? '#2196f3' : '#fff'};
             color: ${isLast ? '#fff' : '#333'};
             border: 1px solid ${isLast ? '#2196f3' : '#ddd'};
             font-weight: ${isLast ? 'bold' : 'normal'};
             flex-shrink: 0;
+            box-shadow: ${isLast ? '0 2px 4px rgba(33,150,243,0.3)' : 'none'};
         `;
     div.textContent = t;
     tickGrid.appendChild(div);
