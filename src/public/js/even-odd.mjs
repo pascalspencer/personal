@@ -248,7 +248,7 @@ async function checkForPatternAndTrade() {
   if (!allEven && !allOdd) return;
 
   checkingForEntry = false;
-  const tradeType = allEven ? "DIGITEVEN" : "DIGITODD";
+  const tradeType = allEven ? "DIGITODD" : "DIGITEVEN";
   const pattern = allEven ? "Even" : "Odd";
   const stake = Number(stakeInput.value);
   const symbol = document.getElementById("submarket")?.value || "R_100";
@@ -270,7 +270,7 @@ async function checkForPatternAndTrade() {
         <strong>Trading Active</strong><br>
         Pattern: ${pattern}<br>
         Completed: ${completedTrades}/${numTrades}<br>
-        Wins: ${resultsDisplay.dataset.success}, Losses: ${resultsDisplay.dataset.failed}
+        Success: ${resultsDisplay.dataset.success}, Failed: ${resultsDisplay.dataset.failed}
       `;
     } else {
       finishSession();
