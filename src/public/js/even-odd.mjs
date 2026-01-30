@@ -179,7 +179,7 @@ function startTickStream() {
         updateTickDisplay();
 
         // Check for pattern if we're actively looking for entry
-        if (checkingForEntry && tickHistory.length >= 3) {
+        if (checkingForEntry && tickHistory.length >= 4) {
           checkForPatternAndTrade();
         }
       }
