@@ -514,7 +514,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
  * Wait for a contract to be settled (Won/Lost)
  * @param {number|string} contractId 
  */
-export async function waitForSettlement(contractId) {
+async function waitForSettlement(contractId) {
   if (!connection || connection.readyState !== WebSocket.OPEN) {
     throw new Error("WebSocket not open");
   }
