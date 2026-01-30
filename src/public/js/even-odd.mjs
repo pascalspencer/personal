@@ -10,6 +10,8 @@ let maxTradesPerSession = 100; // safety cap
 let ticksSinceLastTrade = 0;
 let baseStake = 0;
 let pingInterval = null;
+let lastTickTimestamp = Date.now();
+let watchdogInterval = null;
 
 let tickCountInput, stakeInput, tickGrid, resultsDisplay, digitStatsDisplay;
 
@@ -218,6 +220,7 @@ function startTickStream() {
         const quote = msg.tick.quote;
         const digit = Number(String(quote).slice(-1));
 
+        lastTickTimestamp = Date.now();
         // IMMEDIATE SYNCHRONOUS UPDATE for digit tracking accuracy
         tickHistory.push(digit);
         if (tickHistory.length > 100) tickHistory = tickHistory.slice(-100);
@@ -257,6 +260,21 @@ function startTickStream() {
   };
 }
 
+function startWatchdog() {
+  if (watchdogInterval) clearInterval(watchdogInterval);
+  watchdogInterval = setInterval(() => {
+    if (running && Date.now() - lastTickTimestamp > 15000) {
+      console.warn("[EvenOdd] Watchdog: No ticks for 15s. Restarting stream...");
+      restartTickStream();
+    }
+  }, 5000);
+}
+
+function stopWatchdog() {
+  if (watchdogInterval) clearInterval(watchdogInterval);
+  watchdogInterval = null;
+}
+
 function startPing(ws) {
   if (pingInterval) clearInterval(pingInterval);
   pingInterval = setInterval(() => {
@@ -286,6 +304,8 @@ async function runEvenOdd() {
   running = true;
   checkingForEntry = true;
   baseStake = Number(stakeInput.value);
+  lastTickTimestamp = Date.now();
+  startWatchdog();
 
   resultsDisplay.dataset.success = "0";
   resultsDisplay.dataset.failed = "0";
@@ -326,6 +346,15 @@ async function checkForPatternAndTrade() {
 
   try {
     const result = await buyContract(symbol, tradeType, 1, stake, null, null, true);
+
+    // Handle API error objects returned by buyContract
+    if (result?.error) {
+      resultsDisplay.innerHTML = `<span style="color:red">Trade Error: ${result.error.message}</span>`;
+      completedTrades++;
+      checkingForEntry = true;
+      return;
+    }
+
     // Extract win status immediately if possible
     const winStatusInitial = Number(result?.buy?.payout || 0) > stake;
 
@@ -354,6 +383,7 @@ async function checkForPatternAndTrade() {
 function finishSession() {
   running = false;
   checkingForEntry = false;
+  stopWatchdog();
   document.getElementById("run-even-odd").textContent = "RUN";
   resultsDisplay.innerHTML = `<strong>Session Complete</strong><br>Trades: ${completedTrades}<br>Success: ${resultsDisplay.dataset.success}, Failed: ${resultsDisplay.dataset.failed}`;
 }
@@ -361,6 +391,7 @@ function finishSession() {
 function stopEvenOdd() {
   running = false;
   checkingForEntry = false;
+  stopWatchdog();
   document.getElementById("run-even-odd").textContent = "RUN";
   resultsDisplay.innerHTML = "Stopped.";
 }
