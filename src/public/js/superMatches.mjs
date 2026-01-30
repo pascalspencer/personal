@@ -243,46 +243,37 @@ function selectMatchDigit() {
   const minFrequency = Number(absenceInput.value);
   const dataSize = tickHistory.length;
 
-  // Need at least a small sample (reduced from 50 to 15 for faster start)
+  // Faster start: 15 ticks min
   if (dataSize < 15) return null;
 
-  // 1. Calculate weighted frequency
-  // Newer ticks contribute more to the "Hot" score
   const scores = Array(10).fill(0);
-
   tickHistory.forEach((digit, index) => {
-    // Weight increases linearly from 0.5 (oldest) to 1.5 (newest)
     const weight = 0.5 + (index / dataSize);
     scores[digit] += weight;
   });
 
-  // Convert scores to a relative "Heat" percentage for UI display consistency
   const totalScore = scores.reduce((a, b) => a + b, 0);
   const heatStats = scores.map((score, digit) => ({
     digit,
     heat: (score / totalScore) * 100,
-    // Check if appeared in the very last 5 ticks (Trend detection)
-    recentCount: tickHistory.slice(-5).filter(x => x === digit).length
+    // Double Momentum: Count in last 8 ticks
+    recentCluster: tickHistory.slice(-8).filter(x => x === digit).length
   }));
 
-  // Sort by Heat descending
-  heatStats.sort((a, b) => b.heat - a.heat);
+  // Sort by Momentum first, then Heat
+  heatStats.sort((a, b) => b.recentCluster - a.recentCluster || b.heat - a.heat);
 
   const best = heatStats[0];
 
-  // Best Judgment Criteria:
-  // 1. Must exceed the Min Frequency (user setting)
-  // 2. Stronger preference if it appeared in the last 5 ticks (momentum)
-  if (best.heat >= minFrequency) {
-    // Prediction logic: if it's hot AND has appeared recently, it's a high probability "Repeat"
-    if (best.recentCount >= 1) {
-      return best.digit;
-    }
+  // Logic: Double Appearance in 8 ticks is a strong signal for "Digit Repeating"
+  // Combined with a 1.5x deviation from mean (15% vs 10%)
+  if (best.recentCluster >= 2 && best.heat >= Math.max(minFrequency, 15)) {
+    return best.digit;
+  }
 
-    // Fallback: If it's EXTREMELY hot (e.g., > 25%), trade it anyway
-    if (best.heat > 25) {
-      return best.digit;
-    }
+  // Backup: Extreme Heat remains a valid outlier trigger
+  if (best.heat > 25) {
+    return best.digit;
   }
 
   return null;
@@ -345,11 +336,23 @@ async function handleTradeExecution(contractId) {
       ws.close();
 
       if (contract.profit > 0) {
-        stopStrategy("✅ WIN - Session Complete");
-        sessionWon = true;
+        if (contractId === hedgeContractId) {
+          // It was a hedge win
+          statusDisplay.innerHTML = `✅ Hedge Win. Scanning for next setup...`;
+          awaitingHedge = false;
+        } else {
+          // It was a match win
+          stopStrategy("✅ WIN - Session Complete");
+          sessionWon = true;
+        }
       } else {
-        statusDisplay.innerHTML = `❌ Match Lost. Deploying HEDGE...`;
-        await executeHedge(lastMatchDigit);
+        if (contractId === hedgeContractId) {
+          statusDisplay.innerHTML = `❌ Hedge Lost. Resetting...`;
+          awaitingHedge = false;
+        } else {
+          statusDisplay.innerHTML = `❌ Match Lost. Deploying HEDGE...`;
+          await executeHedge(lastMatchDigit);
+        }
       }
     }
   };
@@ -374,6 +377,8 @@ async function handleTradeExecution(contractId) {
   }, 60000);
 }
 
+let hedgeContractId = null;
+
 async function executeHedge(digit) {
   try {
     const symbol = document.getElementById("submarket").value;
@@ -381,17 +386,17 @@ async function executeHedge(digit) {
 
     const resp = await buyContract(symbol, "DIGITDIFF", 1, stake, digit);
     if (resp && resp.buy) {
-      showLivePopup(resp.buy.contract_id, {
+      hedgeContractId = resp.buy.contract_id;
+      showLivePopup(hedgeContractId, {
         tradeType: "DIGITDIFF",
         stake: stake,
         payout: resp.buy.payout
       });
 
-      // After hedge, we continue scanning for the next match
-      setTimeout(() => {
-        awaitingHedge = false;
-        if (running) statusDisplay.textContent = "Scanning for next opportunity...";
-      }, 5000);
+      // Use the unified monitor for the hedge as well (fast recovery)
+      handleTradeExecution(hedgeContractId);
+    } else {
+      awaitingHedge = false;
     }
   } catch (e) {
     console.error(e);
@@ -414,14 +419,14 @@ function updateUI() {
   const totalScore = scores.reduce((a, b) => a + b, 0) || 1;
   const stats = scores.map((score, digit) => {
     const heat = (score / totalScore) * 100;
-    const isRecent = tickHistory.slice(-5).includes(digit);
-    return { digit, heat, isRecent };
+    const recentCluster = tickHistory.slice(-8).filter(x => x === digit).length;
+    return { digit, heat, recentCluster };
   });
 
   stats.forEach(s => {
     const card = document.createElement("div");
-    const isHot = s.heat >= minFrequency;
-    const hasMomentum = s.isRecent && isHot;
+    const isHot = s.heat >= Math.max(minFrequency, 15);
+    const hasMomentum = s.recentCluster >= 2 && isHot;
 
     card.style.cssText = `
             border: 1px solid #eee;
