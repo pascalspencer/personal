@@ -229,7 +229,7 @@ async function runEvenOdd() {
   document.getElementById("run-even-odd").textContent = "STOP";
   resultsDisplay.innerHTML = "Monitoring Even / Odd ticks...";
 
-  if (tickHistory.length >= 3) {
+  if (tickHistory.length >= 4) {
     checkForPatternAndTrade();
   }
 }
@@ -240,11 +240,11 @@ async function checkForPatternAndTrade() {
   const numTrades = parseInt(tickCountInput.value) || 5;
   if (completedTrades >= numTrades) return finishSession();
 
-  const last3 = tickHistory.slice(-3);
-  if (last3.length < 3) return;
+  const last4 = tickHistory.slice(-4);
+  if (last4.length < 4) return;
 
-  const allEven = last3.every(d => d % 2 === 0);
-  const allOdd = last3.every(d => d % 2 !== 0);
+  const allEven = last4.every(d => d % 2 === 0);
+  const allOdd = last4.every(d => d % 2 !== 0);
   if (!allEven && !allOdd) return;
 
   checkingForEntry = false;
