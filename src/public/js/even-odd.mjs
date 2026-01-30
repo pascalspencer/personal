@@ -8,6 +8,7 @@ let tickHistory = [];
 let tickCountInput, stakeInput, tickGrid, totalTicksDisplay, resultsDisplay;
 let completedTrades = 0;
 let maxTradesPerSession = 100; // safety cap
+let lastTradeTickIndex = -1;
 
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -225,6 +226,7 @@ async function runEvenOdd() {
 
   resultsDisplay.dataset.success = "0";
   resultsDisplay.dataset.failed = "0";
+  lastTradeTickIndex = -1;
 
   document.getElementById("run-even-odd").textContent = "STOP";
   resultsDisplay.innerHTML = "Monitoring Even / Odd ticks...";
@@ -240,6 +242,9 @@ async function checkForPatternAndTrade() {
   const numTrades = parseInt(tickCountInput.value) || 5;
   if (completedTrades >= numTrades) return finishSession();
 
+  // Ensure "once for every check" (at least 4 new ticks since last trade)
+  if (lastTradeTickIndex !== -1 && tickHistory.length < lastTradeTickIndex + 4) return;
+
   const last4 = tickHistory.slice(-4);
   if (last4.length < 4) return;
 
@@ -248,6 +253,7 @@ async function checkForPatternAndTrade() {
   if (!allEven && !allOdd) return;
 
   checkingForEntry = false;
+  lastTradeTickIndex = tickHistory.length;
   const tradeType = allEven ? "DIGITODD" : "DIGITEVEN";
   const pattern = allEven ? "Even" : "Odd";
   const stake = Number(stakeInput.value);
