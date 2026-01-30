@@ -10,6 +10,7 @@ let maxTradesPerSession = 100; // safety cap
 let lastTradeTickIndex = -1;
 let baseStake = 0;
 let sessionStats = { wins: 0, losses: 0 };
+let awaitingRecovery = false;
 let pingInterval = null;
 
 let tickCountInput, stakeInput, tickGrid, resultsDisplay, digitStatsDisplay, martingaleToggle, martingaleFactor;
@@ -324,7 +325,7 @@ async function runEvenOdd() {
 }
 
 async function checkForPatternAndTrade() {
-  if (!running || !checkingForEntry) return;
+  if (!running || !checkingForEntry || awaitingRecovery) return;
 
   const numTrades = parseInt(tickCountInput.value) || 5;
   if (completedTrades >= numTrades) return finishSession();
@@ -357,28 +358,9 @@ async function checkForPatternAndTrade() {
     resultsDisplay.dataset.success = String(Number(resultsDisplay.dataset.success) + (winStatusInitial ? 1 : 0));
     resultsDisplay.dataset.failed = String(Number(resultsDisplay.dataset.failed) + (winStatusInitial ? 0 : 1));
 
-    // Martingale Accuracy: TRACK in background, do not await to keep scanning fast
+    // SuperMatches-style Tracking: Fast and Accurate background monitoring
     if (result && result.buy && martingaleToggle.checked) {
-      const contractId = result.buy.contract_id;
-      const martingaleBox = document.getElementById("martingale-config-eo");
-      if (martingaleBox) martingaleBox.style.boxShadow = "0 0 10px rgba(255, 193, 7, 0.4)";
-
-      waitForSettlement(contractId).then(settled => {
-        if (martingaleBox) martingaleBox.style.boxShadow = "none";
-        const profit = Number(settled.profit);
-        if (profit < 0) {
-          sessionStats.losses++;
-          const factor = Number(martingaleFactor.value) || 2.0;
-          stakeInput.value = (Number(stakeInput.value) * factor).toFixed(2);
-        } else {
-          sessionStats.wins++;
-          stakeInput.value = baseStake;
-        }
-        updateStatsUI();
-      }).catch(e => {
-        console.warn("Settlement track failed:", e);
-        if (martingaleBox) martingaleBox.style.boxShadow = "none";
-      });
+      monitorContractResults(result.buy.contract_id);
     }
 
     if (completedTrades < numTrades && completedTrades < maxTradesPerSession) {
@@ -397,6 +379,70 @@ async function checkForPatternAndTrade() {
     completedTrades++;
     checkingForEntry = true; // Attempt to recover
   }
+}
+
+async function monitorContractResults(contractId) {
+  awaitingRecovery = true;
+  const token = getAuthToken();
+  if (!token) {
+    awaitingRecovery = false;
+    return;
+  }
+
+  const martingaleBox = document.getElementById("martingale-config-eo");
+  if (martingaleBox) martingaleBox.style.boxShadow = "0 0 10px rgba(255, 193, 7, 0.4)";
+
+  const ws = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=61696");
+  let resolved = false;
+
+  ws.onopen = () => ws.send(JSON.stringify({ authorize: token }));
+
+  ws.onmessage = async (msg) => {
+    const data = JSON.parse(msg.data);
+
+    if (data.msg_type === 'authorize' && !data.error) {
+      ws.send(JSON.stringify({ proposal_open_contract: 1, contract_id: contractId, subscribe: 1 }));
+    }
+
+    if (data.proposal_open_contract && data.proposal_open_contract.is_sold) {
+      const contract = data.proposal_open_contract;
+      if (resolved) return;
+      resolved = true;
+      ws.close();
+
+      if (martingaleBox) martingaleBox.style.boxShadow = "none";
+
+      if (contract.profit > 0) {
+        sessionStats.wins++;
+        stakeInput.value = baseStake;
+      } else {
+        sessionStats.losses++;
+        const factor = Number(martingaleFactor.value) || 2.0;
+        stakeInput.value = (Number(stakeInput.value) * factor).toFixed(2);
+      }
+
+      updateStatsUI();
+      awaitingRecovery = false;
+    }
+  };
+
+  ws.onerror = () => {
+    if (!resolved) {
+      resolved = true;
+      ws.close();
+      awaitingRecovery = false;
+      if (martingaleBox) martingaleBox.style.boxShadow = "none";
+    }
+  };
+
+  setTimeout(() => {
+    if (!resolved) {
+      resolved = true;
+      ws.close();
+      awaitingRecovery = false;
+      if (martingaleBox) martingaleBox.style.boxShadow = "none";
+    }
+  }, 60000);
 }
 
 function updateStatsUI() {
