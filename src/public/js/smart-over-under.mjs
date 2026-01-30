@@ -12,7 +12,7 @@ let tradesCompleted = 0;
 let pingInterval = null;
 
 // UI Elements
-let overDigit, underDigit, tickCount, stakeInput;
+let overDigit, underDigit, tickCount, stakeInput, martingaleToggle, martingaleFactor;
 let singleToggle, bulkToggle, resultsBox;
 let digitStatsDisplay, tickGrid;
 
@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <input type="number" id="stake-sou" min="0.35" step="0.01" value="0.35">
             </div>
             
-            <div class="toggle-container" style="grid-column: span 2; display: flex; justify-content: space-around; background: #f5f5f5; padding: 8px; border-radius: 6px;">
+            <div class="toggle-container" style="grid-column: span 2; display: flex; justify-content: space-around; background: #f5f5f5; padding: 8px; border-radius: 6px; margin-bottom: 10px;">
               <label class="small-toggle">
                 <span>Single</span>
                 <input type="checkbox" id="single-toggle-sou" checked>
@@ -72,6 +72,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 <span>Bulk</span>
                 <input type="checkbox" id="bulk-toggle-sou">
               </label>
+            </div>
+
+            <div class="field" style="grid-column: span 1;">
+              <label style="display: flex; align-items: center; gap: 5px;">
+                <input type="checkbox" id="martingale-sou"> Martingale
+              </label>
+            </div>
+            <div class="field" style="grid-column: span 1;">
+              <label for="martingale-factor-sou">Factor</label>
+              <input type="number" id="martingale-factor-sou" min="1.1" step="0.1" value="2.0">
             </div>
           </div>
 
@@ -94,6 +104,8 @@ document.addEventListener("DOMContentLoaded", () => {
   resultsBox = document.getElementById("smart-results");
   digitStatsDisplay = document.getElementById("sou-digit-stats");
   tickGrid = document.getElementById("tick-grid-sou");
+  martingaleToggle = document.getElementById("martingale-sou");
+  martingaleFactor = document.getElementById("martingale-factor-sou");
 
   // Populate selects
   for (let i = 0; i <= 9; i++) {
@@ -282,10 +294,11 @@ async function handleTrigger(quote, isOver, isUnder) {
     tradesCompleted++;
 
     // Martingale
-    if (result && result._meta) {
+    if (result && result._meta && martingaleToggle.checked) {
       const profit = Number(result._meta.profit);
       if (profit < 0) {
-        stakeInput.value = (Number(stakeInput.value) * 2.1).toFixed(2);
+        const factor = Number(martingaleFactor.value) || 2.0;
+        stakeInput.value = (Number(stakeInput.value) * factor).toFixed(2);
       } else if (profit > 0) {
         stakeInput.value = baseStake;
       }

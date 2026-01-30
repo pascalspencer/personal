@@ -8,9 +8,10 @@ let tickHistory = [];
 let completedTrades = 0;
 let maxTradesPerSession = 100; // safety cap
 let lastTradeTickIndex = -1;
+let baseStake = 0;
 let pingInterval = null;
 
-let tickCountInput, stakeInput, tickGrid, resultsDisplay, digitStatsDisplay;
+let tickCountInput, stakeInput, tickGrid, resultsDisplay, digitStatsDisplay, martingaleToggle, martingaleFactor;
 
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -49,6 +50,16 @@ document.addEventListener("DOMContentLoaded", () => {
               <label for="stake-eo">Stake (Min 0.35)</label>
               <input type="number" id="stake-eo" min="0.35" step="0.01" value="0.35">
             </div>
+
+            <div class="field" style="grid-column: span 1;">
+              <label style="display: flex; align-items: center; gap: 5px;">
+                <input type="checkbox" id="martingale-eo"> Martingale
+              </label>
+            </div>
+            <div class="field" style="grid-column: span 1;">
+              <label for="martingale-factor-eo">Factor</label>
+              <input type="number" id="martingale-factor-eo" min="1.1" step="0.1" value="2.0">
+            </div>
           </div>
 
           <div class="action-area" style="text-align: center;">
@@ -66,6 +77,8 @@ document.addEventListener("DOMContentLoaded", () => {
   tickGrid = document.getElementById("tick-grid-eo");
   digitStatsDisplay = document.getElementById("eo-digit-stats");
   resultsDisplay = document.getElementById("even-odd-results");
+  martingaleToggle = document.getElementById("martingale-eo");
+  martingaleFactor = document.getElementById("martingale-factor-eo");
 
   // Event listeners
   document.getElementById("run-even-odd").onclick = runEvenOdd;
@@ -286,6 +299,7 @@ async function runEvenOdd() {
   completedTrades = 0;
   running = true;
   checkingForEntry = true;
+  baseStake = Number(stakeInput.value);
 
   resultsDisplay.dataset.success = "0";
   resultsDisplay.dataset.failed = "0";
@@ -343,6 +357,16 @@ async function checkForPatternAndTrade() {
       `;
     } else {
       finishSession();
+    }
+
+    // Martingale
+    if (martingaleToggle.checked) {
+      if (win) {
+        stakeInput.value = baseStake;
+      } else {
+        const factor = Number(martingaleFactor.value) || 2.0;
+        stakeInput.value = (Number(stakeInput.value) * factor).toFixed(2);
+      }
     }
   } catch (err) {
     console.error("Trade failed:", err);
