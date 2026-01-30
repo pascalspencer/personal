@@ -233,8 +233,9 @@ async function handleTrigger(quote, isOver, isUnder) {
     running = false; // Bulk runs once
     const count = Number(tickCount.value);
     resultsBox.textContent = `Deploying ${count} Bulk Trades...`;
+    const token = getCurrentToken();
     try {
-      const resp = await buyContractBulk(symbol, isOver ? "DIGITOVER" : "DIGITUNDER", 1, stakeInput.value, isOver ? overDigit.value : underDigit.value, count);
+      const resp = await buyContractBulk(symbol, isOver ? "DIGITOVER" : "DIGITUNDER", 1, stakeInput.value, isOver ? overDigit.value : underDigit.value, count, [token]);
       if (resp) stopSmart("Bulk Complete");
     } catch (e) {
       console.error(e);
