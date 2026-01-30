@@ -1,4 +1,4 @@
-import { buyContract, buyContractBulk } from "./buyContract.mjs";
+import { buyContract, buyContractBulk, getAuthToken } from "./buyContract.mjs";
 import { getCurrentToken } from './popupMessages.mjs';
 import { showLivePopup } from './livePopup.mjs';
 
@@ -130,7 +130,7 @@ function toggleSmart() {
 }
 
 function runSmart() {
-  const token = getCurrentToken();
+  const token = getAuthToken();
   if (!token) {
     alert("Please login first");
     return;
@@ -233,9 +233,9 @@ async function handleTrigger(quote, isOver, isUnder) {
     running = false; // Bulk runs once
     const count = Number(tickCount.value);
     resultsBox.textContent = `Deploying ${count} Bulk Trades...`;
-    const token = getCurrentToken();
+    const token = getAuthToken();
     try {
-      const resp = await buyContractBulk(symbol, isOver ? "DIGITOVER" : "DIGITUNDER", 1, stakeInput.value, isOver ? overDigit.value : underDigit.value, count, [token]);
+      const resp = await buyContractBulk(symbol, isOver ? "DIGITOVER" : "DIGITUNDER", 1, stakeInput.value, isOver ? overDigit.value : underDigit.value, count, token ? [token] : []);
       if (resp) stopSmart("Bulk Complete");
     } catch (e) {
       console.error(e);

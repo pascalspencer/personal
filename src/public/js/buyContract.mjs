@@ -89,6 +89,30 @@ function parseCurrencyFromAuth(resp) {
   return null;
 }
 
+/**
+ * Shared helper to get the correct token for the selected account
+ */
+export function getAuthToken() {
+  const params = new URLSearchParams(window.location.search);
+  const accountSelect = typeof document !== 'undefined' ? document.getElementById("accountType") : null;
+  const accountFromUrl = params.get('accountType') || params.get('account');
+  const selected = accountSelect?.value ?? accountFromUrl;
+
+  let loginidToUse = localStorage.getItem('selected_loginid') || selected;
+  let selectedToken = null;
+
+  if (loginidToUse && localStorage.getItem(loginidToUse)) {
+    selectedToken = localStorage.getItem(loginidToUse);
+  } else if (selected && localStorage.getItem(selected)) {
+    selectedToken = localStorage.getItem(selected);
+  } else {
+    selectedToken = params.get('userToken') || localStorage.getItem('userToken');
+  }
+
+  // Final fallback to popupMessages helper if still null
+  return selectedToken || getCurrentToken();
+}
+
 // --- WebSocket lifecycle ---
 connection.onopen = function () {
   api = connection; // mark as available for simple checks elsewhere
@@ -96,7 +120,7 @@ connection.onopen = function () {
   console.log("WebSocket connection is fantastic.");
 
   document.addEventListener("DOMContentLoaded", async () => {
-    const token = getCurrentToken();
+    const token = getAuthToken();
     if (!token) {
       console.warn("No token found at authorization.");
       return;
@@ -425,23 +449,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
 
   // Ensure authorized (basic check: presence of cached userToken or session-based token)
   // --- Ensure correct token is used for selected account (real/demo) ---
-  let selectedToken = null;
-  const params = new URLSearchParams(window.location.search);
-  const accountSelect = typeof document !== 'undefined' ? document.getElementById("accountType") : null;
-  const accountFromUrl = params.get('accountType') || params.get('account');
-  const selected = accountSelect?.value ?? accountFromUrl;
-
-
-
-  // --- Select correct token for trading ---
-  let loginidToUse = localStorage.getItem('selected_loginid') || selected;
-  if (loginidToUse && localStorage.getItem(loginidToUse)) {
-    selectedToken = localStorage.getItem(loginidToUse);
-  } else if (selected && localStorage.getItem(selected)) {
-    selectedToken = localStorage.getItem(selected);
-  } else {
-    selectedToken = params.get('userToken');
-  }
+  const selectedToken = getAuthToken();
 
   if (!selectedToken) {
     console.warn("No token available for selected account; cannot trade. Please re-login via Deriv.");
@@ -451,7 +459,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     // Check if we are already authorized with this token to avoid spamming the API in bulk mode
     if (lastAuthorizedToken !== selectedToken) {
       try {
-        console.log("[TRACK] Sending authorize request to Deriv API", { token: selectedToken.slice(0, 8) + '...', account: selected });
+        console.log("[TRACK] Sending authorize request to Deriv API", { token: selectedToken.slice(0, 8) + '...' });
         const authResp = await sendJson({ authorize: selectedToken });
         if (authResp?.error) {
           console.warn("Authorization failed:", authResp.error);
@@ -786,8 +794,16 @@ async function buyContractBulk(symbol, tradeType, duration, stake, barrier, coun
     return { error: { message: "WebSocket not connected" } };
   }
 
-  // Ensure authorized using the first token (assuming all tokens in bulk batch are same/authorized)
-  const tokenToUse = tokens && tokens.length > 0 ? tokens[0] : null;
+  // Ensure authorized using the provided tokens or fallback to getAuthToken()
+  let tokensToUse = tokens;
+  if (!tokensToUse || tokensToUse.length === 0 || !tokensToUse[0]) {
+    const singleToken = getAuthToken();
+    if (singleToken) {
+      tokensToUse = [singleToken];
+    }
+  }
+
+  const tokenToUse = tokensToUse && tokensToUse.length > 0 ? tokensToUse[0] : null;
   if (tokenToUse) {
     if (lastAuthorizedToken !== tokenToUse) {
       try {

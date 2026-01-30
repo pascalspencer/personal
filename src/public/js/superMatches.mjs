@@ -1,4 +1,4 @@
-import { buyContract } from "./buyContract.mjs";
+import { buyContract, getAuthToken } from "./buyContract.mjs";
 import { getCurrentToken } from './popupMessages.mjs';
 import { showLivePopup } from './livePopup.mjs';
 
@@ -102,7 +102,7 @@ function toggleStrategy() {
 }
 
 function startStrategy() {
-  const token = getCurrentToken();
+  const token = getAuthToken();
   if (!token) {
     alert("Please login first");
     return;
@@ -297,7 +297,7 @@ async function executeMatch(digit) {
 async function handleTradeExecution(contractId) {
   awaitingHedge = true;
 
-  const token = getCurrentToken();
+  const token = getAuthToken();
   if (!token) {
     awaitingHedge = false;
     return;
