@@ -5,48 +5,56 @@ let running = false;
 let checkingForEntry = false;
 let tickWs = null;
 let tickHistory = [];
-let tickCountInput, stakeInput, tickGrid, totalTicksDisplay, resultsDisplay;
 let completedTrades = 0;
 let maxTradesPerSession = 100; // safety cap
 let lastTradeTickIndex = -1;
 let pingInterval = null;
 
+let digitStatsDisplay; // For the 2x5 grid
+
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Create Even/Odd Panel
+  // Inject Refined Even/Odd UI
   document.body.insertAdjacentHTML("beforeend", `
     <div id="even-odd-panel" style="display: none;">
       <div class="smart-card">
         <div class="smart-header">
           <h2 class="smart-title">Even / Odd Switch</h2>
-          <p class="smart-sub">Pattern-based digit trading</p>
+          <p class="smart-sub">Digit Reversal Strategy</p>
         </div>
 
         <div class="smart-form">
-          <div class="tick-display">
-            <div class="tick-header">Live Tick Stream (Last 50)</div>
-            <div class="tick-grid" id="tick-grid-eo">
-              <!-- Ticks will be populated here -->
+          <div class="analysis-section" style="margin-bottom: 20px;">
+            <div class="tick-header" style="margin-bottom: 10px; font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+              Digit Analysis (Last 100 ticks)
             </div>
-            <div class="tick-count-display">
-              Total Ticks: <span id="total-ticks-eo">0</span>
+            
+            <!-- Digit Statistics Grid (Symmetrical 2x5) -->
+            <div id="eo-digit-stats" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px; min-height: 100px;">
+              <!-- Digits 0-9 indicators -->
+            </div>
+
+            <div class="tick-header" style="margin-bottom: 8px; font-size: 0.9rem; color: #666;">Live Tick Stream</div>
+            <div class="tick-grid" id="tick-grid-eo" style="display: flex; gap: 4px; overflow-x: hidden; height: 35px; align-items: center; background: #f9f9f9; padding: 5px; border-radius: 4px; border: 1px solid #eee;">
+              <!-- Ticks flow here -->
             </div>
           </div>
 
-          <div class="field">
-            <label for="tick-count-eo">Number of trades</label>
-            <input type="number" id="tick-count-eo" min="1" value="5">
-          </div>
-
-          <div class="stake-row">
-            <button id="run-even-odd" class="run-btn">RUN</button>
-            <div class="field stake-field">
-              <label for="stake-eo">(Minimum 0.35)</label>
+          <div class="settings-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div class="field">
+              <label for="tick-count-eo">Number of Trades</label>
+              <input type="number" id="tick-count-eo" min="1" value="5">
+            </div>
+            <div class="field">
+              <label for="stake-eo">Stake (Min 0.35)</label>
               <input type="number" id="stake-eo" min="0.35" step="0.01" value="0.35">
             </div>
           </div>
 
-          <div id="even-odd-results" class="smart-results"></div>
+          <div class="action-area" style="text-align: center;">
+            <button id="run-even-odd" class="run-btn" style="width: 100%; height: 50px; font-size: 1.2rem;">RUN</button>
+            <div id="even-odd-results" class="smart-results" style="margin-top: 15px; font-weight: bold; min-height: 24px;">Ready</div>
+          </div>
         </div>
       </div>
     </div>
@@ -56,7 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
   tickCountInput = document.getElementById("tick-count-eo");
   stakeInput = document.getElementById("stake-eo");
   tickGrid = document.getElementById("tick-grid-eo");
-  totalTicksDisplay = document.getElementById("total-ticks-eo");
+  digitStatsDisplay = document.getElementById("eo-digit-stats");
   resultsDisplay = document.getElementById("even-odd-results");
 
   // Event listeners
@@ -80,49 +88,84 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Initialize tick display and start streaming
-  updateTickDisplay();
+  // Initialize UI
+  updateUI();
   startTickStream();
 });
 
-function updateTickDisplay() {
-  tickGrid.innerHTML = '';
+function updateUI() {
+  if (!digitStatsDisplay || !tickGrid) return;
 
-  // Get last 50 ticks
-  const displayTicks = tickHistory.slice(-50);
+  const dataSize = tickHistory.length;
+  const historyLimit = 100;
 
-  // Create a 5x10 grid (50 cells total) - 5 rows, 10 columns
-  for (let row = 0; row < 5; row++) {
-    for (let col = 0; col < 10; col++) {
-      const tickIndex = row * 10 + col;
-      const tickEl = document.createElement('div');
-      tickEl.className = 'tick-item';
+  // 1. Update Digit Stats Grid (Symmetrical 2x5)
+  digitStatsDisplay.innerHTML = "";
+  const scores = Array(10).fill(0);
+  tickHistory.forEach((digit, index) => {
+    // Weighted heat: newer ticks matter more
+    const weight = 0.5 + (index / Math.max(1, dataSize));
+    scores[digit] += weight;
+  });
 
-      if (tickIndex < displayTicks.length) {
-        const tick = displayTicks[tickIndex];
-        tickEl.textContent = tick;
+  const totalScore = scores.reduce((a, b) => a + b, 0) || 1;
+  const stats = scores.map((score, digit) => ({
+    digit,
+    heat: (score / totalScore) * 100,
+    isRecent: tickHistory.slice(-5).includes(digit)
+  }));
 
-        // Color based on even/odd
-        if (tick % 2 === 0) {
-          tickEl.classList.add('even');
-        } else {
-          tickEl.classList.add('odd');
-        }
+  stats.forEach(s => {
+    const card = document.createElement("div");
+    // Visually highlight even/odd types for quicker scanning
+    const isEven = s.digit % 2 === 0;
 
-        // Add animation for newest tick (last position in grid)
-        if (tickIndex === displayTicks.length - 1) {
-          tickEl.classList.add('new-tick');
-        }
-      } else {
-        // Empty cell - show as placeholder
-        tickEl.classList.add('empty');
-      }
+    card.style.cssText = `
+      border: 1px solid #eee;
+      border-radius: 6px;
+      padding: 8px 4px;
+      text-align: center;
+      background: #fff;
+      border-bottom: 3px solid ${s.isRecent ? '#2196f3' : isEven ? '#e1f5fe' : '#fff3e0'};
+      transition: all 0.3s ease;
+    `;
 
-      tickGrid.appendChild(tickEl);
-    }
-  }
+    card.innerHTML = `
+      <div style="font-weight:bold; font-size:1.1rem; color:#333;">${s.digit}</div>
+      <div style="font-size:0.75rem; color:#666;">${s.heat.toFixed(1)}%</div>
+    `;
+    digitStatsDisplay.appendChild(card);
+  });
 
-  totalTicksDisplay.textContent = tickHistory.length;
+  // 2. Update Tick Stream (Horizontal)
+  tickGrid.innerHTML = "";
+  const displayTicks = tickHistory.slice(-25);
+  displayTicks.forEach((t, i) => {
+    const div = document.createElement("div");
+    div.className = "tick-item";
+    const isLast = i === displayTicks.length - 1;
+    const isEven = t % 2 === 0;
+
+    div.style.cssText = `
+      min-width: 25px;
+      height: 25px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      border-radius: 4px;
+      background: ${isLast ? '#2196f3' : isEven ? '#e3f2fd' : '#fff3e0'};
+      color: ${isLast ? '#fff' : '#333'};
+      border: 1px solid ${isLast ? '#2196f3' : '#ddd'};
+      font-weight: ${isLast ? 'bold' : 'normal'};
+      flex-shrink: 0;
+    `;
+    div.textContent = t;
+    tickGrid.appendChild(div);
+  });
+
+  // Auto-scroll to end
+  tickGrid.scrollLeft = tickGrid.scrollWidth;
 }
 
 function startTickStream() {
@@ -179,7 +222,7 @@ function startTickStream() {
           tickHistory = tickHistory.slice(-100);
         }
 
-        updateTickDisplay();
+        updateUI();
 
         // Check for pattern if we're actively looking for entry
         if (checkingForEntry && tickHistory.length >= 4) {
@@ -334,7 +377,7 @@ function restartTickStream() {
 
   // Reset tick history when symbol changes
   tickHistory = [];
-  updateTickDisplay();
+  updateUI();
 
   // Wait a moment before starting new stream
   setTimeout(() => {
