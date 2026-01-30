@@ -9,11 +9,9 @@ let completedTrades = 0;
 let maxTradesPerSession = 100; // safety cap
 let lastTradeTickIndex = -1;
 let baseStake = 0;
-let sessionStats = { wins: 0, losses: 0 };
-let awaitingRecovery = false;
 let pingInterval = null;
 
-let tickCountInput, stakeInput, tickGrid, resultsDisplay, digitStatsDisplay, martingaleToggle, martingaleFactor;
+let tickCountInput, stakeInput, tickGrid, resultsDisplay, digitStatsDisplay;
 
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -58,23 +56,6 @@ document.addEventListener("DOMContentLoaded", () => {
             <button id="run-even-odd" class="run-btn" style="width: 100%; height: 50px; font-size: 1.2rem;">RUN</button>
             <div id="even-odd-results" class="smart-results" style="margin-top: 15px; font-weight: bold; min-height: 24px;">Ready</div>
           </div>
-
-          <div id="martingale-config-eo" style="margin-top: 15px; padding: 12px; background: #fffcf0; border: 1px solid #ffeeba; border-radius: 8px; display: flex; flex-direction: column; gap: 10px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div style="font-size: 0.85rem; font-weight: bold; color: #856404; text-transform: uppercase; letter-spacing: 0.5px;">Recovery Strategy</div>
-              <div id="eo-stats-display" style="font-size: 0.75rem; color: #856404; font-weight: bold;">W: 0 | L: 0</div>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: center;">
-              <label class="small-toggle" style="background: white; border: 1px solid #ffeeba; box-shadow: none;">
-                <span>Martingale</span>
-                <input type="checkbox" id="martingale-eo">
-              </label>
-              <div class="field" style="margin-bottom: 0;">
-                <label for="martingale-factor-eo" style="font-size: 0.75rem; color: #666;">Multiplier</label>
-                <input type="number" id="martingale-factor-eo" min="1.1" step="0.1" value="2.0" style="height: 32px; font-size: 0.85rem;">
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -86,8 +67,6 @@ document.addEventListener("DOMContentLoaded", () => {
   tickGrid = document.getElementById("tick-grid-eo");
   digitStatsDisplay = document.getElementById("eo-digit-stats");
   resultsDisplay = document.getElementById("even-odd-results");
-  martingaleToggle = document.getElementById("martingale-eo");
-  martingaleFactor = document.getElementById("martingale-factor-eo");
 
   // Event listeners
   document.getElementById("run-even-odd").onclick = runEvenOdd;
@@ -306,8 +285,6 @@ async function runEvenOdd() {
   running = true;
   checkingForEntry = true;
   baseStake = Number(stakeInput.value);
-  sessionStats = { wins: 0, losses: 0 };
-  updateStatsUI();
 
   resultsDisplay.dataset.success = "0";
   resultsDisplay.dataset.failed = "0";
@@ -348,17 +325,12 @@ async function checkForPatternAndTrade() {
 
   try {
     const result = await buyContract(symbol, tradeType, 1, stake, null, null, true);
-    // Extract win status immediately if possible, but we'll rely on settlement for stake
+    // Extract win status immediately if possible
     const winStatusInitial = Number(result?.buy?.payout || 0) > stake;
 
     completedTrades++;
     resultsDisplay.dataset.success = String(Number(resultsDisplay.dataset.success) + (winStatusInitial ? 1 : 0));
     resultsDisplay.dataset.failed = String(Number(resultsDisplay.dataset.failed) + (winStatusInitial ? 0 : 1));
-
-    // SuperMatches-style Tracking: Fast and Accurate background monitoring
-    if (result && result.buy && martingaleToggle.checked) {
-      monitorContractResults(result.buy.contract_id);
-    }
 
     if (completedTrades < numTrades && completedTrades < maxTradesPerSession) {
       checkingForEntry = true;
@@ -375,77 +347,6 @@ async function checkForPatternAndTrade() {
     console.error("Trade failed:", err);
     completedTrades++;
     checkingForEntry = true; // Attempt to recover
-  }
-}
-
-async function monitorContractResults(contractId) {
-  awaitingRecovery = true;
-  const token = getAuthToken();
-  if (!token) {
-    awaitingRecovery = false;
-    return;
-  }
-
-  const martingaleBox = document.getElementById("martingale-config-eo");
-  if (martingaleBox) martingaleBox.style.boxShadow = "0 0 10px rgba(255, 193, 7, 0.4)";
-
-  const ws = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=61696");
-  let resolved = false;
-
-  ws.onopen = () => ws.send(JSON.stringify({ authorize: token }));
-
-  ws.onmessage = async (msg) => {
-    const data = JSON.parse(msg.data);
-
-    if (data.msg_type === 'authorize' && !data.error) {
-      ws.send(JSON.stringify({ proposal_open_contract: 1, contract_id: contractId, subscribe: 1 }));
-    }
-
-    if (data.proposal_open_contract && data.proposal_open_contract.is_sold) {
-      const contract = data.proposal_open_contract;
-      if (resolved) return;
-      resolved = true;
-      ws.close();
-
-      if (martingaleBox) martingaleBox.style.boxShadow = "none";
-
-      if (contract.profit > 0) {
-        sessionStats.wins++;
-        stakeInput.value = baseStake;
-      } else {
-        sessionStats.losses++;
-        const factor = Number(martingaleFactor.value) || 2.0;
-        stakeInput.value = (Number(stakeInput.value) * factor).toFixed(2);
-      }
-
-      updateStatsUI();
-      awaitingRecovery = false;
-    }
-  };
-
-  ws.onerror = () => {
-    if (!resolved) {
-      resolved = true;
-      ws.close();
-      awaitingRecovery = false;
-      if (martingaleBox) martingaleBox.style.boxShadow = "none";
-    }
-  };
-
-  setTimeout(() => {
-    if (!resolved) {
-      resolved = true;
-      ws.close();
-      awaitingRecovery = false;
-      if (martingaleBox) martingaleBox.style.boxShadow = "none";
-    }
-  }, 60000);
-}
-
-function updateStatsUI() {
-  const display = document.getElementById("eo-stats-display");
-  if (display) {
-    display.textContent = `W: ${sessionStats.wins} | L: ${sessionStats.losses}`;
   }
 }
 

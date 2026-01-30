@@ -9,12 +9,10 @@ let tradeLock = false;
 let tickWs = null;
 let baseStake = 0;
 let tradesCompleted = 0;
-let sessionStats = { wins: 0, losses: 0 };
-let awaitingRecovery = false;
 let pingInterval = null;
 
 // UI Elements
-let overDigit, underDigit, tickCount, stakeInput, martingaleToggle, martingaleFactor;
+let overDigit, underDigit, tickCount, stakeInput;
 let singleToggle, bulkToggle, resultsBox;
 let digitStatsDisplay, tickGrid;
 
@@ -81,23 +79,6 @@ document.addEventListener("DOMContentLoaded", () => {
             <button id="run-smart" class="run-btn" style="width: 100%; height: 50px; font-size: 1.2rem;">RUN</button>
             <div id="smart-results" class="smart-results" style="margin-top: 15px; font-weight: bold; min-height: 24px;">Ready</div>
           </div>
-
-            <div id="martingale-config-sou" style="margin-top: 15px; padding: 12px; background: #f0f7ff; border: 1px solid #d0e3ff; border-radius: 8px; display: flex; flex-direction: column; gap: 10px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div style="font-size: 0.85rem; font-weight: bold; color: #0056b3; text-transform: uppercase; letter-spacing: 0.5px;">Martingale Setup</div>
-              <div id="sou-stats-display" style="font-size: 0.75rem; color: #0056b3; font-weight: bold;">W: 0 | L: 0</div>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: center;">
-              <label class="small-toggle" style="background: white; border: 1px solid #d0e3ff; box-shadow: none;">
-                <span>Auto-Recovery</span>
-                <input type="checkbox" id="martingale-sou">
-              </label>
-              <div class="field" style="margin-bottom: 0;">
-                <label for="martingale-factor-sou" style="font-size: 0.75rem; color: #666;">Multiplier</label>
-                <input type="number" id="martingale-factor-sou" min="1.1" step="0.1" value="2.0" style="height: 32px; font-size: 0.85rem;">
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -113,8 +94,6 @@ document.addEventListener("DOMContentLoaded", () => {
   resultsBox = document.getElementById("smart-results");
   digitStatsDisplay = document.getElementById("sou-digit-stats");
   tickGrid = document.getElementById("tick-grid-sou");
-  martingaleToggle = document.getElementById("martingale-sou");
-  martingaleFactor = document.getElementById("martingale-factor-sou");
 
   // Populate selects
   for (let i = 0; i <= 9; i++) {
@@ -162,8 +141,6 @@ function runSmart() {
   tradesCompleted = 0;
   tradeLock = false;
   baseStake = Number(stakeInput.value);
-  sessionStats = { wins: 0, losses: 0 };
-  updateStatsUI();
 
   const btn = document.getElementById("run-smart");
   btn.textContent = "STOP";
@@ -307,100 +284,22 @@ async function handleTrigger(quote, isOver, isUnder) {
   resultsBox.textContent = `🎯 Triggered ${type} on ${quote.slice(-1)}`;
 
   try {
-    const result = await executeTrade(symbol, type, prediction, quote);
+    await executeTrade(symbol, type, prediction, quote);
     tradesCompleted++;
 
-    // IMMEDIATELY UNLOCK so scanning continues while we wait for result in background
+    // IMMEDIATELY UNLOCK so scanning continues
     tradeLock = false;
-
-    // SuperMatches-style Tracking: Fast and Accurate background monitoring
-    if (result && result.buy && martingaleToggle.checked) {
-      monitorContractResults(result.buy.contract_id);
-    }
   } catch (e) {
     console.error(e);
     tradeLock = false;
   }
 }
 
-function updateStatsUI() {
-  const display = document.getElementById("sou-stats-display");
-  if (display) {
-    display.textContent = `W: ${sessionStats.wins} | L: ${sessionStats.losses}`;
-  }
-}
-
-async function monitorContractResults(contractId) {
-  awaitingRecovery = true;
-  const token = getAuthToken();
-  if (!token) {
-    awaitingRecovery = false;
-    return;
-  }
-
-  const martingaleBox = document.getElementById("martingale-config-sou");
-  if (martingaleBox) martingaleBox.style.boxShadow = "0 0 10px rgba(0, 187, 240, 0.4)";
-
-  const ws = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${derivAppID}`);
-  let resolved = false;
-
-  ws.onopen = () => ws.send(JSON.stringify({ authorize: token }));
-
-  ws.onmessage = async (msg) => {
-    const data = JSON.parse(msg.data);
-
-    if (data.msg_type === 'authorize' && !data.error) {
-      ws.send(JSON.stringify({ proposal_open_contract: 1, contract_id: contractId, subscribe: 1 }));
-    }
-
-    if (data.proposal_open_contract && data.proposal_open_contract.is_sold) {
-      const contract = data.proposal_open_contract;
-      if (resolved) return;
-      resolved = true;
-      ws.close();
-
-      if (martingaleBox) martingaleBox.style.boxShadow = "none";
-
-      if (contract.profit > 0) {
-        sessionStats.wins++;
-        stakeInput.value = baseStake;
-      } else {
-        sessionStats.losses++;
-        const factor = Number(martingaleFactor.value) || 2.0;
-        stakeInput.value = (Number(stakeInput.value) * factor).toFixed(2);
-      }
-
-      updateStatsUI();
-      awaitingRecovery = false;
-    }
-  };
-
-  ws.onerror = () => {
-    if (!resolved) {
-      resolved = true;
-      ws.close();
-      awaitingRecovery = false;
-      if (martingaleBox) martingaleBox.style.boxShadow = "none";
-    }
-  };
-
-  setTimeout(() => {
-    if (!resolved) {
-      resolved = true;
-      ws.close();
-      awaitingRecovery = false;
-      if (martingaleBox) martingaleBox.style.boxShadow = "none";
-    }
-  }, 60000);
-}
-
 async function executeTrade(symbol, type = "DIGITOVER", barrier = 0, liveQuote = null) {
   const stake = stakeInput.value;
   const resp = await buyContract(symbol, type, 1, stake, barrier, liveQuote, true);
 
-  if (resp?.buy?.contract_id) {
-    // Note: buyContract now handles its own livePopup trigger for parity
-  } else if (resp?.error) {
+  if (resp?.error) {
     resultsBox.innerHTML = `<span style="color:red">Error: ${resp.error.message}</span>`;
   }
 
