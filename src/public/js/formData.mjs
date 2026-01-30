@@ -104,7 +104,7 @@ document.addEventListener("DOMContentLoaded", function () {
     sentimentDropdown.disabled = !sentiments.length;
   }
 
-  // --- Update digit value visibility based on sentiment ---
+  // --- Update digit value visibility based on sentiment --
   function updateDigitValueVisibility() {
     const selectedSentiment = document.getElementById("sentiment").value;
     const digitValue = document.getElementById("digit-value");
