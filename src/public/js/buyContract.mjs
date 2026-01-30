@@ -819,6 +819,11 @@ async function buyContractBulk(symbol, tradeType, duration, stake, barrier, coun
           return { error: authResp.error };
         }
         lastAuthorizedToken = tokenToUse;
+        const cur = getBestAccountCurrency(authResp);
+        if (cur) {
+          defaultCurrency = cur;
+          console.log("✅ Currency refreshed during bulk auth:", defaultCurrency);
+        }
       } catch (err) {
         console.warn("Bulk authorize request error:", err);
         return { error: { message: err.message } };
@@ -867,6 +872,20 @@ async function buyContractBulk(symbol, tradeType, duration, stake, barrier, coun
     }
 
     console.log("🎉 Bulk buy executed:", resp);
+
+    // Show live popups for the contracts
+    if (resp.buy_contract_for_multiple_accounts && Array.isArray(resp.buy_contract_for_multiple_accounts.result)) {
+      resp.buy_contract_for_multiple_accounts.result.forEach(item => {
+        if (item.buy && item.buy.contract_id) {
+          showLivePopup(item.buy.contract_id, {
+            tradeType: tradeType,
+            stake: stake,
+            payout: item.buy.payout
+          });
+        }
+      });
+    }
+
     return resp;
   } catch (err) {
     console.error("❌ Bulk buy exception:", err);
