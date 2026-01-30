@@ -246,36 +246,27 @@ function selectMatchDigit() {
   // Fast Start: 10 ticks floor
   if (dataSize < 10) return null;
 
-  // Weighted frequency: Newer ticks count more
-  const scores = Array(10).fill(0);
-  tickHistory.forEach((digit, index) => {
-    const weight = 0.5 + (index / dataSize);
-    scores[digit] += weight;
-  });
+  // Analyze strictly the last 25 ticks (or all we have if < 25)
+  const windowSize = Math.min(dataSize, 25);
+  const analysisWindow = tickHistory.slice(-windowSize);
 
-  const totalScore = scores.reduce((a, b) => a + b, 0);
-  const heatStats = scores.map((score, digit) => ({
+  const counts = Array(10).fill(0);
+  analysisWindow.forEach(digit => counts[digit]++);
+
+  const heatStats = counts.map((count, digit) => ({
     digit,
-    heat: (score / totalScore) * 100,
-    // Momentum: Appeared in the last 5 ticks
-    recentCount: tickHistory.slice(-5).filter(x => x === digit).length
+    heat: (count / windowSize) * 100,
+    count
   }));
 
-  // Sort by Heat descending
+  // Sort by Heat descending to find the absolute "Most Appearing"
   heatStats.sort((a, b) => b.heat - a.heat);
 
   const best = heatStats[0];
 
-  // Accuracy Trigger: Must exceed min freq AND have appeared very recently (momentum)
-  if (best.heat >= minFrequency) {
-    if (best.recentCount >= 1) {
-      return best.digit;
-    }
-
-    // Fallback for extreme hot zones
-    if (best.heat > 25) {
-      return best.digit;
-    }
+  // Strict Frequency Trigger: Must be the hottest AND meet the floor
+  if (best.heat >= minFrequency && best.count > 0) {
+    return best.digit;
   }
 
   return null;
@@ -341,7 +332,7 @@ async function handleTradeExecution(contractId) {
         stopStrategy("✅ WIN - Session Complete");
         sessionWon = true;
       } else {
-        statusDisplay.innerHTML = `❌ Match Lost. Deploying HEDGE...`;
+        statusDisplay.innerHTML = `❌ Match Lost. Deploying Recovery...`;
         await executeHedge(lastMatchDigit);
       }
     }
@@ -400,32 +391,33 @@ function updateUI() {
   const minFrequency = Number(absenceInput.value);
   const dataSize = tickHistory.length;
 
-  const scores = Array(10).fill(0);
-  tickHistory.forEach((digit, index) => {
-    const weight = 0.5 + (index / dataSize);
-    scores[digit] += weight;
-  });
+  const windowSize = Math.min(dataSize, 25);
+  const analysisWindow = tickHistory.slice(-windowSize);
+  const counts = Array(10).fill(0);
+  analysisWindow.forEach(d => counts[d]++);
 
-  const totalScore = scores.reduce((a, b) => a + b, 0) || 1;
-  const stats = scores.map((score, digit) => {
-    const heat = (score / totalScore) * 100;
-    const isRecent = tickHistory.slice(-5).includes(digit);
-    return { digit, heat, isRecent };
-  });
+  const stats = counts.map((count, digit) => ({
+    digit,
+    heat: (count / windowSize) * 100,
+    count
+  }));
+
+  // Determine the current "Champion" (Most Appearing)
+  const maxHeat = Math.max(...stats.map(s => s.heat));
 
   stats.forEach(s => {
     const card = document.createElement("div");
     const isHot = s.heat >= minFrequency;
-    const hasMomentum = s.isRecent && isHot;
+    const isTarget = s.heat === maxHeat && s.heat > 0;
 
     card.style.cssText = `
             border: 1px solid #eee;
             border-radius: 6px;
             padding: 8px 4px;
             text-align: center;
-            background: ${hasMomentum ? '#e8f5e9' : isHot ? '#fffde7' : '#fff'};
-            border-bottom: 3px solid ${hasMomentum ? '#4caf50' : isHot ? '#fbc02d' : '#ddd'};
-            box-shadow: ${hasMomentum ? 'inset 0 0 5px rgba(76,175,80,0.2)' : 'none'};
+            background: ${isTarget ? '#e8f5e9' : isHot ? '#fffde7' : '#fff'};
+            border-bottom: 3px solid ${isTarget ? '#4caf50' : isHot ? '#fbc02d' : '#ddd'};
+            box-shadow: ${isTarget ? 'inset 0 0 5px rgba(76,175,80,0.2)' : 'none'};
             transition: all 0.3s ease;
         `;
 
