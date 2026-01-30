@@ -9,6 +9,7 @@ let tickCountInput, stakeInput, tickGrid, totalTicksDisplay, resultsDisplay;
 let completedTrades = 0;
 let maxTradesPerSession = 100; // safety cap
 let lastTradeTickIndex = -1;
+let pingInterval = null;
 
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -159,6 +160,7 @@ function startTickStream() {
     console.log("WebSocket connected for symbol:", symbol);
     try {
       tickWs.send(JSON.stringify({ ticks: symbol, subscribe: 1 }));
+      startPing(tickWs);
     } catch (e) {
       console.error("Failed to send subscription:", e);
     }
@@ -191,6 +193,8 @@ function startTickStream() {
 
   tickWs.onerror = (error) => {
     console.error("WebSocket error:", error);
+    if (pingInterval) clearInterval(pingInterval);
+    pingInterval = null;
     // Clear connection and retry after 3 seconds
     tickWs = null;
     setTimeout(() => {
@@ -200,12 +204,27 @@ function startTickStream() {
 
   tickWs.onclose = () => {
     console.log("WebSocket closed, attempting to reconnect...");
+    if (pingInterval) clearInterval(pingInterval);
+    pingInterval = null;
     // Clear connection and retry after 3 seconds
     tickWs = null;
     setTimeout(() => {
       startTickStream();
     }, 3000);
   };
+}
+
+function startPing(ws) {
+  if (pingInterval) clearInterval(pingInterval);
+  pingInterval = setInterval(() => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      try {
+        ws.send(JSON.stringify({ ping: 1 }));
+      } catch (e) {
+        console.warn("[EvenOdd] Ping failed", e);
+      }
+    }
+  }, 20000);
 }
 
 async function runEvenOdd() {

@@ -9,6 +9,7 @@ let lastMatchDigit = null;
 let awaitingHedge = false;
 let matchAttempts = 0;
 let sessionWon = false;
+let pingInterval = null;
 
 // UI Elements
 let stakeInput, maxAttemptsInput, absenceInput, volatilityInput;
@@ -138,6 +139,7 @@ function startTickStream() {
     tickWs.onopen = () => {
       console.log(`[SuperMatch] Tick stream connected for ${submarket}`);
       tickWs.send(JSON.stringify({ ticks: submarket, subscribe: 1 }));
+      startPing(tickWs);
     };
 
     tickWs.onmessage = (msg) => {
@@ -149,10 +151,14 @@ function startTickStream() {
 
     tickWs.onerror = (err) => {
       console.error("[SuperMatch] Tick stream error:", err);
+      if (pingInterval) clearInterval(pingInterval);
+      pingInterval = null;
     };
 
     tickWs.onclose = () => {
       console.warn("[SuperMatch] Tick stream closed. Reconnecting...");
+      if (pingInterval) clearInterval(pingInterval);
+      pingInterval = null;
       tickWs = null;
       // Only reconnect if the panel is visible or strategy is running
       const smPanel = document.getElementById("super-matches-panel");
@@ -162,8 +168,23 @@ function startTickStream() {
     };
   } catch (e) {
     console.error("[SuperMatch] Failed to start tick stream:", e);
+    if (pingInterval) clearInterval(pingInterval);
+    pingInterval = null;
     setTimeout(startTickStream, 5000);
   }
+}
+
+function startPing(ws) {
+  if (pingInterval) clearInterval(pingInterval);
+  pingInterval = setInterval(() => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      try {
+        ws.send(JSON.stringify({ ping: 1 }));
+      } catch (e) {
+        console.warn("[SuperMatch] Ping failed", e);
+      }
+    }
+  }, 20000);
 }
 
 function restartTickStream() {

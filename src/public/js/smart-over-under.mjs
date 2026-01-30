@@ -9,6 +9,7 @@ let tradeLock = false;
 let tickWs = null;
 let baseStake = 0;
 let tradesCompleted = 0;
+let pingInterval = null;
 
 // UI Elements
 let overDigit, underDigit, tickCount, stakeInput;
@@ -167,6 +168,7 @@ function startTickStream() {
     tickWs.onopen = () => {
       console.log(`[Smart] Tick stream connected for ${submarket}`);
       tickWs.send(JSON.stringify({ ticks: submarket, subscribe: 1 }));
+      startPing(tickWs);
     };
 
     tickWs.onmessage = (msg) => {
@@ -176,6 +178,8 @@ function startTickStream() {
 
     tickWs.onerror = (err) => {
       console.error("[Smart] Tick stream error:", err);
+      if (pingInterval) clearInterval(pingInterval);
+      pingInterval = null;
     };
 
     tickWs.onclose = () => {
@@ -185,6 +189,9 @@ function startTickStream() {
         - [x] Fix "No token provided" error for bulk trades
         - [x] Verify bulk trade execution with token handling
         - [x] Optimize single trade speed for sub-second execution ("Direct Buy")`);
+
+      if (pingInterval) clearInterval(pingInterval);
+      pingInterval = null;
       tickWs = null;
       // Only reconnect if the panel is visible or strategy is running
       const panel = document.getElementById("smart-over-under");
@@ -194,8 +201,23 @@ function startTickStream() {
     };
   } catch (e) {
     console.error("[Smart] Failed to start tick stream:", e);
+    if (pingInterval) clearInterval(pingInterval);
+    pingInterval = null;
     setTimeout(startTickStream, 5000);
   }
+}
+
+function startPing(ws) {
+  if (pingInterval) clearInterval(pingInterval);
+  pingInterval = setInterval(() => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      try {
+        ws.send(JSON.stringify({ ping: 1 }));
+      } catch (e) {
+        console.warn("[Smart] Ping failed", e);
+      }
+    }
+  }, 20000);
 }
 
 function restartTickStream() {
