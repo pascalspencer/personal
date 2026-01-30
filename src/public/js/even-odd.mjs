@@ -7,7 +7,7 @@ let tickWs = null;
 let tickHistory = [];
 let completedTrades = 0;
 let maxTradesPerSession = 100; // safety cap
-let lastTradeTickIndex = -1;
+let ticksSinceLastTrade = 0;
 let baseStake = 0;
 let pingInterval = null;
 
@@ -221,6 +221,7 @@ function startTickStream() {
         // IMMEDIATE SYNCHRONOUS UPDATE for digit tracking accuracy
         tickHistory.push(digit);
         if (tickHistory.length > 100) tickHistory = tickHistory.slice(-100);
+        ticksSinceLastTrade++;
         updateUI();
 
         // Check for pattern if we're actively looking for entry (ASYNC)
@@ -288,7 +289,7 @@ async function runEvenOdd() {
 
   resultsDisplay.dataset.success = "0";
   resultsDisplay.dataset.failed = "0";
-  lastTradeTickIndex = -1;
+  ticksSinceLastTrade = 99; // Allow immediate first trigger
 
   document.getElementById("run-even-odd").textContent = "STOP";
   resultsDisplay.innerHTML = "Monitoring Even / Odd ticks...";
@@ -305,7 +306,7 @@ async function checkForPatternAndTrade() {
   if (completedTrades >= numTrades) return finishSession();
 
   // Ensure "once for every check" (at least 4 new ticks since last trade)
-  if (lastTradeTickIndex !== -1 && tickHistory.length < lastTradeTickIndex + 4) return;
+  if (ticksSinceLastTrade < 4) return;
 
   const last4 = tickHistory.slice(-4);
   if (last4.length < 4) return;
@@ -315,7 +316,7 @@ async function checkForPatternAndTrade() {
   if (!allEven && !allOdd) return;
 
   checkingForEntry = false;
-  lastTradeTickIndex = tickHistory.length;
+  ticksSinceLastTrade = 0;
   const tradeType = allEven ? "DIGITODD" : "DIGITEVEN";
   const pattern = allEven ? "Even" : "Odd";
   const stake = Number(stakeInput.value);
