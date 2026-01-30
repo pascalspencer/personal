@@ -10,7 +10,7 @@ let maxTradesPerSession = 100; // safety cap
 let lastTradeTickIndex = -1;
 let pingInterval = null;
 
-let digitStatsDisplay; // For the 2x5 grid
+let tickCountInput, stakeInput, tickGrid, resultsDisplay, digitStatsDisplay;
 
 
 document.addEventListener("DOMContentLoaded", () => {
