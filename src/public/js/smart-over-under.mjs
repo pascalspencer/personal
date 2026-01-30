@@ -179,7 +179,12 @@ function startTickStream() {
     };
 
     tickWs.onclose = () => {
-      console.warn("[Smart] Tick stream closed. Reconnecting...");
+      console.warn(`[Smart] Tick stream closed. Reconnecting...
+        Walkthrough:
+        - [x] Fix WebSocket "freeze" issue with robust reconnection
+        - [x] Fix "No token provided" error for bulk trades
+        - [x] Verify bulk trade execution with token handling
+        - [x] Optimize single trade speed for sub-second execution ("Direct Buy")`);
       tickWs = null;
       // Only reconnect if the panel is visible or strategy is running
       const panel = document.getElementById("smart-over-under");
@@ -271,30 +276,11 @@ async function handleTrigger(quote, isOver, isUnder) {
 }
 
 async function executeTrade(symbol, type = "DIGITOVER", barrier = 0, liveQuote = null) {
-  // 1. Capture Balance (Meta Data)
-  let startingBalance = null;
-  try {
-    const token = getCurrentToken();
-    if (token) {
-      const tempWs = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${derivAppID}`);
-      const bal = await new Promise(res => {
-        tempWs.onopen = () => { tempWs.send(JSON.stringify({ authorize: token })); tempWs.send(JSON.stringify({ balance: 1 })); };
-        tempWs.onmessage = (e) => { const m = JSON.parse(e.data); if (m.balance) { tempWs.close(); res(m.balance.balance); } };
-        setTimeout(() => { try { tempWs.close(); } catch (e) { } res(null); }, 2000);
-      });
-      startingBalance = bal;
-    }
-  } catch (e) { }
-
-  const resp = await buyContract(symbol, type, 1, stakeInput.value, barrier, liveQuote, true);
+  const stake = stakeInput.value;
+  const resp = await buyContract(symbol, type, 1, stake, barrier, liveQuote, true);
 
   if (resp?.buy?.contract_id) {
-    showLivePopup(resp.buy.contract_id, {
-      tradeType: type,
-      stake: stakeInput.value,
-      payout: resp.buy.payout,
-      balance: startingBalance
-    });
+    // Note: buyContract now handles its own livePopup trigger for parity
   } else if (resp?.error) {
     resultsBox.innerHTML = `<span style="color:red">Error: ${resp.error.message}</span>`;
   }
