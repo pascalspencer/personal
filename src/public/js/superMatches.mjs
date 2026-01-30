@@ -422,7 +422,7 @@ function updateUI() {
         `;
 
     const digitLabel = document.createElement("div");
-    digitLabel.style.cssText = `font-weight: bold; font-size: 1.1rem; color: #333; margin-bottom: 2px; ${hasMomentum ? 'text-shadow: 0 0 2px rgba(0,0,0,0.1);' : ''}`;
+    digitLabel.style.cssText = `font-weight: bold; font-size: 1.1rem; color: #333; margin-bottom: 2px; ${isTarget ? 'text-shadow: 0 0 2px rgba(0,0,0,0.1);' : ''}`;
     digitLabel.textContent = s.digit;
 
     const freqLabel = document.createElement("div");
