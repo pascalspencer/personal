@@ -13,7 +13,7 @@ let pingInterval = null;
 
 // UI Elements
 let overDigit, underDigit, tickCount, stakeInput;
-let singleToggle, bulkToggle, resultsBox;
+let singleToggle, bulkToggle, aiPredictToggle, resultsBox;
 let digitStatsDisplay, tickGrid;
 
 const HISTORY_LIMIT = 120;
@@ -72,6 +72,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 <span>Bulk</span>
                 <input type="checkbox" id="bulk-toggle-sou">
               </label>
+              <label class="small-toggle">
+                <span>AI Predict</span>
+                <input type="checkbox" id="ai-predict-sou">
+              </label>
             </div>
           </div>
 
@@ -91,6 +95,7 @@ document.addEventListener("DOMContentLoaded", () => {
   stakeInput = document.getElementById("stake-sou");
   singleToggle = document.getElementById("single-toggle-sou");
   bulkToggle = document.getElementById("bulk-toggle-sou");
+  aiPredictToggle = document.getElementById("ai-predict-sou");
   resultsBox = document.getElementById("smart-results");
   digitStatsDisplay = document.getElementById("sou-digit-stats");
   tickGrid = document.getElementById("tick-grid-sou");
@@ -251,8 +256,23 @@ function processTick(tick) {
     return;
   }
 
-  const isOverTrigger = digit < Number(overDigit.value);
-  const isUnderTrigger = digit > Number(underDigit.value);
+  let isOverTrigger = false;
+  let isUnderTrigger = false;
+
+  if (aiPredictToggle && aiPredictToggle.checked) {
+    if (tickHistory.length >= 2) {
+      const prevDigit = tickHistory[tickHistory.length - 2];
+      const currentDigit = tickHistory[tickHistory.length - 1];
+      const thresholdOver = Number(overDigit.value);
+      const thresholdUnder = Number(underDigit.value);
+
+      isOverTrigger = (currentDigit <= thresholdOver) && (prevDigit <= thresholdOver);
+      isUnderTrigger = (currentDigit >= thresholdUnder) && (prevDigit >= thresholdUnder);
+    }
+  } else {
+    isOverTrigger = digit < Number(overDigit.value);
+    isUnderTrigger = digit > Number(underDigit.value);
+  }
 
   if (isOverTrigger || isUnderTrigger) {
     handleTrigger(quote, isOverTrigger, isUnderTrigger);
