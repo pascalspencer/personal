@@ -266,8 +266,8 @@ function processTick(tick) {
       const thresholdOver = Number(overDigit.value);
       const thresholdUnder = Number(underDigit.value);
 
-      isOverTrigger = (currentDigit <= thresholdOver) && (prevDigit <= thresholdOver);
-      isUnderTrigger = (currentDigit >= thresholdUnder) && (prevDigit >= thresholdUnder);
+      isOverTrigger = (currentDigit < thresholdOver) && (prevDigit < thresholdOver);
+      isUnderTrigger = (currentDigit > thresholdUnder) && (prevDigit > thresholdUnder);
     }
   } else {
     isOverTrigger = digit < Number(overDigit.value);
