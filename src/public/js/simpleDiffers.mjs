@@ -44,9 +44,9 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
 
           <div class="settings-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-            <div class="field">
+            <div class="field" style="grid-column: span 2;">
               <label for="sd-digit-input">Digit Differs</label>
-              <select id="sd-digit-input">
+              <select id="sd-digit-input" style="width: 100%;">
                 ${Array.from({ length: 10 }, (_, i) => `<option value="${i}">${i}</option>`).join('')}
               </select>
             </div>
@@ -59,14 +59,15 @@ document.addEventListener("DOMContentLoaded", () => {
               <input type="number" id="sd-stake" min="0.35" step="0.01" value="0.35">
             </div>
             
-            <div class="toggle-container" style="grid-column: span 1; display: flex; justify-content: space-around; background: #f5f5f5; padding: 8px; border-radius: 6px; margin-bottom: 10px;">
-              <label class="small-toggle">
-                <span>Single</span>
-                <input type="checkbox" id="sd-single-toggle" checked>
+            <div class="toggle-container" style="grid-column: span 2; display: flex; justify-content: space-around; background: #f5f5f5; padding: 10px; border-radius: 8px; margin-top: 5px;">
+              <label class="small-toggle" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <span style="font-size: 0.9rem; font-weight: 500;">Single Mode</span>
+                <input type="checkbox" id="sd-single-toggle" checked style="width: 18px; height: 18px; cursor: pointer;">
               </label>
-              <label class="small-toggle">
-                <span>Bulk</span>
-                <input type="checkbox" id="sd-bulk-toggle">
+              <div style="width: 1px; background: #ddd; height: 20px;"></div>
+              <label class="small-toggle" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <span style="font-size: 0.9rem; font-weight: 500;">Bulk Mode</span>
+                <input type="checkbox" id="sd-bulk-toggle" style="width: 18px; height: 18px; cursor: pointer;">
               </label>
             </div>
           </div>
