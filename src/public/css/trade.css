@@ -63,7 +63,37 @@ body {
 
 .panel-header {
   padding: 15px;
-  text-align: right;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.social-icons {
+  display: flex;
+  gap: 15px;
+}
+
+.social-link {
+  font-size: 20px;
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.social-link.whatsapp {
+  color: #25D366;
+}
+
+.social-link.telegram {
+  color: #0088cc;
+}
+
+.social-link:hover {
+  transform: scale(1.1);
+  opacity: 0.8;
+}
+
+#panel-close {
   font-size: 22px;
   cursor: pointer;
 }
