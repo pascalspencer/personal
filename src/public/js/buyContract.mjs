@@ -474,7 +474,7 @@ async function buyContract(symbol, tradeType, duration, price, prediction = null
     duration_unit: "t"
   };
 
-  if (tradeType.startsWith("DIGIT") && prediction !== null) {
+  if (["DIGITMATCH", "DIGITDIFF", "DIGITOVER", "DIGITUNDER"].includes(tradeType) && prediction !== null) {
     parameters.barrier = String(prediction);
   }
 

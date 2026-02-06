@@ -1,6 +1,7 @@
 import DerivAPIBasic from 'https://cdn.skypack.dev/@deriv/deriv-api/dist/DerivAPIBasic';
 import { calculateChances } from './over_under.mjs';
 import { determineChances } from './matches.mjs';
+import { calculateEvenOddChances } from './even_odd_analysis.mjs';
 import { evaluateAndBuyContractSafe, getAutomationMode, setAutomationMode } from './buyContract.mjs';
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -30,7 +31,7 @@ document.addEventListener("DOMContentLoaded", function () {
   let tickHistory = [];
   let tickSubscription = null;
 
-  let lastResults = { matches: null, over: null };
+  let lastResults = { matches: null, over: null, even: null };
 
   const derivAppID = 61696;
   const connection = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${derivAppID}`);
@@ -146,9 +147,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const { overChance, underChance } = calculateChances(selectedNumber, tickHistory, lastResults.over);
     const { matchesChance, differsChance } = determineChances(selectedNumber, tickHistory, lastResults.matches);
+    const { evenChance, oddChance } = calculateEvenOddChances(tickHistory, lastResults.even);
 
     lastResults.over = overChance;
     lastResults.matches = matchesChance;
+    lastResults.even = evenChance;
 
     const sentimentParts = selectedSentiment.split("/");
     const percentages = sentimentParts.map(generatePercentage);
@@ -162,6 +165,8 @@ document.addEventListener("DOMContentLoaded", function () {
       else if (part.trim() === "Differs") optionElement.textContent = `Differs (${differsChance}%) Stop trade`;
       else if (part.trim() === "Over") optionElement.textContent = `Over (${overChance}%) Stop trade`;
       else if (part.trim() === "Under") optionElement.textContent = `Under (${underChance}%) Stop trade`;
+      else if (part.trim() === "Even") optionElement.textContent = `Even (${evenChance}%) Stop trade`;
+      else if (part.trim() === "Odd") optionElement.textContent = `Odd (${oddChance}%) Stop trade`;
       else optionElement.textContent = `${part.trim()} (${percentages[index]}%) Stop trade`;
       resultsContainer.appendChild(optionElement);
     });
