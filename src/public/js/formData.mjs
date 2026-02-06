@@ -27,6 +27,8 @@ document.addEventListener("DOMContentLoaded", function () {
   let api;
   let sentimentsData = {};
   let marketsData = {};
+  let tickHistory = [];
+  let tickSubscription = null;
 
   const derivAppID = 61696;
   const connection = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${derivAppID}`);
@@ -84,6 +86,28 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     submarketSelect.disabled = false;
+    restartTickStream();
+  }
+
+  function restartTickStream() {
+    const submarket = document.getElementById("submarket").value;
+    if (!submarket || !api) return;
+
+    if (tickSubscription) {
+      tickSubscription.unsubscribe();
+    }
+
+    tickHistory = [];
+    console.log(`[AutoAnalysis] Subscribing to ticks for ${submarket}`);
+    tickSubscription = api.subscribe({ ticks: submarket });
+    tickSubscription.subscribe((data) => {
+      if (data.tick) {
+        const quote = data.tick.quote.toString();
+        const digit = Number(quote.slice(-1));
+        tickHistory.push(digit);
+        if (tickHistory.length > 100) tickHistory.shift();
+      }
+    });
   }
 
 
@@ -118,8 +142,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const selectedSentiment = sentimentDropdown.value;
     const selectedNumber = parseInt(document.getElementById("input-value").value, 10);
 
-    const { overChance, underChance } = calculateChances(selectedNumber);
-    const { matchesChance, differsChance } = determineChances(selectedNumber);
+    const { overChance, underChance } = calculateChances(selectedNumber, tickHistory);
+    const { matchesChance, differsChance } = determineChances(selectedNumber, tickHistory);
 
     const sentimentParts = selectedSentiment.split("/");
     const percentages = sentimentParts.map(generatePercentage);
