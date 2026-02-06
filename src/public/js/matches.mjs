@@ -1,6 +1,12 @@
-function determinePercentage(selectedNumber, tickHistory) {
+function determinePercentage(selectedNumber, tickHistory, lastValue) {
   if (!tickHistory || tickHistory.length === 0) {
-    return { matches: 10, differs: 90 };
+    let base = 10;
+    if (lastValue !== null) {
+      // If no data, jitter a bit to avoid similarity
+      base = lastValue > 50 ? 55 : 45;
+      base += (Math.random() * 4) - 2;
+    }
+    return { matches: base, differs: 100 - base };
   }
 
   const count = tickHistory.filter(d => d === selectedNumber).length;
@@ -8,21 +14,37 @@ function determinePercentage(selectedNumber, tickHistory) {
 
   // Base chances from real data
   let matches = frequency;
-  let differs = 100 - frequency;
 
-  // Add allowance for variations and deviations (±5% swing)
-  const deviation = (Math.random() * 10) - 5;
+  // Add allowance for variations and deviations (±6% swing for better lean)
+  let deviation = (Math.random() * 12) - 6;
+
+  // Ensure we don't end up with the same value as before
+  if (lastValue !== null && Math.abs((matches + deviation) - lastValue) < 3) {
+    deviation += deviation > 0 ? 4 : -4;
+  }
+
   matches = Math.max(1, Math.min(99, matches + deviation));
-  differs = 100 - matches;
 
+  // Never 50/50
+  if (Math.abs(matches - 50) < 1) {
+    matches += matches >= 50 ? 2 : -2;
+  }
+
+  const differs = 100 - matches;
   return { matches, differs };
 }
 
-function determineChances(selectedNumber, tickHistory) {
-  const { matches, differs } = determinePercentage(selectedNumber, tickHistory);
+function determineChances(selectedNumber, tickHistory, lastValue) {
+  const { matches, differs } = determinePercentage(selectedNumber, tickHistory, lastValue);
 
-  const matchesChance = Math.floor(matches);
-  const differsChance = Math.ceil(differs); // Ensure differs is the complement
+  let matchesChance = Math.floor(matches);
+  let differsChance = 100 - matchesChance;
+
+  // Final catch for 50/50 after flooring
+  if (matchesChance === 50) {
+    matchesChance = 51;
+    differsChance = 49;
+  }
 
   return { matchesChance, differsChance };
 }

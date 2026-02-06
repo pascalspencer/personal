@@ -30,6 +30,8 @@ document.addEventListener("DOMContentLoaded", function () {
   let tickHistory = [];
   let tickSubscription = null;
 
+  let lastResults = { matches: null, over: null };
+
   const derivAppID = 61696;
   const connection = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${derivAppID}`);
 
@@ -142,8 +144,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const selectedSentiment = sentimentDropdown.value;
     const selectedNumber = parseInt(document.getElementById("input-value").value, 10);
 
-    const { overChance, underChance } = calculateChances(selectedNumber, tickHistory);
-    const { matchesChance, differsChance } = determineChances(selectedNumber, tickHistory);
+    const { overChance, underChance } = calculateChances(selectedNumber, tickHistory, lastResults.over);
+    const { matchesChance, differsChance } = determineChances(selectedNumber, tickHistory, lastResults.matches);
+
+    lastResults.over = overChance;
+    lastResults.matches = matchesChance;
 
     const sentimentParts = selectedSentiment.split("/");
     const percentages = sentimentParts.map(generatePercentage);
