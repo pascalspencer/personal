@@ -9,7 +9,8 @@ function calculateChances(selectedNumber, tickHistory, lastValue) {
     } else {
       base = 52; // Default lean
     }
-    return { overChance: base, underChance: 100 - base };
+    const overChance = Math.floor(base);
+    return { overChance, underChance: 100 - overChance };
   }
 
   const overCount = tickHistory.filter(d => d > selectedNumber).length;

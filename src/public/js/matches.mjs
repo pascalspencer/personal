@@ -6,7 +6,8 @@ function determinePercentage(selectedNumber, tickHistory, lastValue) {
       base = lastValue > 50 ? 55 : 45;
       base += (Math.random() * 4) - 2;
     }
-    return { matches: base, differs: 100 - base };
+    const matches = Math.floor(base);
+    return { matches, differs: 100 - matches };
   }
 
   const count = tickHistory.filter(d => d === selectedNumber).length;

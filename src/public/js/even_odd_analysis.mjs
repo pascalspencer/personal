@@ -7,7 +7,8 @@ function calculateEvenOddChances(tickHistory, lastValue) {
         } else {
             base = 52; // Default lean
         }
-        return { evenChance: base, oddChance: 100 - base };
+        const evenChance = Math.floor(base);
+        return { evenChance, oddChance: 100 - evenChance };
     }
 
     const evenCount = tickHistory.filter(d => d % 2 === 0).length;
