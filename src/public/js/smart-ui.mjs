@@ -4,6 +4,14 @@ document.addEventListener("DOMContentLoaded", () => {
     <div id="menu-btn">☰</div>
     <div id="side-panel">
       <div class="panel-header">
+        <div class="social-icons">
+          <a href="https://wa.me/254757384487" target="_blank" rel="noopener noreferrer" class="social-link whatsapp">
+            <i class="fa-brands fa-whatsapp"></i>
+          </a>
+          <a href="https://t.me/zodiacalgotrade" target="_blank" rel="noopener noreferrer" class="social-link telegram">
+            <i class="fa-brands fa-telegram"></i>
+          </a>
+        </div>
         <span id="panel-close">✕</span>
       </div>
 <div class="panel-tabs">
