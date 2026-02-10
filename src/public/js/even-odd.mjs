@@ -1,4 +1,4 @@
-import { buyContract, getAuthToken, waitForSettlement } from "./buyContract.mjs";
+import { buyContract, getAuthToken, waitForSettlement, formatQuote } from "./buyContract.mjs";
 import { showLivePopup } from './livePopup.mjs';
 
 let running = false;
@@ -217,7 +217,12 @@ function startTickStream() {
     try {
       const msg = JSON.parse(e.data);
       if (msg.tick) {
-        const quote = msg.tick.quote;
+        let quote = msg.tick.quote;
+        if (msg.tick.pip_size !== undefined) {
+          quote = Number(quote).toFixed(msg.tick.pip_size);
+        } else {
+          quote = formatQuote(msg.tick.symbol, quote);
+        }
         const digit = Number(String(quote).slice(-1));
 
         lastTickTimestamp = Date.now();

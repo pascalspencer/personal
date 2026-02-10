@@ -1,4 +1,4 @@
-import { buyContract, getAuthToken } from "./buyContract.mjs";
+import { buyContract, getAuthToken, formatQuote } from "./buyContract.mjs";
 import { getCurrentToken } from './popupMessages.mjs';
 import { showLivePopup } from './livePopup.mjs';
 
@@ -196,8 +196,13 @@ function restartTickStream() {
 }
 
 function processTick(tick) {
-  const quote = tick.quote.toString();
-  const digit = Number(quote.slice(-1));
+  let quote = tick.quote;
+  if (tick.pip_size !== undefined) {
+    quote = Number(quote).toFixed(tick.pip_size);
+  } else {
+    quote = formatQuote(tick.symbol, quote);
+  }
+  const digit = Number(String(quote).slice(-1));
 
   tickHistory.push(digit);
   if (tickHistory.length > HISTORY_LIMIT) tickHistory.shift();

@@ -1,4 +1,4 @@
-import { buyContract, buyContractBulk, getAuthToken, waitForSettlement } from "./buyContract.mjs";
+import { buyContract, buyContractBulk, getAuthToken, waitForSettlement, formatQuote } from "./buyContract.mjs";
 import { getCurrentToken } from './popupMessages.mjs';
 import { showLivePopup } from './livePopup.mjs';
 
@@ -179,7 +179,12 @@ function startTickStream() {
     tickWs.onmessage = (msg) => {
       const data = JSON.parse(msg.data);
       if (data.tick) {
-        const quote = data.tick.quote.toString();
+        let quote = data.tick.quote;
+        if (data.tick.pip_size !== undefined) {
+          quote = Number(quote).toFixed(data.tick.pip_size);
+        } else {
+          quote = formatQuote(data.tick.symbol, quote);
+        }
         const digit = Number(quote.slice(-1));
 
         // IMMEDIATE SYNCHRONOUS UPDATE for digit tracking accuracy
@@ -248,7 +253,12 @@ function restartTickStream() {
 function processTick(tick) {
   if (!running || tradeLock) return;
 
-  const quote = tick.quote.toString();
+  let quote = tick.quote;
+  if (tick.pip_size !== undefined) {
+    quote = Number(quote).toFixed(tick.pip_size);
+  } else {
+    quote = formatQuote(tick.symbol, quote);
+  }
   const digit = Number(quote.slice(-1));
 
   if (tradesCompleted >= Number(tickCount.value)) {

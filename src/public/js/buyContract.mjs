@@ -42,6 +42,37 @@ createWebSocket();
 let api = null; // kept for compatibility checks in other codepaths
 const resultsContainer = document.getElementById("results-container");
 
+// Symbol Pip Cache
+let symbolPips = null;
+
+async function ensureSymbolPips() {
+  if (symbolPips) return;
+  // wait a moment for connection if needed, though sendJson handles checks
+  try {
+    const response = await sendJson({ active_symbols: "brief", product_type: "basic" });
+    if (response.active_symbols) {
+      symbolPips = new Map();
+      response.active_symbols.forEach(s => {
+        // Calculate decimal places from pip (e.g. 0.01 -> 2, 0.0001 -> 4)
+        const decimals = Math.abs(Math.log10(s.pip));
+        symbolPips.set(s.symbol, decimals);
+      });
+      console.log(`[BuyContract] Cached pip counts for ${symbolPips.size} symbols.`);
+    }
+  } catch (e) {
+    console.warn("[BuyContract] Failed to fetch active symbols for pip sizes:", e);
+  }
+}
+
+export function formatQuote(symbol, quote) {
+  const val = Number(quote);
+  if (symbolPips && symbolPips.has(symbol)) {
+    return val.toFixed(symbolPips.get(symbol));
+  }
+  // Fallback: If not cached, return raw string (original behavior)
+  return String(quote);
+}
+
 // request bookkeeping
 let reqCounter = 1;
 const pending = new Map();        // req_id -> resolve(response)
@@ -118,6 +149,9 @@ connection.onopen = function () {
   api = connection; // mark as available for simple checks elsewhere
   startPing();
   console.log("WebSocket connection is fantastic.");
+
+  // Fetch pip sizes immediately on connect
+  ensureSymbolPips();
 
   document.addEventListener("DOMContentLoaded", async () => {
     const token = getAuthToken();
