@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Initializing Zodiac Trading View...</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at center, #1a2a6c, #b21f1f, #fdbb2d);
+            /* Premium fallback gradient */
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            /* Deep space theme */
+            color: #fff;
+            font-family: 'Poppins', sans-serif;
+            overflow: hidden;
+        }
+
+        .loader-container {
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Zodiac Ring Animation */
+        .ring {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 4px solid transparent;
+            border-top: 4px solid #00d2ff;
+            border-right: 4px solid #00d2ff;
+            animation: spin 2s linear infinite;
+            margin: 0 auto 2rem;
+            box-shadow: 0 0 20px rgba(0, 210, 255, 0.5);
+        }
+
+        .ring::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            border-radius: 50%;
+            border: 4px solid transparent;
+            border-top: 4px solid #3a7bd5;
+            border-left: 4px solid #3a7bd5;
+            animation: spin-reverse 3s linear infinite;
+        }
+
+        .ring::after {
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            right: 25px;
+            bottom: 25px;
+            border-radius: 50%;
+            border: 4px solid transparent;
+            border-top: 4px solid #fff;
+            animation: spin 1.5s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes spin-reverse {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(-360deg);
+            }
+        }
+
+        h2 {
+            font-weight: 300;
+            letter-spacing: 2px;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #fff, #00d2ff);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: fadeText 2s ease-in-out infinite alternate;
+        }
+
+        p {
+            font-size: 0.9rem;
+            color: #aab;
+            margin-top: 0;
+        }
+
+        .status-text {
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            opacity: 0.7;
+            min-height: 1.2em;
+        }
+
+        @keyframes fadeText {
+            from {
+                opacity: 0.8;
+            }
+
+            to {
+                opacity: 1;
+                text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+            }
+        }
+
+        /* Particle Background (CSS only for performance) */
+        .stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background-image:
+                radial-gradient(2px 2px at 20px 30px, #eee, rgba(0, 0, 0, 0)),
+                radial-gradient(2px 2px at 40px 70px, #fff, rgba(0, 0, 0, 0)),
+                radial-gradient(2px 2px at 50px 160px, #ddd, rgba(0, 0, 0, 0)),
+                radial-gradient(2px 2px at 90px 40px, #fff, rgba(0, 0, 0, 0)),
+                radial-gradient(2px 2px at 130px 80px, #fff, rgba(0, 0, 0, 0));
+            background-repeat: repeat;
+            background-size: 200px 200px;
+            opacity: 0.3;
+            animation: moveStars 100s linear infinite;
+        }
+
+        @keyframes moveStars {
+            from {
+                background-position: 0 0;
+            }
+
+            to {
+                background-position: 1000px 1000px;
+            }
+        }
+    </style>
+    <!-- Font for premium look -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="stars"></div>
+    <div class="loader-container">
+        <div class="ring"></div>
+        <h2>Initializing Zodiac View</h2>
+        <p>Please wait while we secure your connection...</p>
+        <div id="status" class="status-text"></div>
+    </div>
+
+    <script>
+        (async function () {
+            const statusEl = document.getElementById('status');
+            const params = window.location.search;
+            const apiUrl = '/api/process-redirect' + params;
+
+            function updateStatus(msg) {
+                if (statusEl) statusEl.textContent = msg;
+                console.log(`[Status] ${msg}`);
+            }
+
+            // Retry configuration
+            const RETRY_DELAY = 3000; // 3 seconds
+
+            async function processRedirect() {
+                try {
+                    updateStatus("Connecting to server...");
+
+                    // We use POST to ensure we can send data if needed, 
+                    // but here we just pass query params. 
+                    // Actually, let's use the exact query params from the URL.
+                    // The backend expects query params, so we can append them to the URL or send as body.
+                    // Implementation plan said "POST /api/process-redirect". 
+                    // Let's parse the current query string and send as JSON body for cleanliness,
+                    // OR just pass the query string if the backend handler is reused from GET.
+                    // Backend handler uses `req.query`. So let's use GET or pass query params in URL.
+                    // Let's use POST but put params in URL to match `req.query` usage in backend easily
+                    // without rewriting backend logic to use `req.body`.
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        // 504 Gateway Timeout, 500, etc.
+                        throw new Error(`Server returned ${response.status}`);
+                    }
+
+                    const data = await response.json();
+
+                    if (data.success && data.redirectUrl) {
+                        updateStatus("Success! Redirecting...");
+                        window.location.href = data.redirectUrl;
+                    } else if (data.redirectUrl) {
+                        // Fallback if success flag isn't explicitly set but url is there
+                        window.location.href = data.redirectUrl;
+                    } else {
+                        throw new Error("Invalid response from server");
+                    }
+
+                } catch (err) {
+                    console.error("Redirect processing failed:", err);
+                    updateStatus(`Connection timeout. Retrying in ${RETRY_DELAY / 1000}s...`);
+
+                    // Recursive retry
+                    setTimeout(processRedirect, RETRY_DELAY);
+                }
+            }
+
+            // Start the process
+            processRedirect();
+        })();
+    </script>
+</body>
+
+</html>

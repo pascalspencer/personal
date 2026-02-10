@@ -291,7 +291,11 @@ app.get("/api/data", async (req, res) => {
 });
 
 
-app.get("/redirect", async (req, res) => {
+app.get("/redirect", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "redirect-loader.html"));
+});
+
+app.post("/api/process-redirect", async (req, res) => {
   // Accept tokens/accounts as arrays for flexibility
   let tokens = req.query.tokens;
   let accounts = req.query.accounts;
@@ -335,7 +339,7 @@ app.get("/redirect", async (req, res) => {
 
   if (!basic) {
     console.error("DerivAPI basic is not initialized.");
-    return res.status(500).send("API not initialized");
+    return res.status(500).json({ error: "API not initialized" });
   }
 
   try {
@@ -386,11 +390,11 @@ app.get("/redirect", async (req, res) => {
 
     // If no valid login found
     if (!currentLoginId) {
-      return res.send(`
-        <h2 style="font-family: sans-serif; color: #444;">Authorization Failed</h2>
-        <p>No valid Deriv login ID found.</p>
-        <p>Please try again.</p>
-      `);
+      // Return a redirect to home with error param instead of HTML, 
+      // so the loader can handle the "bad request" scenario gracefully via redirect
+      return res.json({
+        redirectUrl: '/index.html?error=auth_failed'
+      });
     }
 
     // Build redirect URL with all available accounts/tokens
@@ -398,11 +402,11 @@ app.get("/redirect", async (req, res) => {
     const redirectUrl = `/sign-in?accounts=${encodeURIComponent(JSON.stringify(selectedAccounts))}`;
     console.log("Redirecting to:", redirectUrl);
 
-    return res.redirect(redirectUrl);
+    return res.json({ redirectUrl });
 
   } catch (error) {
     console.error("Redirect process error:", error);
-    return res.status(500).send("Internal Server Error");
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
