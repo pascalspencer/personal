@@ -155,7 +155,7 @@ connection.onopen = function () {
   // Fetch pip sizes immediately on connect
   ensureSymbolPips();
 
-  document.addEventListener("DOMContentLoaded", async () => {
+  const performAuthAndSubscribe = async () => {
     const token = getAuthToken();
     if (!token) {
       console.warn("No token found at authorization.");
@@ -181,7 +181,13 @@ connection.onopen = function () {
     } catch (err) {
       console.error("Authorization failed:", err);
     }
-  });
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", performAuthAndSubscribe);
+  } else {
+    performAuthAndSubscribe();
+  }
 };
 
 // --- Robust Balance Subscription ---
@@ -209,8 +215,8 @@ function startBalanceCheck() {
   if (balanceCheckInterval) clearInterval(balanceCheckInterval);
   // Check immediately
   ensureBalanceSubscription();
-  // Then poll every 3 seconds
-  balanceCheckInterval = setInterval(ensureBalanceSubscription, 3000);
+  // Then poll every 1 second (faster feedback)
+  balanceCheckInterval = setInterval(ensureBalanceSubscription, 1000);
 }
 
 
