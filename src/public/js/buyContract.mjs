@@ -12,14 +12,8 @@ const reconnectDelay = 3000;
 function createWebSocket() {
   connection = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${derivAppID}`);
 
-  connection.onopen = function () {
-    wsReconnectAttempts = 0;
-    api = connection;
-    lastAuthorizedToken = null; // Reset auth cache on new connection
-    startPing();
-    console.log("WebSocket connection is fantastic.");
-
-    document.dispatchEvent(new Event("ws-opened"));
+  connection.onerror = (err) => {
+    console.error("WebSocket error:", err);
   };
 
   connection.onerror = (err) => {
@@ -146,9 +140,12 @@ export function getAuthToken() {
 
 // --- WebSocket lifecycle ---
 connection.onopen = function () {
+  wsReconnectAttempts = 0;
   api = connection; // mark as available for simple checks elsewhere
+  lastAuthorizedToken = null;
   startPing();
   console.log("WebSocket connection is fantastic.");
+  document.dispatchEvent(new Event("ws-opened"));
 
   // Fetch pip sizes immediately on connect
   ensureSymbolPips();
@@ -172,6 +169,15 @@ connection.onopen = function () {
       } else {
         console.warn("⛔ Could not detect account currency — trading disabled");
       }
+
+      // Subscribe to balance updates AFTER auth
+      try {
+        console.log("Subscribing to balance updates...");
+        connection.send(JSON.stringify({ balance: 1, subscribe: 1 }));
+      } catch (e) {
+        console.warn("Could not subscribe to balance:", e);
+      }
+
     } catch (err) {
       console.error("Authorization failed:", err);
     }
@@ -208,6 +214,11 @@ connection.onmessage = (evt) => {
       subscriptions.delete(id);
       return;
     }
+  }
+
+  // Handle Balance updates
+  if (msg.balance) {
+    updateBalanceUI(msg.balance);
   }
 
   // Normal single-response routing
@@ -713,3 +724,37 @@ function calculatePercentages() {
 
 // --- Export for automation ---
 export { evaluateAndBuyContractSafe, buyContract, buyContractBulk, showLoginidPrompt, waitForSettlement };
+
+// --- Balance UI Logic ---
+let previousBalance = null;
+
+function updateBalanceUI(balanceObj) {
+  const balanceAmount = Number(balanceObj.balance);
+  const currency = balanceObj.currency;
+  const balanceEl = document.getElementById("balance-amount");
+  const container = document.getElementById("balance-container");
+
+  if (!balanceEl || !container) return;
+
+  // Format: "10,234.56 USD"
+  const formatted = balanceAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  balanceEl.textContent = `${formatted} ${currency}`;
+
+  if (previousBalance !== null) {
+    // Determine Profit or Loss
+    if (balanceAmount > previousBalance) {
+      container.classList.add("balance-profit");
+      container.classList.remove("balance-loss");
+    } else if (balanceAmount < previousBalance) {
+      container.classList.add("balance-loss");
+      container.classList.remove("balance-profit");
+    }
+
+    // Reset visual feedback after 2 seconds
+    setTimeout(() => {
+      container.classList.remove("balance-profit", "balance-loss");
+    }, 2000);
+  }
+
+  previousBalance = balanceAmount;
+}

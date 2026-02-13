@@ -44,6 +44,37 @@ body {
   z-index: 10001;
 }
 
+#balance-container {
+  position: fixed;
+  top: 15px;
+  right: 15px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 8px 16px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  font-weight: 700;
+  font-size: 16px;
+  z-index: 10001; /* High z-index to stay on top */
+  transition: background-color 0.5s ease, color 0.5s ease;
+  border: 1px solid rgba(0,0,0,0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 100px;
+}
+
+#balance-container.balance-profit {
+  background-color: #dcfce7;
+  color: #166534;
+  border-color: #86efac;
+}
+
+#balance-container.balance-loss {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border-color: #fca5a5;
+}
+
 #side-panel {
   position: fixed;
   top: 0;

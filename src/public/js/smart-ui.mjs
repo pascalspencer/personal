@@ -2,6 +2,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Create hamburger + panel dynamically
   document.body.insertAdjacentHTML("afterbegin", `
     <div id="menu-btn">☰</div>
+    <div id="balance-container">
+      <span id="balance-amount">Loading...</span>
+    </div>
     <div id="side-panel">
       <div class="panel-header">
         <div class="social-icons">
