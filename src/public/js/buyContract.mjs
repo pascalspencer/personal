@@ -758,3 +758,62 @@ function updateBalanceUI(balanceObj) {
 
   previousBalance = balanceAmount;
 }
+
+// --- Listen for Account Switch (Storage Event) ---
+window.addEventListener('storage', async (e) => {
+  if (e.key === 'selected_loginid' || e.key === 'active_token') {
+    const newToken = getAuthToken();
+    if (newToken && newToken !== lastAuthorizedToken) {
+      console.log("🔄 Account switch detected via storage event. Re-authorizing...");
+
+      // Update balance display to show loading state
+      const balanceEl = document.getElementById("balance-amount");
+      if (balanceEl) balanceEl.textContent = "Loading...";
+      previousBalance = null; // Reset tracking
+
+      try {
+        const authResp = await sendJson({ authorize: newToken });
+        if (authResp.error) {
+          console.error("Re-authorization failed:", authResp.error);
+          return;
+        }
+
+        lastAuthorizedToken = newToken;
+        const cur = getBestAccountCurrency(authResp);
+        if (cur) {
+          defaultCurrency = cur;
+          console.log("✅ Account currency updated:", defaultCurrency);
+        }
+
+        // Re-subscribe to balance
+        try {
+          // Send forget for old balance subscription if tracked (optional, or just new sub)
+          // For simplicity, just sending new subscribe is usually fine as connection is same
+          // But strict generic subscription might need cleanup. 
+          // Deriv WS usually invalidates old auth subscriptions on new auth, 
+          // but explicit subscribe is needed for the new account.
+          connection.send(JSON.stringify({ balance: 1, subscribe: 1 }));
+        } catch (err) {
+          console.warn("Could not re-subscribe to balance:", err);
+        }
+
+      } catch (err) {
+        console.error("Error handling account switch:", err);
+      }
+    }
+  }
+});
+
+// --- Also check on tab focus (visibility change) ---
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible') {
+    const newToken = getAuthToken();
+    if (newToken && newToken !== lastAuthorizedToken) {
+      console.log("👁️ Tab visible & token changed. Re-authorizing...");
+      // Trigger the same logic as storage event - could be refactored but inline is fine for now
+      window.dispatchEvent(new StorageEvent('storage', { key: 'active_token' }));
+    }
+  }
+});
+
+
