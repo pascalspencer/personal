@@ -21,7 +21,12 @@ function createWebSocket() {
   };
 
   connection.onclose = function () {
+    if (balanceCheckInterval) {
+      clearInterval(balanceCheckInterval);
+      balanceCheckInterval = null;
+    }
     if (wsReconnectAttempts < maxReconnects) {
+
       wsReconnectAttempts++;
       console.warn(`WebSocket closed. Attempting reconnect #${wsReconnectAttempts} in ${reconnectDelay}ms.`);
       setTimeout(createWebSocket, reconnectDelay);
@@ -170,19 +175,44 @@ connection.onopen = function () {
         console.warn("⛔ Could not detect account currency — trading disabled");
       }
 
-      // Subscribe to balance updates AFTER auth
-      try {
-        console.log("Subscribing to balance updates...");
-        connection.send(JSON.stringify({ balance: 1, subscribe: 1 }));
-      } catch (e) {
-        console.warn("Could not subscribe to balance:", e);
-      }
+      // Robust Balance Subscription
+      startBalanceCheck();
 
     } catch (err) {
       console.error("Authorization failed:", err);
     }
   });
 };
+
+// --- Robust Balance Subscription ---
+let balanceCheckInterval = null;
+
+function ensureBalanceSubscription() {
+  const balanceEl = document.getElementById("balance-amount");
+  if (balanceEl && balanceEl.textContent === "Loading...") {
+    console.log("Balance still loading... retrying subscription.");
+    try {
+      connection.send(JSON.stringify({ balance: 1, subscribe: 1 }));
+    } catch (e) {
+      console.warn("Retrying balance sub failed:", e);
+    }
+  } else {
+    // Balance is showing, stop retrying
+    if (balanceCheckInterval) {
+      clearInterval(balanceCheckInterval);
+      balanceCheckInterval = null;
+    }
+  }
+}
+
+function startBalanceCheck() {
+  if (balanceCheckInterval) clearInterval(balanceCheckInterval);
+  // Check immediately
+  ensureBalanceSubscription();
+  // Then poll every 3 seconds
+  balanceCheckInterval = setInterval(ensureBalanceSubscription, 3000);
+}
+
 
 connection.onerror = (err) => {
   console.error("WebSocket error:", err);
@@ -785,17 +815,8 @@ window.addEventListener('storage', async (e) => {
           console.log("✅ Account currency updated:", defaultCurrency);
         }
 
-        // Re-subscribe to balance
-        try {
-          // Send forget for old balance subscription if tracked (optional, or just new sub)
-          // For simplicity, just sending new subscribe is usually fine as connection is same
-          // But strict generic subscription might need cleanup. 
-          // Deriv WS usually invalidates old auth subscriptions on new auth, 
-          // but explicit subscribe is needed for the new account.
-          connection.send(JSON.stringify({ balance: 1, subscribe: 1 }));
-        } catch (err) {
-          console.warn("Could not re-subscribe to balance:", err);
-        }
+        // Re-subscribe to balance robustly
+        startBalanceCheck();
 
       } catch (err) {
         console.error("Error handling account switch:", err);
