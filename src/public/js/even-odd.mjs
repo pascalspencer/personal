@@ -9,11 +9,14 @@ let completedTrades = 0;
 let maxTradesPerSession = 100; // safety cap
 let ticksSinceLastTrade = 0;
 let baseStake = 0;
-let pingInterval = null;
 let lastTickTimestamp = Date.now();
 let watchdogInterval = null;
 
-let tickCountInput, stakeInput, tickGrid, resultsDisplay, digitStatsDisplay;
+// Martingale State
+let martingaleActive = false;
+let lastTrade = null; // { type: "DIGITODD/EVEN", stake: 0.35 }
+
+let tickCountInput, stakeInput, tickGrid, resultsDisplay, digitStatsDisplay, martingaleToggle, martingaleMultiplier;
 
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -52,6 +55,15 @@ document.addEventListener("DOMContentLoaded", () => {
               <label for="stake-eo">Stake (Min 0.35)</label>
               <input type="number" id="stake-eo" min="0.35" step="0.01" value="0.35">
             </div>
+
+            <!-- Martingale Section -->
+            <div class="field" style="grid-column: span 2; display: flex; align-items: center; gap: 10px; background: #fff3e0; padding: 8px; border-radius: 6px;">
+              <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; white-space: nowrap;">
+                <input type="checkbox" id="martingale-eo" style="width: auto; height: auto;">
+                Martingale
+              </label>
+              <input type="number" id="martingale-multiplier-eo" min="1.0" step="0.1" value="2.1" style="width: 80px;" placeholder="Mult">
+            </div>
           </div>
 
           <div class="action-area" style="text-align: center;">
@@ -69,6 +81,8 @@ document.addEventListener("DOMContentLoaded", () => {
   tickGrid = document.getElementById("tick-grid-eo");
   digitStatsDisplay = document.getElementById("eo-digit-stats");
   resultsDisplay = document.getElementById("even-odd-results");
+  martingaleToggle = document.getElementById("martingale-eo");
+  martingaleMultiplier = document.getElementById("martingale-multiplier-eo");
 
   // Event listeners
   document.getElementById("run-even-odd").onclick = runEvenOdd;
@@ -232,6 +246,12 @@ function startTickStream() {
         ticksSinceLastTrade++;
         updateUI();
 
+        // --- MARTINGALE LOGIC START ---
+        if (running && martingaleActive && lastTrade && checkingForEntry) {
+          checkMartingale(digit);
+        }
+        // --- MARTINGALE LOGIC END ---
+
         // Check for pattern if we're actively looking for entry (ASYNC)
         if (checkingForEntry && tickHistory.length >= 4) {
           setTimeout(() => checkForPatternAndTrade(), 0);
@@ -309,6 +329,8 @@ async function runEvenOdd() {
   running = true;
   checkingForEntry = true;
   baseStake = Number(stakeInput.value);
+  martingaleActive = martingaleToggle.checked;
+  lastTrade = null;
   lastTickTimestamp = Date.now();
   startWatchdog();
 
@@ -326,6 +348,9 @@ async function runEvenOdd() {
 
 async function checkForPatternAndTrade() {
   if (!running || !checkingForEntry) return;
+
+  // If waiting for Martingale result, do NOT trade
+  if (martingaleActive && lastTrade) return;
 
   const numTrades = parseInt(tickCountInput.value) || 5;
   if (completedTrades >= numTrades) return finishSession();
@@ -360,28 +385,81 @@ async function checkForPatternAndTrade() {
       return;
     }
 
-    // Extract win status immediately if possible
+    // Extract win status immediately if possible (Estimated)
+    // We rely on Martingale logic for actual result calc next tick
     const winStatusInitial = Number(result?.buy?.payout || 0) > stake;
 
     completedTrades++;
     resultsDisplay.dataset.success = String(Number(resultsDisplay.dataset.success) + (winStatusInitial ? 1 : 0));
     resultsDisplay.dataset.failed = String(Number(resultsDisplay.dataset.failed) + (winStatusInitial ? 0 : 1));
 
-    if (completedTrades < numTrades && completedTrades < maxTradesPerSession) {
-      checkingForEntry = true;
-      resultsDisplay.innerHTML = `
-        <strong>Trading Active</strong><br>
-        Pattern: ${pattern}<br>
-        Completed: ${completedTrades}/${numTrades}<br>
-        Success: ${resultsDisplay.dataset.success}, Failed: ${resultsDisplay.dataset.failed}
-      `;
+    if (martingaleActive) {
+      lastTrade = {
+        type: tradeType, // "DIGITEVEN" or "DIGITODD"
+        stake: stake
+      };
+      // Don't set checkingForEntry = true yet. Handled in checkMartingale
+      checkingForEntry = true; // Wait... actually we NEED checkingForEntry true so tick handler calls checkMartingale?
+      // Yes, checkMartingale is inside `if (checkingForEntry)` block in tick handler?
+      // Let's verify tick handler logic:
+      // if (running && martingaleActive && lastTrade && checkingForEntry) { checkMartingale(digit); }
+      // So yes, we must set checkingForEntry = true here to allow the next tick to trigger the check.
     } else {
-      finishSession();
+      if (completedTrades < numTrades && completedTrades < maxTradesPerSession) {
+        checkingForEntry = true;
+        resultsDisplay.innerHTML = `
+                <strong>Trading Active</strong><br>
+                Pattern: ${pattern}<br>
+                Completed: ${completedTrades}/${numTrades}<br>
+                Success: ${resultsDisplay.dataset.success}, Failed: ${resultsDisplay.dataset.failed}
+            `;
+      } else {
+        finishSession();
+      }
     }
+
   } catch (err) {
     console.error("Trade failed:", err);
     completedTrades++;
     checkingForEntry = true; // Attempt to recover
+  }
+}
+
+// Separate Martingale Check function
+function checkMartingale(currentDigit) {
+  if (!lastTrade) return;
+
+  let won = false;
+  const isEven = currentDigit % 2 === 0;
+
+  if (lastTrade.type === "DIGITEVEN") {
+    won = isEven;
+  } else {
+    // DIGITODD
+    won = !isEven;
+  }
+
+  if (won) {
+    console.log(`[Martingale] WIN! Reset stake to ${baseStake}`);
+    stakeInput.value = baseStake;
+    resultsDisplay.innerHTML += ` <span style="color:green">WIN (Martingale Reset)</span>`;
+  } else {
+    const mult = Number(martingaleMultiplier.value) || 2.1;
+    const newStake = (Number(stakeInput.value) * mult).toFixed(2);
+    console.log(`[Martingale] LOSS! Increasing stake to ${newStake}`);
+    stakeInput.value = newStake;
+    resultsDisplay.innerHTML += ` <span style="color:red">LOSS (Martingale x${mult})</span>`;
+  }
+
+  lastTrade = null;
+
+  // Resume trading if not finished
+  const numTrades = parseInt(tickCountInput.value) || 5;
+  if (completedTrades < numTrades && completedTrades < maxTradesPerSession) {
+    checkingForEntry = true;
+    // Note: results display might be overwritten by next pattern check quickly, but that's ok
+  } else {
+    finishSession();
   }
 }
 
@@ -396,6 +474,7 @@ function finishSession() {
 function stopEvenOdd() {
   running = false;
   checkingForEntry = false;
+  stakeInput.value = baseStake; // Reset stake
   stopWatchdog();
   document.getElementById("run-even-odd").textContent = "RUN";
   resultsDisplay.innerHTML = "Stopped.";

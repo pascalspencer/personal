@@ -8,13 +8,17 @@ let tradeLock = false;
 let tickWs = null;
 let tradesCompleted = 0;
 let pingInterval = null;
+let baseStake = 0;
 
-// UI Elements
-let digitSelect, tickCount, stakeInput;
-let singleToggle, bulkToggle, resultsBox;
-let digitStatsDisplay, tickGrid;
+// Martingale State
+let martingaleActive = false;
+let lastTrade = null; // { type: "DIGITDIFF", prediction: 5, stake: 0.35 }
 
-const HISTORY_LIMIT = 120;
+let digitSelect, tickCount, stakeInput, singleToggle, bulkToggle;
+let resultsBox, digitStatsDisplay, tickGrid;
+let martingaleToggle, martingaleMultiplier;
+
+const HISTORY_LIMIT = 100;
 const derivAppID = 61696;
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -58,6 +62,15 @@ document.addEventListener("DOMContentLoaded", () => {
               <label for="sd-stake">Stake (Min 0.35)</label>
               <input type="number" id="sd-stake" min="0.35" step="0.01" value="0.35">
             </div>
+
+            <!-- Martingale Section -->
+            <div class="field" style="grid-column: span 2; display: flex; align-items: center; gap: 10px; background: #fff3e0; padding: 8px; border-radius: 6px;">
+              <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; white-space: nowrap;">
+                <input type="checkbox" id="martingale-sd" style="width: auto; height: auto;">
+                Martingale
+              </label>
+              <input type="number" id="martingale-multiplier-sd" min="1.0" step="1.0" value="11" style="width: 80px;" placeholder="Mult">
+            </div>
             
             <div class="toggle-container" style="grid-column: span 2; display: flex; justify-content: space-around; background: #f5f5f5; padding: 10px; border-radius: 8px; margin-top: 5px;">
               <label class="small-toggle" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
@@ -90,6 +103,8 @@ document.addEventListener("DOMContentLoaded", () => {
     resultsBox = document.getElementById("sd-results");
     digitStatsDisplay = document.getElementById("sd-digit-stats");
     tickGrid = document.getElementById("tick-grid-sd");
+    martingaleToggle = document.getElementById("martingale-sd");
+    martingaleMultiplier = document.getElementById("martingale-multiplier-sd");
 
     // Mutually exclusive toggles
     function updateToggles(e) {
@@ -128,6 +143,9 @@ function runSD() {
     running = true;
     tradesCompleted = 0;
     tradeLock = false;
+    martingaleActive = martingaleToggle.checked;
+    lastTrade = null;
+    baseStake = Number(stakeInput.value);
 
     const btn = document.getElementById("run-sd");
     btn.textContent = "STOP";
@@ -137,6 +155,7 @@ function runSD() {
 
 function stopSD(msg) {
     running = false;
+    stakeInput.value = baseStake; // Reset stake
     const btn = document.getElementById("run-sd");
     if (btn) {
         btn.textContent = "RUN";
@@ -171,6 +190,13 @@ function startTickStream() {
 
                 tickHistory.push(digit);
                 if (tickHistory.length > HISTORY_LIMIT) tickHistory.shift();
+
+                // --- MARTINGALE LOGIC START ---
+                if (running && martingaleActive && lastTrade && !tradeLock) {
+                    checkMartingale(digit);
+                }
+                // --- MARTINGALE LOGIC END ---
+
                 updateUI();
 
                 setTimeout(() => processTick(data.tick), 0);
@@ -192,6 +218,28 @@ function startTickStream() {
         pingInterval = null;
         setTimeout(startTickStream, 5000);
     }
+}
+
+function checkMartingale(currentDigit) {
+    // Differs: Win if currentDigit != prediction. Loss if currentDigit == prediction.
+    if (!lastTrade) return;
+    const lost = currentDigit === lastTrade.prediction;
+
+    if (!lost) {
+        // WIN
+        console.log(`[Martingale] WIN! Reset stake to ${baseStake}`);
+        stakeInput.value = baseStake;
+        resultsBox.innerHTML += ` <span style="color:green">WIN</span>`;
+    } else {
+        // LOSS
+        const mult = Number(martingaleMultiplier.value) || 11; // High default for Differs
+        const newStake = (Number(stakeInput.value) * mult).toFixed(2);
+        console.log(`[Martingale] LOSS! Increasing stake to ${newStake}`);
+        stakeInput.value = newStake;
+        resultsBox.innerHTML += ` <span style="color:red">LOSS</span>`;
+    }
+
+    lastTrade = null;
 }
 
 function startPing(ws) {
@@ -218,6 +266,9 @@ function restartTickStream() {
 
 function processTick(tick) {
     if (!running || tradeLock) return;
+
+    // If waiting for result (Martingale active), do not trigger new trade yet
+    if (martingaleActive && lastTrade) return;
 
     let quote = tick.quote;
     if (tick.pip_size !== undefined) {
@@ -261,8 +312,18 @@ async function handleTrigger(quote) {
     resultsBox.textContent = `🎯 Triggered DIGITDIFF on ${quote.slice(-1)}`;
 
     try {
-        await executeTrade(symbol, digitSelect.value, quote);
+        const resp = await executeTrade(symbol, digitSelect.value, quote);
         tradesCompleted++;
+
+        if (martingaleActive && resp && !resp.error) {
+            // Store trade to check NEXT tick
+            lastTrade = {
+                type: "DIGITDIFF",
+                prediction: Number(digitSelect.value),
+                stake: Number(stakeInput.value)
+            };
+        }
+
         tradeLock = false;
     } catch (e) {
         console.error(e);

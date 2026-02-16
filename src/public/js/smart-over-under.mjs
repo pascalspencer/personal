@@ -11,8 +11,12 @@ let baseStake = 0;
 let tradesCompleted = 0;
 let pingInterval = null;
 
+// Martingale State
+let martingaleActive = false;
+let lastTrade = null; // { type: "DIGITOVER/UNDER", prediction: 5, stake: 0.35 }
+
 // UI Elements
-let overDigit, underDigit, tickCount, stakeInput;
+let overDigit, underDigit, tickCount, stakeInput, martingaleToggle, martingaleMultiplier;
 let singleToggle, bulkToggle, aiPredictToggle, resultsBox;
 let digitStatsDisplay, tickGrid;
 
@@ -62,6 +66,15 @@ document.addEventListener("DOMContentLoaded", () => {
               <label for="stake-sou">Stake (Min 0.35)</label>
               <input type="number" id="stake-sou" min="0.35" step="0.01" value="0.35">
             </div>
+
+            <!-- Martingale Section -->
+            <div class="field" style="grid-column: span 2; display: flex; align-items: center; gap: 10px; background: #fff3e0; padding: 8px; border-radius: 6px;">
+              <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; white-space: nowrap;">
+                <input type="checkbox" id="martingale-sou" style="width: auto; height: auto;">
+                Martingale
+              </label>
+              <input type="number" id="martingale-multiplier-sou" min="1.0" step="0.1" value="2.1" style="width: 80px;" placeholder="Mult">
+            </div>
             
             <div class="toggle-container" style="grid-column: span 2; display: flex; justify-content: space-around; background: #f5f5f5; padding: 8px; border-radius: 6px; margin-bottom: 10px;">
               <label class="small-toggle">
@@ -93,6 +106,8 @@ document.addEventListener("DOMContentLoaded", () => {
   underDigit = document.getElementById("under-digit");
   tickCount = document.getElementById("tick-count-sou");
   stakeInput = document.getElementById("stake-sou");
+  martingaleToggle = document.getElementById("martingale-sou");
+  martingaleMultiplier = document.getElementById("martingale-multiplier-sou");
   singleToggle = document.getElementById("single-toggle-sou");
   bulkToggle = document.getElementById("bulk-toggle-sou");
   aiPredictToggle = document.getElementById("ai-predict-sou");
@@ -145,6 +160,8 @@ function runSmart() {
   running = true;
   tradesCompleted = 0;
   tradeLock = false;
+  martingaleActive = martingaleToggle.checked;
+  lastTrade = null;
   baseStake = Number(stakeInput.value);
 
   const btn = document.getElementById("run-smart");
@@ -155,6 +172,7 @@ function runSmart() {
 
 function stopSmart(msg) {
   running = false;
+  stakeInput.value = baseStake; // Reset stake on stop
   const btn = document.getElementById("run-smart");
   if (btn) {
     btn.textContent = "RUN";
@@ -190,6 +208,13 @@ function startTickStream() {
         // IMMEDIATE SYNCHRONOUS UPDATE for digit tracking accuracy
         tickHistory.push(digit);
         if (tickHistory.length > HISTORY_LIMIT) tickHistory.shift();
+
+        // --- MARTINGALE LOGIC START ---
+        if (running && martingaleActive && lastTrade && !tradeLock) {
+          checkMartingale(digit);
+        }
+        // --- MARTINGALE LOGIC END ---
+
         updateUI();
 
         // ASYNC TRIGGERING to prevent event loop lag
@@ -228,6 +253,32 @@ function startTickStream() {
   }
 }
 
+function checkMartingale(currentDigit) {
+  // Determine win/loss based on the digit that just arrived
+  let won = false;
+  if (lastTrade.type === "DIGITOVER") {
+    won = currentDigit > lastTrade.prediction;
+  } else if (lastTrade.type === "DIGITUNDER") {
+    won = currentDigit < lastTrade.prediction;
+  }
+
+  if (won) {
+    // WIN: Reset stake
+    console.log(`[Martingale] WIN! Reset stake to ${baseStake}`);
+    stakeInput.value = baseStake;
+    resultsBox.innerHTML += ` <span style="color:green">WIN</span>`;
+  } else {
+    // LOSS: Multiply stake
+    const mult = Number(martingaleMultiplier.value) || 2.1;
+    const newStake = (Number(stakeInput.value) * mult).toFixed(2);
+    console.log(`[Martingale] LOSS! Increasing stake to ${newStake}`);
+    stakeInput.value = newStake;
+    resultsBox.innerHTML += ` <span style="color:red">LOSS</span>`;
+  }
+
+  lastTrade = null; // Reset until next trade
+}
+
 function startPing(ws) {
   if (pingInterval) clearInterval(pingInterval);
   pingInterval = setInterval(() => {
@@ -252,6 +303,9 @@ function restartTickStream() {
 
 function processTick(tick) {
   if (!running || tradeLock) return;
+
+  // If waiting for result (Martingale active), do not trigger new trade yet
+  if (martingaleActive && lastTrade) return;
 
   let quote = tick.quote;
   if (tick.pip_size !== undefined) {
@@ -314,10 +368,24 @@ async function handleTrigger(quote, isOver, isUnder) {
   resultsBox.textContent = `🎯 Triggered ${type} on ${quote.slice(-1)}`;
 
   try {
-    await executeTrade(symbol, type, prediction, quote);
+    const resp = await executeTrade(symbol, type, prediction, quote);
+
+    // Only count completed trades here if not using Martingale logic to wait for result?
+    // Actually, we count "placed" trades. Logic handles result separately.
     tradesCompleted++;
 
-    // IMMEDIATELY UNLOCK so scanning continues
+    if (martingaleActive && resp && !resp.error) {
+      // Store trade parameters to check NEXT tick
+      lastTrade = {
+        type: type,
+        prediction: Number(prediction),
+        stake: Number(stakeInput.value)
+      };
+    }
+
+    // IMMEDIATELY UNLOCK so scanning continues (unless Martingale logic needs to block?)
+    // If waiting for Martingale result, we block in processTick via `if (lastTrade) return`
+
     tradeLock = false;
   } catch (e) {
     console.error(e);
