@@ -64,12 +64,16 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
 
             <!-- Martingale Section -->
-            <div class="field" style="grid-column: span 2; display: flex; align-items: center; gap: 10px; background: #fff3e0; padding: 8px; border-radius: 6px;">
-              <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; white-space: nowrap;">
-                <input type="checkbox" id="martingale-sd" style="width: auto; height: auto;">
-                Martingale
+            <div class="toggle-container" style="grid-column: span 2; margin-top: 5px;">
+              <label class="small-toggle">
+                <span>Martingale</span>
+                <input type="checkbox" id="martingale-sd">
               </label>
-              <input type="number" id="martingale-multiplier-sd" min="1.0" step="1.0" value="11" style="width: 80px;" placeholder="Mult">
+              <div class="small-toggle" style="flex: 1.5; justify-content: flex-start; gap: 10px;">
+                <span style="font-size: 0.8rem; color: #666;">Multiplier</span>
+                <input type="number" id="martingale-multiplier-sd" min="1.0" step="1.0" value="11" 
+                       style="height: 30px; width: 65px; padding: 0 5px; font-weight: bold; border: 1px solid #ddd; background: #fff;">
+              </div>
             </div>
             
             <div class="toggle-container" style="grid-column: span 2; display: flex; justify-content: space-around; background: #f5f5f5; padding: 10px; border-radius: 8px; margin-top: 5px;">

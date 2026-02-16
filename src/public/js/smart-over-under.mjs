@@ -68,15 +68,19 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
 
             <!-- Martingale Section -->
-            <div class="field" style="grid-column: span 2; display: flex; align-items: center; gap: 10px; background: #fff3e0; padding: 8px; border-radius: 6px;">
-              <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; white-space: nowrap;">
-                <input type="checkbox" id="martingale-sou" style="width: auto; height: auto;">
-                Martingale
+            <div class="toggle-container" style="grid-column: span 2; margin-top: 5px;">
+              <label class="small-toggle">
+                <span>Martingale</span>
+                <input type="checkbox" id="martingale-sou">
               </label>
-              <input type="number" id="martingale-multiplier-sou" min="1.0" step="0.1" value="2.1" style="width: 80px;" placeholder="Mult">
+              <div class="small-toggle" style="flex: 1.5; justify-content: flex-start; gap: 10px;">
+                <span style="font-size: 0.8rem; color: #666;">Multiplier</span>
+                <input type="number" id="martingale-multiplier-sou" min="1.0" step="0.1" value="2.1" 
+                       style="height: 30px; width: 65px; padding: 0 5px; font-weight: bold; border: 1px solid #ddd; background: #fff;">
+              </div>
             </div>
             
-            <div class="toggle-container" style="grid-column: span 2; display: flex; justify-content: space-around; background: #f5f5f5; padding: 8px; border-radius: 6px; margin-bottom: 10px;">
+            <div class="toggle-container" style="grid-column: span 2; margin-bottom: 10px;">
               <label class="small-toggle">
                 <span>Single</span>
                 <input type="checkbox" id="single-toggle-sou" checked>
