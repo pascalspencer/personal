@@ -1,18 +1,16 @@
-import { buyContract, buyContractBulk, getAuthToken, formatQuote } from "./buyContract.mjs";
+import { buyContract, buyContractBulk, getAuthToken, formatQuote, waitForSettlement } from "./buyContract.mjs";
 import { showLivePopup } from './livePopup.mjs';
 
 // Strategy State
 let running = false;
-let tickHistory = [];
+let tickHistory = []; // Full tick history (prices)
+let digitHistory = []; // Last digit history
 let tradeLock = false;
 let tickWs = null;
 let tradesCompleted = 0;
 let pingInterval = null;
 let baseStake = 0;
 let isRecoveryMode = false;
-
-// Martingale State
-let lastTradeResult = null; // 'win' or 'loss'
 
 const HISTORY_LIMIT = 120;
 const derivAppID = 61696;
@@ -26,7 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const riseFallChoices = ['Rise', 'Fall'];
 
     const createDropdownGroup = (idPrefix) => `
-        <div class="sr-column" style="flex: 1; padding: 10px; border: 1px solid #eee; border-radius: 8px; background: #f9f9f9; min-width: 150px;">
+        <div class="sr-column" style="flex: 1; padding: 10px; border: 1px solid #eee; border-radius: 8px; background: #f9f9f9; min-width: 200px;">
             <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 10px;">
                 <select class="sr-main-sentiment" id="${idPrefix}-main" style="flex: 1; height: 35px; border-radius: 4px; border: 1px solid #ccc;">
                     ${sentimentOptions.map(opt => `<option value="${opt.toLowerCase()}">${opt}</option>`).join('')}
@@ -34,18 +32,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 <input type="checkbox" id="${idPrefix}-active" class="sr-active-check" style="width: 18px; height: 18px;">
             </div>
             <div class="sr-sub-dropdowns">
-                <select id="${idPrefix}-sub1" style="width: 100%; height: 30px; margin-bottom: 5px; border-radius: 4px; border: 1px solid #ddd;"></select>
+                <select id="${idPrefix}-sub1" style="width: 100%; height: 30px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #ddd;"></select>
                 
                 <!-- Dual Barrier Container -->
                 <div id="${idPrefix}-barrier-container" style="display: none;">
                     <div id="${idPrefix}-barrier-box1">
-                        <label id="${idPrefix}-label1" style="font-size: 0.75rem; color: #666; display: block; margin-bottom: 2px;">Digit 1:</label>
-                        <select id="${idPrefix}-barrier1" style="width: 100%; height: 30px; border-radius: 4px; border: 1px solid #ddd; margin-bottom: 5px;">
+                        <label id="${idPrefix}-label1" style="font-size: 0.75rem; color: #666; display: block; margin-bottom: 2px;">Over Digit:</label>
+                        <select id="${idPrefix}-barrier1" style="width: 100%; height: 30px; border-radius: 4px; border: 1px solid #ddd; margin-bottom: 8px;">
                             ${Array.from({ length: 10 }, (_, i) => `<option value="${i}">${i}</option>`).join('')}
                         </select>
                     </div>
                     <div id="${idPrefix}-barrier-box2">
-                        <label id="${idPrefix}-label2" style="font-size: 0.75rem; color: #666; display: block; margin-bottom: 2px;">Digit 2:</label>
+                        <label id="${idPrefix}-label2" style="font-size: 0.75rem; color: #666; display: block; margin-bottom: 2px;">Under Digit:</label>
                         <select id="${idPrefix}-barrier2" style="width: 100%; height: 30px; border-radius: 4px; border: 1px solid #ddd;">
                             ${Array.from({ length: 10 }, (_, i) => `<option value="${i}">${i}</option>`).join('')}
                         </select>
@@ -57,7 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.body.insertAdjacentHTML("beforeend", `
     <div id="sharp-recovery-panel" style="display:none">
-      <div class="smart-card" style="max-width: 1100px; margin: 0 auto;">
+      <div class="smart-card" style="max-width: 900px; margin: 0 auto;">
         <div class="smart-header" style="background: #00204a; color: white; padding: 15px; border-radius: 12px 12px 0 0;">
           <h2 class="smart-title" style="color: white; margin: 0;">Sharp Recovery</h2>
           <p class="smart-sub" style="color: rgba(255,255,255,0.7); margin: 5px 0 0 0;">Advanced Recovery Strategy</p>
@@ -79,28 +77,24 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
 
           <div class="strategy-area" style="margin-bottom: 30px;">
-             <h3 style="font-size: 1.1rem; color: #00204a; margin-bottom: 15px; border-left: 4px solid #00bbf0; padding-left: 10px;">Primary Execution Configuration</h3>
+             <h3 style="font-size: 1.1rem; color: #00204a; margin-bottom: 15px; border-left: 4px solid #00bbf0; padding-left: 10px;">Primary Strategy (2 Slots)</h3>
              <div style="display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px;">
                 ${createDropdownGroup('ps1')}
                 ${createDropdownGroup('ps2')}
-                ${createDropdownGroup('ps3')}
-                ${createDropdownGroup('ps4')}
              </div>
              <div style="margin-top: 15px; padding: 10px; background: #e3f2fd; border-radius: 6px;">
                 <label class="small-toggle" style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; color: #1976d2;">
                     <input type="checkbox" id="sr-execute-all" style="width: 20px; height: 20px;">
-                    <span>Simultaneous Execution (All Checked)</span>
+                    <span>Execute both simultaneously if triggered</span>
                 </label>
              </div>
           </div>
 
           <div class="recovery-area" style="border-top: 2px dashed #ddd; padding-top: 25px;">
-             <h3 style="font-size: 1.1rem; color: #d32f2f; margin-bottom: 15px; border-left: 4px solid #d32f2f; padding-left: 10px;">Recovery Matrix Configuration</h3>
+             <h3 style="font-size: 1.1rem; color: #d32f2f; margin-bottom: 15px; border-left: 4px solid #d32f2f; padding-left: 10px;">Recovery Strategy (2 Slots)</h3>
              <div style="display: flex; gap: 12px; overflow-x: auto; padding-bottom: 15px;">
                 ${createDropdownGroup('rs1')}
                 ${createDropdownGroup('rs2')}
-                ${createDropdownGroup('rs3')}
-                ${createDropdownGroup('rs4')}
              </div>
              
              <div class="toggle-container" style="background: #fff5f5; border-radius: 8px; border: 1px solid #ffcdd2; margin-top: 15px; display: flex; flex-wrap: wrap; gap: 20px; align-items: center;">
@@ -122,14 +116,14 @@ document.addEventListener("DOMContentLoaded", () => {
                   <input type="number" id="sr-stake" min="0.35" step="0.01" value="0.35" style="border-radius: 8px; border: 2px solid #ddd; height: 45px; font-size: 1.1rem; font-weight: 700;">
               </div>
               <div class="field">
-                  <label style="font-weight: 700; color: #333; margin-bottom: 8px;">Profit Goal (Trades)</label>
+                  <label style="font-weight: 700; color: #333; margin-bottom: 8px;">Total Trades</label>
                   <input type="number" id="sr-count" min="1" value="5" style="border-radius: 8px; border: 2px solid #ddd; height: 45px; font-size: 1.1rem; font-weight: 700;">
               </div>
           </div>
 
           <div class="action-area" style="text-align: center; margin-top: 25px;">
             <button id="run-sr" class="run-btn" style="width: 100%; height: 60px; font-size: 1.4rem; font-weight: 800; border-radius: 30px; background: linear-gradient(135deg, #00bbf0, #00204a); color: white; border: none; cursor: pointer; transition: all 0.3s ease;">RUN SYSTEM</button>
-            <div id="sr-results" class="smart-results" style="margin-top: 20px; font-size: 1.1rem; border-top: 1px solid #eee; padding-top: 15px;">System Active • Waiting for scan</div>
+            <div id="sr-results" class="smart-results" style="margin-top: 20px; font-size: 1.1rem; border-top: 1px solid #eee; padding-top: 15px;">System Ready</div>
           </div>
         </div>
       </div>
@@ -137,7 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
     `);
 
     // Initialize dropdowns
-    const prefixes = ['ps1', 'ps2', 'ps3', 'ps4', 'rs1', 'rs2', 'rs3', 'rs4'];
+    const prefixes = ['ps1', 'ps2', 'rs1', 'rs2'];
     prefixes.forEach(p => {
         const main = document.getElementById(`${p}-main`);
         const sub1 = document.getElementById(`${p}-sub1`);
@@ -157,8 +151,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (val === 'over/under') {
                 barrierCont.style.display = 'block';
-                label1.textContent = 'Over Digit:';
-                label2.textContent = 'Under Digit:';
+                label1.textContent = 'Over Barrier:';
+                label2.textContent = 'Under Barrier:';
             } else if (val === 'matches/differs') {
                 barrierCont.style.display = 'block';
                 label1.textContent = 'Matches Digit:';
@@ -184,7 +178,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function toggleSR() {
     if (running) {
-        stopSR("System manual stop");
+        stopSR("System stopped");
     } else {
         runSR();
     }
@@ -193,7 +187,7 @@ function toggleSR() {
 function runSR() {
     const token = getAuthToken();
     if (!token) {
-        alert("Authorization required. Please login.");
+        alert("Authorization required.");
         return;
     }
     running = true;
@@ -215,7 +209,7 @@ function stopSR(msg) {
         btn.textContent = "RUN SYSTEM";
         btn.style.background = "linear-gradient(135deg, #00bbf0, #00204a)";
     }
-    document.getElementById("sr-results").textContent = msg || "Ready for scan";
+    document.getElementById("sr-results").textContent = msg || "Ready";
 }
 
 function startTickStream() {
@@ -235,8 +229,10 @@ function startTickStream() {
                 else quote = formatQuote(data.tick.symbol, quote);
                 const digit = Number(String(quote).slice(-1));
 
-                tickHistory.push(digit);
+                tickHistory.push(Number(data.tick.quote));
+                digitHistory.push(digit);
                 if (tickHistory.length > HISTORY_LIMIT) tickHistory.shift();
+                if (digitHistory.length > HISTORY_LIMIT) digitHistory.shift();
 
                 updateUI();
                 processTick(data.tick, quote);
@@ -273,43 +269,72 @@ function restartTickStream() {
 async function processTick(tick, quote) {
     if (!running || tradeLock) return;
 
-    const targetTrades = Number(document.getElementById('sr-count').value);
-    if (tradesCompleted >= targetTrades) {
+    const totalTarget = Number(document.getElementById('sr-count').value);
+    if (tradesCompleted >= totalTarget) {
         stopSR("Goal Achieved ✅");
         return;
     }
 
     const executeAll = document.getElementById('sr-execute-all').checked;
-    const prefixSet = isRecoveryMode ? ['rs1', 'rs2', 'rs3', 'rs4'] : ['ps1', 'ps2', 'ps3', 'ps4'];
+    const prefixSet = isRecoveryMode ? ['rs1', 'rs2'] : ['ps1', 'ps2'];
 
     const activeStrategies = prefixSet.filter(p => document.getElementById(`${p}-active`).checked);
     if (activeStrategies.length === 0) return;
 
+    const lastDigit = digitHistory[digitHistory.length - 1];
     let triggeredActions = [];
 
     activeStrategies.forEach(p => {
         const type = document.getElementById(`${p}-main`).value;
-        const s1 = document.getElementById(`${p}-sub1`).value;
-        const b1 = document.getElementById(`${p}-barrier1`).value;
-        const b2 = document.getElementById(`${p}-barrier2`).value;
+        const sub = document.getElementById(`${p}-sub1`).value;
+        const b1 = Number(document.getElementById(`${p}-barrier1`).value);
+        const b2 = Number(document.getElementById(`${p}-barrier2`).value);
 
-        let triggered = true; // For now we trigger immediately on tick if active
         let tradeType = '';
         let prediction = 0;
 
-        if (type === 'even/odd') {
-            tradeType = s1 === 'even' ? 'DIGITEVEN' : 'DIGITODD';
-        } else if (type === 'over/under') {
-            tradeType = s1 === 'over' ? 'DIGITOVER' : 'DIGITUNDER';
-            prediction = s1 === 'over' ? Number(b1) : Number(b2);
-        } else if (type === 'matches/differs') {
-            tradeType = s1 === 'matches' ? 'DIGITMATCH' : 'DIGITDIFF';
-            prediction = s1 === 'matches' ? Number(b1) : Number(b2);
-        } else if (type === 'rise/fall') {
-            tradeType = s1 === 'rise' ? 'CALL' : 'PUT';
+        // Smart Over/Under Logic
+        if (type === 'over/under') {
+            if (lastDigit < b1) {
+                tradeType = 'DIGITOVER';
+                prediction = b1;
+            } else if (lastDigit > b2) {
+                tradeType = 'DIGITUNDER';
+                prediction = b2;
+            }
+        }
+        // Even/Odd Switch Logic
+        else if (type === 'even/odd') {
+            if (digitHistory.length >= 4) {
+                const last4 = digitHistory.slice(-4);
+                const allEven = last4.every(d => d % 2 === 0);
+                const allOdd = last4.every(d => d % 2 !== 0);
+                if (allEven) tradeType = 'DIGITODD';
+                else if (allOdd) tradeType = 'DIGITEVEN';
+            }
+        }
+        // Rise/Fall Double Movement Logic
+        else if (type === 'rise/fall') {
+            if (tickHistory.length >= 3) {
+                const cur = tickHistory[tickHistory.length - 1];
+                const p1 = tickHistory[tickHistory.length - 2];
+                const p2 = tickHistory[tickHistory.length - 3];
+                if (cur > p1 && p1 > p2) tradeType = 'CALL';
+                else if (cur < p1 && p1 < p2) tradeType = 'PUT';
+            }
+        }
+        // Matches/Differs Logic (Simple Matches style)
+        else if (type === 'matches/differs') {
+            if (sub === 'matches' && lastDigit === b1) {
+                tradeType = 'DIGITMATCH';
+                prediction = b1;
+            } else if (sub === 'differs' && lastDigit === b2) {
+                tradeType = 'DIGITDIFF';
+                prediction = b2;
+            }
         }
 
-        if (triggered && tradeType) {
+        if (tradeType) {
             triggeredActions.push({ type: tradeType, prediction });
         }
     });
@@ -327,19 +352,15 @@ async function processTick(tick, quote) {
             tradesCompleted++;
         }
 
-        // Wait between trades
-        if (!executeAll) {
-            setTimeout(() => { tradeLock = false; }, 2000);
-        } else {
-            tradeLock = false;
-        }
+        // Brief pause after trade to avoid overlapping triggers on same tick stream update
+        setTimeout(() => { tradeLock = false; }, 3000);
     }
 }
 
 async function executeTrade(symbol, type, barrier, quote) {
     const stake = document.getElementById('sr-stake').value;
     const resultsBox = document.getElementById("sr-results");
-    resultsBox.textContent = `🎯 Executing ${type} @ ${stake}...`;
+    resultsBox.textContent = `🎯 Triggered ${type} @ ${stake}`;
 
     const resp = await buyContract(symbol, type, 1, stake, barrier, quote, true);
     if (resp?.buy) {
@@ -352,16 +373,15 @@ async function executeTrade(symbol, type, barrier, quote) {
 }
 
 async function handleSettlement(contractId) {
-    const { waitForSettlement } = await import("./buyContract.mjs");
     const result = await waitForSettlement(contractId);
     if (result) {
         const resultsBox = document.getElementById("sr-results");
         if (result.status === 'won') {
-            resultsBox.innerHTML = `✅ Last Trade WON! Continuing scan...`;
+            resultsBox.innerHTML = `✅ Winner! Stake Reset`;
             isRecoveryMode = false;
             document.getElementById('sr-stake').value = baseStake;
         } else {
-            resultsBox.innerHTML = `❌ Last Trade LOST. Entering Recovery...`;
+            resultsBox.innerHTML = `❌ Loss. Switching to Recovery...`;
             isRecoveryMode = true;
             if (document.getElementById('sr-martingale').checked) {
                 const mult = Number(document.getElementById('sr-martingale-multiplier').value) || 2.1;
@@ -378,9 +398,10 @@ function updateUI() {
 
     statsBox.innerHTML = "";
     const counts = Array(10).fill(0);
-    tickHistory.forEach(d => counts[d]++);
+    digitHistory.forEach(d => counts[d]++);
     counts.forEach((c, i) => {
-        const pct = counts.reduce((a, b) => a + b, 0) > 0 ? ((c / tickHistory.length) * 100).toFixed(1) : 0;
+        const total = digitHistory.length || 1;
+        const pct = ((c / total) * 100).toFixed(1);
         statsBox.insertAdjacentHTML('beforeend', `
             <div style="border: 1px solid #eee; padding: 4px; text-align: center; border-radius: 4px; background: white; min-width: 30px;">
                 <div style="font-weight: bold; font-size: 0.8rem;">${i}</div>
@@ -389,6 +410,6 @@ function updateUI() {
         `);
     });
 
-    const lastTick = tickHistory[tickHistory.length - 1];
-    gridBox.textContent = lastTick !== undefined ? lastTick : '';
+    const lastDigit = digitHistory[digitHistory.length - 1];
+    gridBox.textContent = lastDigit !== undefined ? lastDigit : '';
 }
