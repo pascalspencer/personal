@@ -11,6 +11,7 @@ let tradesCompleted = 0;
 let pingInterval = null;
 let baseStake = 0;
 let isRecoveryMode = false;
+let currentStake = 0; // Tracks the current active stake (with Martingale)
 
 const HISTORY_LIMIT = 120;
 const derivAppID = 61696;
@@ -37,13 +38,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 <!-- Dual Barrier Container -->
                 <div id="${idPrefix}-barrier-container" style="display: none;">
                     <div id="${idPrefix}-barrier-box1">
-                        <label id="${idPrefix}-label1" style="font-size: 0.75rem; color: #666; display: block; margin-bottom: 2px;">Over Digit:</label>
+                        <label id="${idPrefix}-label1" style="font-size: 0.75rem; color: #666; display: block; margin-bottom: 2px;">Over Barrier:</label>
                         <select id="${idPrefix}-barrier1" style="width: 100%; height: 30px; border-radius: 4px; border: 1px solid #ddd; margin-bottom: 8px;">
                             ${Array.from({ length: 10 }, (_, i) => `<option value="${i}">${i}</option>`).join('')}
                         </select>
                     </div>
                     <div id="${idPrefix}-barrier-box2">
-                        <label id="${idPrefix}-label2" style="font-size: 0.75rem; color: #666; display: block; margin-bottom: 2px;">Under Digit:</label>
+                        <label id="${idPrefix}-label2" style="font-size: 0.75rem; color: #666; display: block; margin-bottom: 2px;">Under Barrier:</label>
                         <select id="${idPrefix}-barrier2" style="width: 100%; height: 30px; border-radius: 4px; border: 1px solid #ddd;">
                             ${Array.from({ length: 10 }, (_, i) => `<option value="${i}">${i}</option>`).join('')}
                         </select>
@@ -104,7 +105,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 </label>
                 <div style="display: flex; align-items: center; gap: 10px; background: white; padding: 5px 12px; border-radius: 20px; border: 1px solid #ffcdd2;">
                     <span style="font-size: 0.85rem; font-weight: 600; color: #555;">Multiplier:</span>
-                    <input type="number" id="sr-martingale-multiplier" min="1.0" step="0.1" value="2.1" 
+                    <input type="number" id="sr-martingale-multiplier" min="1.0" step="0.01" value="2.1" 
                            style="height: 30px; width: 60px; border: none; font-weight: 800; color: #c62828; text-align: center;">
                 </div>
              </div>
@@ -195,6 +196,7 @@ function runSR() {
     tradeLock = false;
     isRecoveryMode = false;
     baseStake = Number(document.getElementById('sr-stake').value);
+    currentStake = baseStake;
 
     const btn = document.getElementById("run-sr");
     btn.textContent = "STOP SYSTEM";
@@ -293,7 +295,7 @@ async function processTick(tick, quote) {
         let tradeType = '';
         let prediction = 0;
 
-        // Smart Over/Under Logic
+        // Alternating Over/Under Logic (Checks both barriers simultaneously)
         if (type === 'over/under') {
             if (lastDigit < b1) {
                 tradeType = 'DIGITOVER';
@@ -323,12 +325,12 @@ async function processTick(tick, quote) {
                 else if (cur < p1 && p1 < p2) tradeType = 'PUT';
             }
         }
-        // Matches/Differs Logic (Simple Matches style)
+        // Alternating Matches/Differs Logic (Checks both barrier conditions)
         else if (type === 'matches/differs') {
-            if (sub === 'matches' && lastDigit === b1) {
+            if (lastDigit === b1) {
                 tradeType = 'DIGITMATCH';
                 prediction = b1;
-            } else if (sub === 'differs' && lastDigit === b2) {
+            } else if (lastDigit === b2) {
                 tradeType = 'DIGITDIFF';
                 prediction = b2;
             }
@@ -352,19 +354,18 @@ async function processTick(tick, quote) {
             tradesCompleted++;
         }
 
-        // Brief pause after trade to avoid overlapping triggers on same tick stream update
+        // Brief pause after trade to avoid overlapping triggers
         setTimeout(() => { tradeLock = false; }, 3000);
     }
 }
 
 async function executeTrade(symbol, type, barrier, quote) {
-    const stake = document.getElementById('sr-stake').value;
     const resultsBox = document.getElementById("sr-results");
-    resultsBox.textContent = `🎯 Triggered ${type} @ ${stake}`;
+    resultsBox.textContent = `🎯 Triggered ${type} @ ${currentStake.toFixed(2)}`;
 
-    const resp = await buyContract(symbol, type, 1, stake, barrier, quote, true);
+    const resp = await buyContract(symbol, type, 1, currentStake, barrier, quote, true);
     if (resp?.buy) {
-        showLivePopup(resp.buy.contract_id, { tradeType: type, stake, payout: resp.buy.payout });
+        showLivePopup(resp.buy.contract_id, { tradeType: type, stake: currentStake.toFixed(2), payout: resp.buy.payout });
         handleSettlement(resp.buy.contract_id);
     } else if (resp?.error) {
         resultsBox.innerHTML = `<span style="color:red">Error: ${resp.error.message}</span>`;
@@ -377,15 +378,15 @@ async function handleSettlement(contractId) {
     if (result) {
         const resultsBox = document.getElementById("sr-results");
         if (result.status === 'won') {
-            resultsBox.innerHTML = `✅ Winner! Stake Reset`;
+            resultsBox.innerHTML = `✅ Winner! System Reset.`;
             isRecoveryMode = false;
-            document.getElementById('sr-stake').value = baseStake;
+            currentStake = baseStake;
         } else {
-            resultsBox.innerHTML = `❌ Loss. Switching to Recovery...`;
-            isRecoveryMode = true;
+            resultsBox.innerHTML = `❌ Loss. Maintaining Recovery & Martingale...`;
+            isRecoveryMode = true; // Stays true until a win
             if (document.getElementById('sr-martingale').checked) {
-                const mult = Number(document.getElementById('sr-martingale-multiplier').value) || 2.1;
-                document.getElementById('sr-stake').value = (Number(document.getElementById('sr-stake').value) * mult).toFixed(2);
+                const mult = parseFloat(document.getElementById('sr-martingale-multiplier').value) || 2.1;
+                currentStake = currentStake * mult;
             }
         }
     }
