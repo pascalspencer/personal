@@ -35,12 +35,21 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
             <div class="sr-sub-dropdowns">
                 <select id="${idPrefix}-sub1" style="width: 100%; height: 30px; margin-bottom: 5px; border-radius: 4px; border: 1px solid #ddd;"></select>
-                <select id="${idPrefix}-sub2" style="width: 100%; height: 30px; margin-bottom: 5px; border-radius: 4px; border: 1px solid #ddd;"></select>
+                
+                <!-- Dual Barrier Container -->
                 <div id="${idPrefix}-barrier-container" style="display: none;">
-                    <label style="font-size: 0.75rem; color: #666;">Barrier Digit:</label>
-                    <select id="${idPrefix}-barrier" style="width: 100%; height: 30px; border-radius: 4px; border: 1px solid #ddd;">
-                        ${Array.from({ length: 10 }, (_, i) => `<option value="${i}">${i}</option>`).join('')}
-                    </select>
+                    <div id="${idPrefix}-barrier-box1">
+                        <label id="${idPrefix}-label1" style="font-size: 0.75rem; color: #666; display: block; margin-bottom: 2px;">Digit 1:</label>
+                        <select id="${idPrefix}-barrier1" style="width: 100%; height: 30px; border-radius: 4px; border: 1px solid #ddd; margin-bottom: 5px;">
+                            ${Array.from({ length: 10 }, (_, i) => `<option value="${i}">${i}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div id="${idPrefix}-barrier-box2">
+                        <label id="${idPrefix}-label2" style="font-size: 0.75rem; color: #666; display: block; margin-bottom: 2px;">Digit 2:</label>
+                        <select id="${idPrefix}-barrier2" style="width: 100%; height: 30px; border-radius: 4px; border: 1px solid #ddd;">
+                            ${Array.from({ length: 10 }, (_, i) => `<option value="${i}">${i}</option>`).join('')}
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
@@ -48,7 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.body.insertAdjacentHTML("beforeend", `
     <div id="sharp-recovery-panel" style="display:none">
-      <div class="smart-card" style="max-width: 1000px; margin: 0 auto;">
+      <div class="smart-card" style="max-width: 1100px; margin: 0 auto;">
         <div class="smart-header" style="background: #00204a; color: white; padding: 15px; border-radius: 12px 12px 0 0;">
           <h2 class="smart-title" style="color: white; margin: 0;">Sharp Recovery</h2>
           <p class="smart-sub" style="color: rgba(255,255,255,0.7); margin: 5px 0 0 0;">Advanced Recovery Strategy</p>
@@ -132,8 +141,9 @@ document.addEventListener("DOMContentLoaded", () => {
     prefixes.forEach(p => {
         const main = document.getElementById(`${p}-main`);
         const sub1 = document.getElementById(`${p}-sub1`);
-        const sub2 = document.getElementById(`${p}-sub2`);
         const barrierCont = document.getElementById(`${p}-barrier-container`);
+        const label1 = document.getElementById(`${p}-label1`);
+        const label2 = document.getElementById(`${p}-label2`);
 
         const updateSubs = () => {
             const val = main.value;
@@ -144,10 +154,15 @@ document.addEventListener("DOMContentLoaded", () => {
             else if (val === 'rise/fall') options = riseFallChoices;
 
             sub1.innerHTML = options.map(o => `<option value="${o.toLowerCase()}">${o}</option>`).join('');
-            sub2.innerHTML = options.map((o, i) => `<option value="${o.toLowerCase()}" ${i === 1 ? 'selected' : ''}>${o}</option>`).join('');
 
-            if (val === 'over/under' || val === 'matches/differs') {
+            if (val === 'over/under') {
                 barrierCont.style.display = 'block';
+                label1.textContent = 'Over Digit:';
+                label2.textContent = 'Under Digit:';
+            } else if (val === 'matches/differs') {
+                barrierCont.style.display = 'block';
+                label1.textContent = 'Matches Digit:';
+                label2.textContent = 'Differs Digit:';
             } else {
                 barrierCont.style.display = 'none';
             }
@@ -270,37 +285,31 @@ async function processTick(tick, quote) {
     const activeStrategies = prefixSet.filter(p => document.getElementById(`${p}-active`).checked);
     if (activeStrategies.length === 0) return;
 
-    const lastDigit = Number(String(quote).slice(-1));
-    const direction = tick.quote > (tickHistory[tickHistory.length - 2] || 0) ? 'rise' : 'fall';
-
     let triggeredActions = [];
 
     activeStrategies.forEach(p => {
         const type = document.getElementById(`${p}-main`).value;
         const s1 = document.getElementById(`${p}-sub1`).value;
-        const barrier = document.getElementById(`${p}-barrier`).value;
+        const b1 = document.getElementById(`${p}-barrier1`).value;
+        const b2 = document.getElementById(`${p}-barrier2`).value;
 
-        let triggered = false;
+        let triggered = true; // For now we trigger immediately on tick if active
         let tradeType = '';
-        let prediction = Number(barrier);
+        let prediction = 0;
 
         if (type === 'even/odd') {
-            // Check trigger: we'll use a simple "any tick" trigger for even/odd if s1 is chosen
-            // Or we could wait for a pattern. Let's trigger based on s1 choice.
-            triggered = true;
             tradeType = s1 === 'even' ? 'DIGITEVEN' : 'DIGITODD';
         } else if (type === 'over/under') {
-            triggered = true;
             tradeType = s1 === 'over' ? 'DIGITOVER' : 'DIGITUNDER';
+            prediction = s1 === 'over' ? Number(b1) : Number(b2);
         } else if (type === 'matches/differs') {
-            triggered = true;
             tradeType = s1 === 'matches' ? 'DIGITMATCH' : 'DIGITDIFF';
+            prediction = s1 === 'matches' ? Number(b1) : Number(b2);
         } else if (type === 'rise/fall') {
-            triggered = true;
             tradeType = s1 === 'rise' ? 'CALL' : 'PUT';
         }
 
-        if (triggered) {
+        if (triggered && tradeType) {
             triggeredActions.push({ type: tradeType, prediction });
         }
     });
@@ -318,7 +327,7 @@ async function processTick(tick, quote) {
             tradesCompleted++;
         }
 
-        // Wait 2 ticks between trades to allow for settlement and avoid overlap if not simultaneous
+        // Wait between trades
         if (!executeAll) {
             setTimeout(() => { tradeLock = false; }, 2000);
         } else {
