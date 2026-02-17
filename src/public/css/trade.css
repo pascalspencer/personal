@@ -1104,7 +1104,51 @@ body.smart-mode>#side-panel.open {
   width: 100%;
   margin-bottom: 0.5rem;
   text-align: center;
-  border-radius: 6px;
+  border-radius: 4px;
+}
+
+/* Sharp Recovery Styles */
+#sharp-recovery-panel {
+  display: none;
+  box-sizing: border-box;
+  padding: 18px;
+  background: #ffffff;
+  border: 1px solid #f0f0f2;
+  border-radius: 12px;
+  max-width: 1100px;
+  width: 100%;
+  margin: 12px auto;
+  gap: 12px;
+}
+
+body.smart-mode>#sharp-recovery-panel {
+  display: block;
+}
+
+#sharp-recovery-panel .sr-column {
+  min-width: 180px;
+  flex: 1;
+}
+
+#sharp-recovery-panel .sr-main-sentiment {
+  font-weight: 700;
+  color: var(--secondary-color);
+}
+
+#sharp-recovery-panel .sr-active-check {
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+
+  #sharp-recovery-panel .strategy-area>div,
+  #sharp-recovery-panel .recovery-area>div {
+    flex-wrap: wrap;
+  }
+
+  #sharp-recovery-panel .sr-column {
+    min-width: 100%;
+  }
 }
 
 .tab-content {
