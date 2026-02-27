@@ -969,28 +969,34 @@ body.smart-mode>#sharp-recovery-panel {
 }
 
 #sharp-recovery-panel .sr-column {
-  min-width: 180px;
+  min-width: 140px;
   flex: 1;
 }
 
-#sharp-recovery-panel .sr-main-sentiment {
-  font-weight: 700;
-  color: var(--secondary-color);
-}
-
-#sharp-recovery-panel .sr-active-check {
-  cursor: pointer;
-}
-
 @media (max-width: 768px) {
+  #sharp-recovery-panel {
+    padding: 10px;
+  }
 
-  #sharp-recovery-panel .strategy-area>div,
-  #sharp-recovery-panel .recovery-area>div {
-    flex-wrap: wrap;
+  #sharp-recovery-panel .smart-card {
+    max-width: 100%;
+  }
+
+  #sharp-recovery-panel .smart-form {
+    padding: 10px;
+  }
+
+  #sharp-recovery-panel .analysis-section {
+    padding: 10px;
   }
 
   #sharp-recovery-panel .sr-column {
     min-width: 100%;
+  }
+
+  #sharp-recovery-panel .toggle-container {
+    padding: 10px;
+    gap: 10px;
   }
 }
 

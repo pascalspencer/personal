@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const riseFallChoices = ['Rise', 'Fall'];
 
     const createDropdownGroup = (idPrefix) => `
-        <div class="sr-column" style="flex: 1; padding: 10px; border: 1px solid #eee; border-radius: 8px; background: #f9f9f9; min-width: 200px;">
+        <div class="sr-column" style="flex: 1; padding: 10px; border: 1px solid #eee; border-radius: 8px; background: #f9f9f9; min-width: 0;">
             <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 10px;">
                 <select class="sr-main-sentiment" id="${idPrefix}-main" style="flex: 1; height: 35px; border-radius: 4px; border: 1px solid #ccc;">
                     ${sentimentOptions.map(opt => `<option value="${opt.toLowerCase()}">${opt}</option>`).join('')}
@@ -67,7 +67,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="tick-header" style="margin-bottom: 12px; font-weight: 600; color: #444; border-bottom: 1px solid #eee; padding-bottom: 8px;">
               Digit Intensity (Last ${HISTORY_LIMIT} ticks)
             </div>
-            <div id="sr-digit-stats" style="display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px; margin-bottom: 20px;"></div>
+            <div id="sr-digit-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(35px, 1fr)); gap: 4px; margin-bottom: 20px;"></div>
             
             <div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
                 <div style="text-align: center;">
@@ -79,7 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
           <div class="strategy-area" style="margin-bottom: 30px;">
              <h3 style="font-size: 1.1rem; color: #00204a; margin-bottom: 15px; border-left: 4px solid #00bbf0; padding-left: 10px;">Primary Strategy (2 Slots)</h3>
-             <div style="display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px;">
+             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                 ${createDropdownGroup('ps1')}
                 ${createDropdownGroup('ps2')}
              </div>
@@ -93,7 +93,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
           <div class="recovery-area" style="border-top: 2px dashed #ddd; padding-top: 25px;">
              <h3 style="font-size: 1.1rem; color: #d32f2f; margin-bottom: 15px; border-left: 4px solid #d32f2f; padding-left: 10px;">Recovery Strategy (2 Slots)</h3>
-             <div style="display: flex; gap: 12px; overflow-x: auto; padding-bottom: 15px;">
+             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                 ${createDropdownGroup('rs1')}
                 ${createDropdownGroup('rs2')}
              </div>
