@@ -91,6 +91,13 @@ document.addEventListener("DOMContentLoaded", () => {
   if (marketSelect) marketSelect.addEventListener("change", restartTickStream);
   if (submarketSelect) submarketSelect.addEventListener("change", restartTickStream);
 
+  // Resume stream on tab switch
+  window.addEventListener('tabChange', (e) => {
+    if (e.detail.tab === 'super-matches') {
+      startTickStream();
+    }
+  });
+
   startTickStream();
 });
 

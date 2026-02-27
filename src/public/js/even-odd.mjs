@@ -111,6 +111,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initialize UI
   updateUI();
+  // Resume stream on tab switch
+  window.addEventListener('tabChange', (e) => {
+    if (e.detail.tab === 'even-odd') {
+      startTickStream();
+    }
+  });
+
   startTickStream();
 });
 

@@ -228,6 +228,9 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
 
+      // Dispatch custom event to notify strategy scripts that tab has changed
+      window.dispatchEvent(new CustomEvent('tabChange', { detail: { tab: btn.dataset.tab } }));
+
       sidePanel.classList.remove("open");
       // restore hamburger after choosing a tab
       menuBtn.style.display = '';

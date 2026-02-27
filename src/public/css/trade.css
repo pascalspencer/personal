@@ -708,397 +708,140 @@ body.smart-mode>#side-panel.open {
 }
 
 /* layout inside smart UI */
-#smart-over-under {
+#smart-over-under,
+#even-odd-panel,
+#super-matches-panel,
+#simple-differs-panel,
+#sharp-recovery-panel,
+#sniper-rise-fall-panel {
   display: flex;
   flex-direction: column;
-}
-
-#smart-over-under .smart-card {
-  display: block;
-}
-
-#smart-over-under .smart-header {
-  margin-bottom: 8px;
-}
-
-#smart-over-under .smart-title {
-  margin: 0;
-  font-size: 20px;
-}
-
-#smart-over-under .smart-sub {
-  margin: 4px 0 12px 0;
-  color: #5a6170;
-  font-size: 13px;
-}
-
-#smart-over-under .smart-form {
-  display: grid;
-  gap: 12px;
-}
-
-#smart-over-under .row {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-#smart-over-under .two-cols {
-  grid-template-columns: 1fr 1fr;
-  display: grid;
-}
-
-#smart-over-under .field {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-}
-
-#smart-over-under .field input,
-#smart-over-under .field select {
   width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
-#smart-over-under label {
-  font-weight: 600;
-  font-size: 13px;
-  color: #222;
-}
-
-#smart-over-under select,
-#smart-over-under input[type="number"] {
-  height: 44px;
-  border: 1px solid #e3e6ea;
-  border-radius: 8px;
-  padding: 0 10px;
-  font-size: 14px;
-}
-
-#smart-over-under .toggles {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-#smart-over-under .toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  color: #333;
-}
-
-#smart-over-under .smart-buttons {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-}
-
-/* Buttons */
-.btn {
-  height: 40px;
-  padding: 0 14px;
-  border-radius: 8px;
-  border: 1px solid #d1d5db;
-  background: #fff;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.btn.primary {
-  background: #0077c8;
-  color: #fff;
-  border-color: #0077c8;
-}
-
-.btn:disabled,
-.btn[aria-disabled="true"] {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* Results */
-.smart-results {
-  margin-top: 12px;
-  min-height: 40px;
-  border-top: 1px dashed #eef0f3;
-  padding-top: 12px;
-  color: #222;
-}
-
-@media (max-width: 768px) {
-  #smart-over-under {
-    width: 90%;
-    max-width: calc(100% - 48px);
-    padding: 12px;
-  }
-
-  #smart-over-under .two-cols {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Responsive: mirror Auto Analysis on medium and small screens */
-@media (max-width: 768px) {
-  #smart-over-under {
-    width: 70%;
-    max-width: calc(100% - 48px);
-    padding: 15px;
-  }
-}
-
-@media (max-width: 480px) {
-  #smart-over-under {
-    width: calc(100% - 48px);
-    max-width: calc(100% - 48px);
-    margin: 8px 24px;
-    padding: 10px;
-  }
-}
-
-/* prevent hamburger overlap on very small screens by offsetting panel content */
-@media (max-width: 480px) {
-
-  /* push smart panel content right to leave space for fixed hamburger */
-  #smart-over-under {
-    margin-left: 72px;
-    padding-left: 12px;
-  }
-
-  /* ensure the menu button remains above content */
-  #menu-btn {
-    z-index: 10002;
-  }
-}
-
-/* When the hamburger/menu is positioned on the right, mirror the left offset
-   so the smart panel doesn't butt up against the screen edge. */
-@media (max-width: 480px) {
-  body.menu-right #smart-over-under {
-    margin-right: 72px;
-    padding-right: 12px;
-    margin-left: 8px;
-  }
-
-  /* ensure the menu button remains above content when on right */
-  body.menu-right #menu-btn {
-    z-index: 10002;
-    right: 15px;
-    left: auto;
-  }
-}
-
-/* Clean toggle layout below price */
-#smart-over-under .toggle-container {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  padding-top: 10px;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-#smart-over-under .small-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(0, 0, 0, 0.02);
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-weight: 600;
-}
-
-#smart-over-under .small-toggle input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  margin-left: 6px;
-  accent-color: #00bbf0;
-}
-
-/* Make buttons match Auto Analysis styling and look crisp */
-#smart-over-under .smart-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-#smart-over-under .smart-buttons button {
-  height: 42px;
-  padding: 0 16px;
-  border-radius: 6px;
-  border: none;
-  font-size: 15px;
-  font-weight: 600;
-  box-shadow: 0 2px 6px rgba(2, 6, 23, 0.08);
-}
-
-#smart-over-under .smart-buttons #run-smart {
-  background: #00bbf0;
-  color: #fff;
-}
-
-#smart-over-under .smart-buttons #run-smart:hover {
-  filter: brightness(0.95);
-}
-
-#smart-over-under .smart-buttons #stop-smart {
-  background: #d32f2f;
-  color: #fff;
-}
-
-@media (max-width: 480px) {
-  #smart-over-under .toggle-container {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-    border-top: none;
-  }
-
-  #smart-over-under .small-toggle {
-    justify-content: space-between;
-  }
-
-  /* keep stake input fixed width like Auto Analysis even on small screens */
-  #smart-over-under .stake-row {
-    flex-direction: row;
-    align-items: flex-start;
-    justify-content: flex-start;
-    gap: 8px;
-  }
-
-  #smart-over-under .smart-buttons {
-    justify-content: flex-end;
-  }
-
-  #smart-over-under .smart-buttons button {
-    width: auto;
-  }
-}
-
-/* spacing adjustments to prevent elements touching */
-#tick-count {
-  margin-bottom: 12px;
-}
-
-#smart-over-under .stake-row {
-  margin-top: 12px;
-}
-
-/* stake row: put stake input and run/stop buttons on one line */
-#smart-over-under .stake-row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  justify-content: flex-start;
-}
-
-#smart-over-under .stake-row label {
-  margin: 0;
-  font-weight: 600;
-}
-
-#smart-over-under #stake {
-  width: 120px;
-  height: 45px;
-  padding: 8px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-}
-
-#smart-over-under .smart-buttons button {
-  height: 45px;
-  padding: 0 18px;
-  border-radius: 5px;
-  border: none;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-#smart-over-under .smart-buttons #run-smart {
-  background: #00bbf0;
-  color: #fff;
-}
-
-#smart-over-under .smart-buttons #stop-smart {
-  background: #d32f2f;
-  color: #fff;
-}
-
-@media (max-width: 480px) {
-  #smart-over-under .stake-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  #smart-over-under #stake {
-    width: 100%;
-  }
-
-  #smart-over-under .smart-buttons {
-    display: flex;
-    gap: 8px;
-  }
-}
-
-/* ===========================
-   SMART OVER / UNDER – POLISH
-=========================== */
-
-#smart-over-under {
-  background: linear-gradient(180deg, #ffffff, #fafbfc);
-}
-
-#smart-over-under .smart-card {
+.smart-card {
   background: #ffffff;
   border-radius: 14px;
   padding: 18px;
   box-shadow: 0 8px 24px rgba(2, 6, 23, 0.08);
+  margin-bottom: 20px;
 }
 
-#smart-over-under .smart-header {
+.smart-header {
   border-bottom: 1px solid #eef0f3;
   margin-bottom: 14px;
   padding-bottom: 10px;
 }
 
-#smart-over-under .smart-title {
+.smart-title {
   font-size: 22px;
   font-weight: 700;
   margin: 0;
 }
 
-#smart-over-under .smart-sub {
+.smart-sub {
   font-size: 13px;
   color: #6b7280;
   margin: 4px 0 0;
 }
 
-/* Form layout */
-#smart-over-under .smart-form {
+.smart-form {
   display: grid;
   gap: 14px;
 }
 
-#smart-over-under .field label {
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
   font-size: 13px;
   font-weight: 600;
   color: #374151;
 }
 
-#smart-over-under select,
-#smart-over-under input[type="number"] {
+.field input,
+.field select {
   background: #f9fafb;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   height: 44px;
   padding: 0 12px;
   font-size: 14px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: var(--transition);
 }
 
-#smart-over-under select:focus,
-#smart-over-under input[type="number"]:focus {
+.field input:focus,
+.field select:focus {
   outline: none;
-  border-color: #00bbf0;
-  box-shadow: 0 0 0 3px rgba(0, 187, 240, 0.15);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(0, 187, 240, 0.1);
+}
+
+.toggle-container {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+}
+
+.small-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+
+  #auto-analysis,
+  #smart-over-under,
+  #even-odd-panel,
+  #super-matches-panel,
+  #simple-differs-panel,
+  #sharp-recovery-panel,
+  #sniper-rise-fall-panel {
+    width: 95%;
+    max-width: calc(100% - 20px);
+    margin: 10px auto;
+  }
+}
+
+@media (max-width: 480px) {
+  #balance-container {
+    top: 5px;
+    right: 5px;
+    font-size: 13px;
+    padding: 4px 10px;
+    min-width: auto;
+    background: rgba(255, 255, 255, 0.95);
+  }
+
+  body {
+    padding-top: 60px;
+    /* Space for fixed balance and menu */
+  }
+
+  .smart-card {
+    padding: 12px;
+  }
+
+  .smart-title {
+    font-size: 18px;
+  }
 }
 
 /* Over / Under row */
