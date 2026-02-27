@@ -275,11 +275,8 @@ function startTickStream() {
         ticksSinceLastTrade++;
         updateUI();
 
-        // --- MARTINGALE LOGIC START ---
-        if (running && martingaleActive && lastTrade && checkingForEntry) {
-          checkMartingale(digit);
-        }
-        // --- MARTINGALE LOGIC END ---
+        // Removed the brittle Martingale check from onmessage.
+        // Logic is now handled via waitForSettlement in checkForPatternAndTrade.
 
         // Check for pattern if we're actively looking for entry (ASYNC)
         if (checkingForEntry && tickHistory.length >= 4) {
@@ -378,9 +375,6 @@ async function runEvenOdd() {
 async function checkForPatternAndTrade() {
   if (!running || !checkingForEntry) return;
 
-  // If waiting for Martingale result, do NOT trade
-  if (martingaleActive && lastTrade) return;
-
   const numTrades = parseInt(tickCountInput.value) || 5;
   if (completedTrades >= numTrades) return finishSession();
 
@@ -394,7 +388,7 @@ async function checkForPatternAndTrade() {
   const allOdd = last4.every(d => d % 2 !== 0);
   if (!allEven && !allOdd) return;
 
-  checkingForEntry = false;
+  checkingForEntry = false; // Lock entry search while trading
   ticksSinceLastTrade = 0;
   const tradeType = allEven ? "DIGITODD" : "DIGITEVEN";
   const pattern = allEven ? "Even" : "Odd";
@@ -407,7 +401,8 @@ async function checkForPatternAndTrade() {
 
   try {
     if (isBulk) {
-      const tokens = [token]; // Wrap current token in array for bulk API
+      const token = getAuthToken(); // Fix ReferenceError
+      const tokens = [token];
       const resp = await buyContractBulk(symbol, tradeType, 1, stake, null, numTrades, tokens);
       if (resp?.error) {
         resultsDisplay.innerHTML = `<span style="color:red">Bulk Error: ${resp.error.message}</span>`;
@@ -420,87 +415,59 @@ async function checkForPatternAndTrade() {
 
     const result = await buyContract(symbol, tradeType, 1, stake, null, null, true);
 
-    // Handle API error objects returned by buyContract
     if (result?.error) {
       resultsDisplay.innerHTML = `<span style="color:red">Trade Error: ${result.error.message}</span>`;
       completedTrades++;
-      checkingForEntry = true;
+      checkingForEntry = true; // Recover and look for next pattern
       return;
     }
 
-    // Extract win status immediately if possible (Estimated)
-    // We rely on Martingale logic for actual result calc next tick
-    const winStatusInitial = Number(result?.buy?.payout || 0) > stake;
+    if (result?.buy) {
+      resultsDisplay.innerHTML = `Trade placed: <b>${tradeType}</b><br>Waiting for settlement...`;
 
-    completedTrades++;
-    resultsDisplay.dataset.success = String(Number(resultsDisplay.dataset.success) + (winStatusInitial ? 1 : 0));
-    resultsDisplay.dataset.failed = String(Number(resultsDisplay.dataset.failed) + (winStatusInitial ? 0 : 1));
-
-    if (martingaleActive) {
-      lastTrade = {
-        type: tradeType, // "DIGITEVEN" or "DIGITODD"
-        stake: stake
-      };
-      // Don't set checkingForEntry = true yet. Handled in checkMartingale
-      checkingForEntry = true; // Wait... actually we NEED checkingForEntry true so tick handler calls checkMartingale?
-      // Yes, checkMartingale is inside `if (checkingForEntry)` block in tick handler?
-      // Let's verify tick handler logic:
-      // if (running && martingaleActive && lastTrade && checkingForEntry) { checkMartingale(digit); }
-      // So yes, we must set checkingForEntry = true here to allow the next tick to trigger the check.
-    } else {
-      if (completedTrades < numTrades && completedTrades < maxTradesPerSession) {
-        checkingForEntry = true;
-        resultsDisplay.innerHTML = `
-                <strong>Trading Active</strong><br>
-                Pattern: ${pattern}<br>
-                Completed: ${completedTrades}/${numTrades}<br>
-                Success: ${resultsDisplay.dataset.success}, Failed: ${resultsDisplay.dataset.failed}
-            `;
-      } else {
-        finishSession();
-      }
+      const settlement = await waitForSettlement(result.buy.contract_id);
+      handleResult(settlement, tradeType, pattern, numTrades);
     }
 
   } catch (err) {
-    console.error("Trade failed:", err);
+    console.error("Trade execution exception:", err);
     completedTrades++;
     checkingForEntry = true; // Attempt to recover
   }
 }
 
-// Separate Martingale Check function
-function checkMartingale(currentDigit) {
-  if (!lastTrade) return;
+function handleResult(settlement, tradeType, pattern, numTrades) {
+  if (!running) return;
 
-  let won = false;
-  const isEven = currentDigit % 2 === 0;
+  const won = settlement.status === "won";
+  completedTrades++;
 
-  if (lastTrade.type === "DIGITEVEN") {
-    won = isEven;
-  } else {
-    // DIGITODD
-    won = !isEven;
+  // Update Statistics
+  resultsDisplay.dataset.success = String(Number(resultsDisplay.dataset.success) + (won ? 1 : 0));
+  resultsDisplay.dataset.failed = String(Number(resultsDisplay.dataset.failed) + (won ? 0 : 1));
+
+  // Handle Martingale
+  if (martingaleActive) {
+    if (won) {
+      console.log(`[Martingale] WIN! Reset stake to ${baseStake}`);
+      stakeInput.value = baseStake;
+    } else {
+      const mult = Number(martingaleMultiplier.value) || 2.1;
+      const newStake = (Number(stakeInput.value) * mult).toFixed(2);
+      console.log(`[Martingale] LOSS! Increasing stake to ${newStake}`);
+      stakeInput.value = newStake;
+    }
   }
 
-  if (won) {
-    console.log(`[Martingale] WIN! Reset stake to ${baseStake}`);
-    stakeInput.value = baseStake;
-    resultsDisplay.innerHTML += ` <span style="color:green">WIN (Martingale Reset)</span>`;
-  } else {
-    const mult = Number(martingaleMultiplier.value) || 2.1;
-    const newStake = (Number(stakeInput.value) * mult).toFixed(2);
-    console.log(`[Martingale] LOSS! Increasing stake to ${newStake}`);
-    stakeInput.value = newStake;
-    resultsDisplay.innerHTML += ` <span style="color:red">LOSS (Martingale x${mult})</span>`;
-  }
-
-  lastTrade = null;
-
-  // Resume trading if not finished
-  const numTrades = parseInt(tickCountInput.value) || 5;
+  // Check if session should continue
   if (completedTrades < numTrades && completedTrades < maxTradesPerSession) {
-    checkingForEntry = true;
-    // Note: results display might be overwritten by next pattern check quickly, but that's ok
+    checkingForEntry = true; // Unlock for next pattern
+    resultsDisplay.innerHTML = `
+      <strong>Trading Active</strong><br>
+      Last Result: <span style="color:${won ? 'green' : 'red'}">${won ? 'WIN' : 'LOSS'}</span><br>
+      Completed: ${completedTrades}/${numTrades}<br>
+      Success: ${resultsDisplay.dataset.success}, Failed: ${resultsDisplay.dataset.failed}
+    `;
   } else {
     finishSession();
   }
@@ -517,7 +484,7 @@ function finishSession() {
 function stopEvenOdd() {
   running = false;
   checkingForEntry = false;
-  stakeInput.value = baseStake; // Reset stake
+  if (stakeInput) stakeInput.value = baseStake; // Reset stake
   stopWatchdog();
   document.getElementById("run-even-odd").textContent = "RUN";
   resultsDisplay.innerHTML = "Stopped.";
