@@ -62,8 +62,8 @@ document.addEventListener("DOMContentLoaded", () => {
     "even-odd": "Waits for a streak of even or odd digits and then bets on the opposite, expecting a change.",
     "super-matches": "Finds the most common digit and bets on it to appear again, using a safety strategy if it loses.",
     "simple-differs": "Bets that the next digit will NOT be the same as the one you selected. Very high chance of winning.",
-    "sharp-recovery": "An advanced system that uses multiple strategies and increased stakes to quickly win back any losses.",
-    "sniper-rise-fall": "Sniper Rise/Fall waits for three consecutive price movements in the same direction before placing a trade, with recovery options."
+    "sharp-recovery": "An advanced system that uses multiple strategies and increased stakes representing a momentum breakout approach to quickly win back any losses.",
+    "sniper-rise-fall": "Sniper Rise/Fall waits for a strong momentum breakout (reaching the highest/lowest price in a 6-tick window) before placing a trade, with recovery options."
   };
 
   function showStrategyPopup(strategy) {

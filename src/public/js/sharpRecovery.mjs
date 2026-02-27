@@ -322,14 +322,24 @@ async function processTick(tick, quote) {
                 else if (allOdd) tradeType = 'DIGITEVEN';
             }
         }
-        // Rise/Fall Double Movement Logic
+        // Dynamic Momentum Breakout Rise/Fall Logic
         else if (type === 'rise/fall') {
-            if (tickHistory.length >= 3) {
-                const cur = tickHistory[tickHistory.length - 1];
-                const p1 = tickHistory[tickHistory.length - 2];
-                const p2 = tickHistory[tickHistory.length - 3];
-                if (cur > p1 && p1 > p2) tradeType = 'CALL';
-                else if (cur < p1 && p1 < p2) tradeType = 'PUT';
+            if (tickHistory.length >= 6) {
+                const history = tickHistory.slice(-6);
+                const cur = history[5];
+                const isMax = cur === Math.max(...history);
+                const isMin = cur === Math.min(...history);
+
+                // Price changes (5 changes for 6 ticks)
+                let posChanges = 0;
+                let negChanges = 0;
+                for (let i = 1; i < history.length; i++) {
+                    if (history[i] > history[i - 1]) posChanges++;
+                    else if (history[i] < history[i - 1]) negChanges++;
+                }
+
+                if (isMax && posChanges >= 4) tradeType = 'CALL';
+                else if (isMin && negChanges >= 4) tradeType = 'PUT';
             }
         }
         // Alternating Matches/Differs Logic (Checks both barrier conditions)
