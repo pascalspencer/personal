@@ -134,17 +134,32 @@ export function showLivePopup(contractId, initialData = {}) {
 }
 
 /**
- * Update popup status badge only
+ * Update popup status badge and display result amount
  */
 function updatePopupStatus(popup, contract) {
     const statusBadge = popup.querySelector('.status-badge');
+    const body = popup.querySelector('.popup-body');
 
     // Update status badge based on contract state
     if (contract.is_sold || contract.is_expired) {
         const profit = contract.profit !== undefined ? Number(contract.profit) : 0;
         const isWin = profit >= 0;
+        const stake = Number(contract.buy_price || 0);
+        const payout = Number(contract.payout || 0);
+
         statusBadge.textContent = isWin ? 'WON' : 'LOST';
         statusBadge.className = `status-badge ${isWin ? 'status-won' : 'status-lost'}`;
+
+        // Ensure result row isn't added multiple times
+        if (!popup.querySelector('.result-row')) {
+            const amount = isWin ? (payout - stake) : stake;
+            const resultLabel = isWin ? 'Win' : 'Loss';
+            const sign = isWin ? '+' : '-';
+            const color = isWin ? '#2e7d32' : '#d32f2f';
+
+            const resultRow = createRow('Result', `<span style="color: ${color}; font-weight: 800;">${resultLabel} ${sign}$${amount.toFixed(2)}</span>`, 'result-row');
+            body.appendChild(resultRow);
+        }
 
         // Auto-close after 5 seconds
         setTimeout(() => {

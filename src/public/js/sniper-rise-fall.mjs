@@ -1,4 +1,4 @@
-import { buyContract, getAuthToken, waitForSettlement } from "./buyContract.mjs";
+import { buyContract, buyContractBulk, getAuthToken, waitForSettlement } from "./buyContract.mjs";
 
 // Strategy State
 let running = false;
@@ -72,6 +72,18 @@ document.addEventListener("DOMContentLoaded", () => {
                        style="height: 30px; width: 65px; padding: 0 5px; font-weight: bold; border: 1px solid #ddd; background: #fff;">
               </div>
             </div>
+
+            <!-- Single/Bulk Selection -->
+            <div class="toggle-container" style="grid-column: span 2; margin-top: 5px; background: #e3f2fd; border: 1px solid #bbdefb; padding: 10px; border-radius: 8px; display: flex; gap: 10px;">
+              <label class="small-toggle" style="flex: 1; background: #fff; justify-content: space-between;">
+                <span>Single</span>
+                <input type="checkbox" id="mode-single-srf" checked>
+              </label>
+              <label class="small-toggle" style="flex: 1; background: #fff; justify-content: space-between;">
+                <span>Bulk</span>
+                <input type="checkbox" id="mode-bulk-srf">
+              </label>
+            </div>
           </div>
 
           <div class="action-area" style="text-align: center;">
@@ -88,6 +100,12 @@ document.addEventListener("DOMContentLoaded", () => {
     stakeInput = document.getElementById("stake-srf");
     martingaleToggle = document.getElementById("martingale-srf");
     martingaleMultiplier = document.getElementById("martingale-multiplier-srf");
+
+    const singleToggle = document.getElementById("mode-single-srf");
+    const bulkToggle = document.getElementById("mode-bulk-srf");
+
+    singleToggle.onchange = () => { if (singleToggle.checked) bulkToggle.checked = false; else singleToggle.checked = true; };
+    bulkToggle.onchange = () => { if (bulkToggle.checked) singleToggle.checked = false; else bulkToggle.checked = true; };
     resultsBox = document.getElementById("sniper-results");
     tickDisplay = document.getElementById("tick-display-srf");
     chartCanvas = document.getElementById("sniper-chart");
@@ -328,7 +346,24 @@ async function handleTrigger(type) {
 
     resultsBox.textContent = `🎯 Triggered ${type} @ ${currentStake.toFixed(2)}`;
 
+    const isBulk = document.getElementById("mode-bulk-srf").checked;
+    const numTrades = Number(tickCount.value);
+
     try {
+        if (isBulk) {
+            const token = getAuthToken();
+            const tokens = [token];
+            const resp = await buyContractBulk(symbol, type, 1, currentStake, null, numTrades, tokens);
+            if (resp?.error) {
+                resultsBox.innerHTML = `<span style="color:red">Bulk Error: ${resp.error.message}</span>`;
+                tradeLock = false;
+                stopSniper();
+                return;
+            }
+            resultsBox.innerHTML = `<span style="color:green">Bulk Trades Placed!</span> Goal Reached.`;
+            return stopSniper("Goal Reached");
+        }
+
         const resp = await buyContract(symbol, type, 1, currentStake, null, null, true);
         if (resp?.buy) {
             tradesCompleted++;

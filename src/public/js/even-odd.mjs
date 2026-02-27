@@ -1,4 +1,4 @@
-import { buyContract, getAuthToken, waitForSettlement, formatQuote } from "./buyContract.mjs";
+import { buyContract, buyContractBulk, getAuthToken, waitForSettlement, formatQuote } from "./buyContract.mjs";
 import { showLivePopup } from './livePopup.mjs';
 
 let running = false;
@@ -68,6 +68,18 @@ document.addEventListener("DOMContentLoaded", () => {
                        style="height: 30px; width: 65px; padding: 0 5px; font-weight: bold; border: 1px solid #ddd; background: #fff;">
               </div>
             </div>
+
+            <!-- Single/Bulk Selection -->
+            <div class="toggle-container" style="grid-column: span 2; margin-top: 5px; background: #e3f2fd; border: 1px solid #bbdefb; padding: 10px; border-radius: 8px; display: flex; gap: 10px;">
+              <label class="small-toggle" style="flex: 1; background: #fff; justify-content: space-between;">
+                <span>Single</span>
+                <input type="checkbox" id="mode-single-eo" checked>
+              </label>
+              <label class="small-toggle" style="flex: 1; background: #fff; justify-content: space-between;">
+                <span>Bulk</span>
+                <input type="checkbox" id="mode-bulk-eo">
+              </label>
+            </div>
           </div>
 
           <div class="action-area" style="text-align: center;">
@@ -87,6 +99,12 @@ document.addEventListener("DOMContentLoaded", () => {
   resultsDisplay = document.getElementById("even-odd-results");
   martingaleToggle = document.getElementById("martingale-eo");
   martingaleMultiplier = document.getElementById("martingale-multiplier-eo");
+
+  const singleToggle = document.getElementById("mode-single-eo");
+  const bulkToggle = document.getElementById("mode-bulk-eo");
+
+  singleToggle.onchange = () => { if (singleToggle.checked) bulkToggle.checked = false; else singleToggle.checked = true; };
+  bulkToggle.onchange = () => { if (bulkToggle.checked) singleToggle.checked = false; else bulkToggle.checked = true; };
 
   // Event listeners
   document.getElementById("run-even-odd").onclick = runEvenOdd;
@@ -385,7 +403,21 @@ async function checkForPatternAndTrade() {
 
   resultsDisplay.innerHTML = `Pattern detected: <b>${pattern}</b><br>Executing trade...`;
 
+  const isBulk = document.getElementById("mode-bulk-eo").checked;
+
   try {
+    if (isBulk) {
+      const tokens = [token]; // Wrap current token in array for bulk API
+      const resp = await buyContractBulk(symbol, tradeType, 1, stake, null, numTrades, tokens);
+      if (resp?.error) {
+        resultsDisplay.innerHTML = `<span style="color:red">Bulk Error: ${resp.error.message}</span>`;
+        stopEvenOdd();
+        return;
+      }
+      resultsDisplay.innerHTML = `<span style="color:green">Bulk Trades Placed!</span> Goal Reached.`;
+      return finishSession();
+    }
+
     const result = await buyContract(symbol, tradeType, 1, stake, null, null, true);
 
     // Handle API error objects returned by buyContract
