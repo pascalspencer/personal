@@ -11,13 +11,13 @@ let pingInterval = null;
 
 // Martingale State
 let martingaleActive = false;
-let lastTradeStatus = null; // { won: boolean, stake: number }
 
 // UI Elements
 let tickCount, stakeInput, martingaleToggle, martingaleMultiplier;
-let resultsBox, tickDisplay;
+let resultsBox, tickDisplay, chartCanvas, chartCtx;
 
 const HISTORY_LIMIT = 50;
+const CHART_POINTS = 30; // Number of points to show on chart
 const derivAppID = 61696;
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -36,9 +36,14 @@ document.addEventListener("DOMContentLoaded", () => {
               Live Price Action
             </div>
             
-            <div style="display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 20px;">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 15px; margin-bottom: 20px;">
+                <!-- Price Chart -->
+                <div style="width: 100%; height: 120px; background: #fcfcfc; border: 1px solid #efefef; border-radius: 8px; position: relative; overflow: hidden;">
+                  <canvas id="sniper-chart" style="width: 100%; height: 100%; display: block;"></canvas>
+                </div>
+
                 <div style="text-align: center;">
-                    <div class="tick-grid" id="tick-display-srf" style="min-width: 120px; height: 50px; background: #fff; border: 2px solid #00bbf0; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: #00204a; padding: 0 15px;">
+                    <div class="tick-grid" id="tick-display-srf" style="min-width: 140px; height: 50px; background: #fff; border: 2px solid #00bbf0; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: #00204a; padding: 0 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                       Waiting...
                     </div>
                 </div>
@@ -63,7 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
               </label>
               <div class="small-toggle" style="flex: 1.5; justify-content: flex-start; gap: 10px;">
                 <span style="font-size: 0.8rem; color: #666;">Multiplier</span>
-                <input type="number" id="martingale-multiplier-srf" min="1.0" step="1.0" value="2.1" 
+                <input type="number" id="martingale-multiplier-srf" min="1.0" step="0.1" value="2.1" 
                        style="height: 30px; width: 65px; padding: 0 5px; font-weight: bold; border: 1px solid #ddd; background: #fff;">
               </div>
             </div>
@@ -85,6 +90,13 @@ document.addEventListener("DOMContentLoaded", () => {
     martingaleMultiplier = document.getElementById("martingale-multiplier-srf");
     resultsBox = document.getElementById("sniper-results");
     tickDisplay = document.getElementById("tick-display-srf");
+    chartCanvas = document.getElementById("sniper-chart");
+
+    if (chartCanvas) {
+        chartCtx = chartCanvas.getContext("2d");
+        initChart();
+        window.addEventListener('resize', initChart);
+    }
 
     document.getElementById("run-sniper").onclick = toggleSniper;
 
@@ -96,6 +108,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     startTickStream();
 });
+
+function initChart() {
+    if (!chartCanvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    const rect = chartCanvas.parentElement.getBoundingClientRect();
+    chartCanvas.width = rect.width * dpr;
+    chartCanvas.height = rect.height * dpr;
+    chartCanvas.style.width = rect.width + 'px';
+    chartCanvas.style.height = rect.height + 'px';
+    chartCtx.scale(dpr, dpr);
+    drawChart();
+}
 
 function toggleSniper() {
     if (running) {
@@ -116,7 +140,6 @@ function runSniper() {
     tradesCompleted = 0;
     tradeLock = false;
     martingaleActive = martingaleToggle.checked;
-    lastTradeStatus = null;
     baseStake = Number(stakeInput.value);
 
     const btn = document.getElementById("run-sniper");
@@ -157,6 +180,7 @@ function startTickStream() {
                 if (tickHistory.length > HISTORY_LIMIT) tickHistory.shift();
 
                 updateUI(quote);
+                drawChart();
                 if (running && !tradeLock) {
                     processTick();
                 }
@@ -183,6 +207,62 @@ function updateUI(quote) {
     const prevQuote = tickHistory.length > 1 ? tickHistory[tickHistory.length - 2] : quote;
     tickDisplay.textContent = quote;
     tickDisplay.style.color = quote > prevQuote ? "#2e7d32" : quote < prevQuote ? "#d32f2f" : "#00204a";
+}
+
+function drawChart() {
+    if (!chartCtx || tickHistory.length < 2) return;
+
+    const width = chartCanvas.offsetWidth;
+    const height = chartCanvas.offsetHeight;
+    chartCtx.clearRect(0, 0, width, height);
+
+    const history = tickHistory.slice(-CHART_POINTS);
+    const min = Math.min(...history);
+    const max = Math.max(...history);
+    const range = (max - min) || (max * 0.0001); // Avoid division by zero
+    const padding = 20;
+
+    const getY = (val) => height - padding - ((val - min) / range) * (height - 2 * padding);
+    const getX = (idx) => (idx / (history.length - 1)) * width;
+
+    // Line Path
+    chartCtx.beginPath();
+    chartCtx.strokeStyle = "#00bbf0";
+    chartCtx.lineWidth = 2;
+    chartCtx.lineJoin = "round";
+    chartCtx.moveTo(getX(0), getY(history[0]));
+
+    for (let i = 1; i < history.length; i++) {
+        chartCtx.lineTo(getX(i), getY(history[i]));
+    }
+    chartCtx.stroke();
+
+    // Fill Area
+    const fillPath = new Path2D();
+    fillPath.moveTo(getX(0), getY(history[0]));
+    for (let i = 1; i < history.length; i++) {
+        fillPath.lineTo(getX(i), getY(history[i]));
+    }
+    fillPath.lineTo(getX(history.length - 1), height);
+    fillPath.lineTo(getX(0), height);
+    fillPath.closePath();
+
+    const gradient = chartCtx.createLinearGradient(0, 0, 0, height);
+    gradient.addColorStop(0, "rgba(0, 187, 240, 0.2)");
+    gradient.addColorStop(1, "rgba(0, 187, 240, 0)");
+    chartCtx.fillStyle = gradient;
+    chartCtx.fill(fillPath);
+
+    // Latest Point
+    const lastX = getX(history.length - 1);
+    const lastY = getY(history[history.length - 1]);
+    chartCtx.beginPath();
+    chartCtx.arc(lastX, lastY, 4, 0, Math.PI * 2);
+    chartCtx.fillStyle = "#00bbf0";
+    chartCtx.fill();
+    chartCtx.strokeStyle = "#fff";
+    chartCtx.lineWidth = 1.5;
+    chartCtx.stroke();
 }
 
 function startPing(ws) {
