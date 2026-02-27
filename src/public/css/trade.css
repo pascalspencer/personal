@@ -814,9 +814,9 @@ body.smart-mode>#side-panel.open {
   #simple-differs-panel,
   #sharp-recovery-panel,
   #sniper-rise-fall-panel {
-    width: 95%;
-    max-width: calc(100% - 20px);
-    margin: 10px auto;
+    width: 100%;
+    max-width: 100%;
+    margin: 10px 0;
   }
 }
 

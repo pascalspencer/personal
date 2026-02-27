@@ -111,7 +111,7 @@ document.addEventListener("DOMContentLoaded", () => {
              </div>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 25px; padding: 20px; background: #f8f9fa; border-radius: 12px;">
+          <div class="settings-grid" style="margin-top: 25px; padding: 20px; background: #f8f9fa; border-radius: 12px;">
               <div class="field">
                   <label style="font-weight: 700; color: #333; margin-bottom: 8px;">Base Stake ($)</label>
                   <input type="number" id="sr-stake" min="0.35" step="0.01" value="0.35" style="border-radius: 8px; border: 2px solid #ddd; height: 45px; font-size: 1.1rem; font-weight: 700;">

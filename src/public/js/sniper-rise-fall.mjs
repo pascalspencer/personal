@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
           </div>
 
-          <div class="settings-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+          <div class="settings-grid" style="gap: 15px; margin-bottom: 20px;">
             <div class="field">
               <label for="tick-count-srf">Target Trades</label>
               <input type="number" id="tick-count-srf" min="1" value="5">
@@ -286,6 +286,11 @@ function startPing(ws) {
 }
 
 function restartTickStream() {
+    // Clear history and reset UI for instant update
+    tickHistory = [];
+    if (tickDisplay) tickDisplay.textContent = "Waiting...";
+    drawChart();
+
     if (tickWs) {
         tickWs.onclose = () => { tickWs = null; startTickStream(); };
         tickWs.close();
