@@ -17,13 +17,31 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
         <span id="panel-close">✕</span>
       </div>
-<div class="panel-tabs">
-        <button class="tab-btn active" data-tab="auto">Auto Analysis</button>
-        <button class="tab-btn" data-tab="smart">Smart Over/Under</button>
-        <button class="tab-btn" data-tab="even-odd">Even/Odd Switch</button>
-        <button class="tab-btn" data-tab="super-matches">Super Matches</button>
-        <button class="tab-btn" data-tab="simple-differs">Simple Differs</button>
-        <button class="tab-btn" data-tab="sharp-recovery">Sharp Recovery</button>
+      <div class="panel-tabs">
+        <div class="tab-btn-wrapper">
+          <button class="tab-btn active" data-tab="auto">Auto Analysis</button>
+          <span class="info-icon" data-strategy="auto">!</span>
+        </div>
+        <div class="tab-btn-wrapper">
+          <button class="tab-btn" data-tab="smart">Smart Over/Under</button>
+          <span class="info-icon" data-strategy="smart">!</span>
+        </div>
+        <div class="tab-btn-wrapper">
+          <button class="tab-btn" data-tab="even-odd">Even/Odd Switch</button>
+          <span class="info-icon" data-strategy="even-odd">!</span>
+        </div>
+        <div class="tab-btn-wrapper">
+          <button class="tab-btn" data-tab="super-matches">Super Matches</button>
+          <span class="info-icon" data-strategy="super-matches">!</span>
+        </div>
+        <div class="tab-btn-wrapper">
+          <button class="tab-btn" data-tab="simple-differs">Simple Differs</button>
+          <span class="info-icon" data-strategy="simple-differs">!</span>
+        </div>
+        <div class="tab-btn-wrapper">
+          <button class="tab-btn" data-tab="sharp-recovery">Sharp Recovery</button>
+          <span class="info-icon" data-strategy="sharp-recovery">!</span>
+        </div>
       </div>
     </div>
   `);
@@ -32,6 +50,51 @@ document.addEventListener("DOMContentLoaded", () => {
   const sidePanel = document.getElementById("side-panel");
   const closeBtn = document.getElementById("panel-close");
   const tabs = document.querySelectorAll(".tab-btn");
+  const infoIcons = document.querySelectorAll(".info-icon");
+
+  const explanations = {
+    "auto": "Analyzes market trends and automatically places trades based on whether the market is going up or down.",
+    "smart": "Predicts if the next digit will be higher or lower than a chosen number based on recent patterns.",
+    "even-odd": "Waits for a streak of even or odd digits and then bets on the opposite, expecting a change.",
+    "super-matches": "Finds the most common digit and bets on it to appear again, using a safety strategy if it loses.",
+    "simple-differs": "Bets that the next digit will NOT be the same as the one you selected. Very high chance of winning.",
+    "sharp-recovery": "An advanced system that uses multiple strategies and increased stakes to quickly win back any losses."
+  };
+
+  function showStrategyPopup(strategy) {
+    const overlay = document.createElement("div");
+    overlay.className = "info-popup-overlay";
+    overlay.innerHTML = `
+      <div class="info-popup">
+        <span class="info-popup-close">✕</span>
+        <h3>${strategy.replace("-", " ").replace(/\b\w/g, l => l.toUpperCase())}</h3>
+        <p>${explanations[strategy]}</p>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    overlay.querySelector(".info-popup-close").onclick = () => overlay.remove();
+    overlay.onclick = (e) => {
+      if (e.target === overlay) overlay.remove();
+    };
+  }
+
+  infoIcons.forEach(icon => {
+    icon.onclick = (e) => {
+      e.stopPropagation();
+      showStrategyPopup(icon.dataset.strategy);
+    };
+  });
+
+  // Close side panel when clicking outside
+  document.addEventListener("click", (e) => {
+    if (sidePanel.classList.contains("open") &&
+      !sidePanel.contains(e.target) &&
+      e.target !== menuBtn) {
+      sidePanel.classList.remove("open");
+      menuBtn.style.display = '';
+    }
+  });
 
   // Detect whether the menu/hamburger is positioned on the right side of the
   // viewport and toggle a `body.menu-right` class so CSS can mirror offsets.
@@ -46,7 +109,8 @@ document.addEventListener("DOMContentLoaded", () => {
   updateMenuSide();
   window.addEventListener('resize', updateMenuSide);
 
-  menuBtn.onclick = () => {
+  menuBtn.onclick = (e) => {
+    e.stopPropagation();
     sidePanel.classList.add("open");
     // hide hamburger while side panel is open
     menuBtn.style.display = 'none';
