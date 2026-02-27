@@ -42,6 +42,10 @@ document.addEventListener("DOMContentLoaded", () => {
           <button class="tab-btn" data-tab="sharp-recovery">Sharp Recovery</button>
           <span class="info-icon" data-strategy="sharp-recovery">!</span>
         </div>
+        <div class="tab-btn-wrapper">
+          <button class="tab-btn" data-tab="sniper-rise-fall">Sniper Rise/Fall</button>
+          <span class="info-icon" data-strategy="sniper-rise-fall">!</span>
+        </div>
       </div>
     </div>
   `);
@@ -58,7 +62,8 @@ document.addEventListener("DOMContentLoaded", () => {
     "even-odd": "Waits for a streak of even or odd digits and then bets on the opposite, expecting a change.",
     "super-matches": "Finds the most common digit and bets on it to appear again, using a safety strategy if it loses.",
     "simple-differs": "Bets that the next digit will NOT be the same as the one you selected. Very high chance of winning.",
-    "sharp-recovery": "An advanced system that uses multiple strategies and increased stakes to quickly win back any losses."
+    "sharp-recovery": "An advanced system that uses multiple strategies and increased stakes to quickly win back any losses.",
+    "sniper-rise-fall": "Sniper Rise/Fall waits for three consecutive price movements in the same direction before placing a trade, with recovery options."
   };
 
   function showStrategyPopup(strategy) {
@@ -136,6 +141,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (sdPanel) sdPanel.style.display = "none";
       const srPanel = document.getElementById("sharp-recovery-panel");
       if (srPanel) srPanel.style.display = "none";
+      const sniperPanel = document.getElementById("sniper-rise-fall-panel");
+      if (sniperPanel) sniperPanel.style.display = "none";
 
       const resultsContainer = document.getElementById("results-container");
       if (resultsContainer) resultsContainer.style.display = "none";
@@ -198,6 +205,18 @@ document.addEventListener("DOMContentLoaded", () => {
       } else if (btn.dataset.tab === "sharp-recovery") {
         const srPanel = document.getElementById("sharp-recovery-panel");
         if (srPanel) srPanel.style.display = "block";
+        // Only gets market and submarket, hide everything else
+        const formElements = document.querySelectorAll("#trade-form > *");
+        formElements.forEach(el => {
+          if (el.id === "market" || el.id === "submarket") {
+            el.style.display = "";
+          } else {
+            el.style.display = "none";
+          }
+        });
+      } else if (btn.dataset.tab === "sniper-rise-fall") {
+        const sniperPanel = document.getElementById("sniper-rise-fall-panel");
+        if (sniperPanel) sniperPanel.style.display = "block";
         // Only gets market and submarket, hide everything else
         const formElements = document.querySelectorAll("#trade-form > *");
         formElements.forEach(el => {
