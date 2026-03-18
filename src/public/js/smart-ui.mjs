@@ -75,7 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <li style="margin-bottom: 5px;"><strong>OVER &lt; / UNDER &gt;:</strong> Select the target digits. If you pick OVER 5, the system bets the next digit will be greater than 5.</li>
         <li style="margin-bottom: 5px;"><strong>Target Trades:</strong> Number of trades to execute before stopping.</li>
         <li style="margin-bottom: 5px;"><strong>Martingale:</strong> When activated, the system increases your stake after a loss to recover funds upon your next win.</li>
-        <li style="margin-bottom: 5px;"><strong>AI Predict:</strong> Uses a stricter 2-tick confirmation rule before entering a trade for higher accuracy.</li>
+        <li style="margin-bottom: 5px;"><strong>AI Predict:</strong> Uses an AI Algorithm for confirmation before entering a trade for higher accuracy.</li>
       </ul>`,
     "even-odd": `
       <p><strong>Even/Odd Switch</strong> waits for a streak of similar numbers and bets that the pattern will break.</p>
