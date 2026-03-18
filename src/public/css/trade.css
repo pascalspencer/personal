@@ -204,8 +204,10 @@ body {
   background: #fff;
   padding: 30px;
   border-radius: var(--border-radius);
-  max-width: 400px;
+  max-width: 500px;
   width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
   position: relative;
   box-shadow: var(--shadow-lg);
   animation: popupFadeIn 0.3s ease-out;
