@@ -3,7 +3,7 @@ import { showLoginidPrompt } from './sign-in.mjs';
 import { showLivePopup } from './livePopup.mjs';
 
 // --- WebSocket connection setup ---
-const derivAppID = 61696;
+const derivAppID = localStorage.getItem('deriv_app_id') || 61696;
 let connection = null;
 let wsReconnectAttempts = 0;
 const maxReconnects = 10;

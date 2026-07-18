@@ -41,6 +41,8 @@ export function handleAccountSelectionAndPopup() {
             if (selectedAccount && selectedAccount.token) {
               localStorage.setItem('selected_loginid', selectedLoginid);
               localStorage.setItem('active_token', selectedAccount.token);
+              if (selectedAccount.app_id) localStorage.setItem('deriv_app_id', selectedAccount.app_id);
+              if (selectedAccount.api_type) localStorage.setItem('deriv_api_type', selectedAccount.api_type);
             }
           });
 
@@ -50,6 +52,8 @@ export function handleAccountSelectionAndPopup() {
           if (initialAccount && initialAccount.token) {
             localStorage.setItem('selected_loginid', initialLoginid);
             localStorage.setItem('active_token', initialAccount.token);
+            if (initialAccount.app_id) localStorage.setItem('deriv_app_id', initialAccount.app_id);
+            if (initialAccount.api_type) localStorage.setItem('deriv_api_type', initialAccount.api_type);
           }
           // Show popup only when Continue button is clicked, if needed
           const realTradingAccounts = realAccounts.filter(a => a.currency === 'USD');
@@ -166,6 +170,8 @@ export function showLoginidPrompt({realAccounts = [], demoAccounts = [], account
       localStorage.setItem('active_token', selectedAccount.token);
       localStorage.setItem(val, selectedAccount.token);
     }
+    if (selectedAccount.app_id) localStorage.setItem('deriv_app_id', selectedAccount.app_id);
+    if (selectedAccount.api_type) localStorage.setItem('deriv_api_type', selectedAccount.api_type);
     overlay.remove();
     if (typeof onSelected === 'function') onSelected(val);
   };

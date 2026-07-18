@@ -5,7 +5,7 @@
 
 import { getCurrentToken } from './popupMessages.mjs';
 
-const derivAppID = 61696;
+const derivAppID = localStorage.getItem('deriv_app_id') || 61696;
 const activePopups = new Map(); // Track active contract subscriptions
 
 /**

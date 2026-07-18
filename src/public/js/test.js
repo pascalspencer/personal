@@ -11,7 +11,7 @@
  * NOTE: Replace APP_ID if you have a custom app_id. Default uses Binary.com's public v3 endpoint.
  */
 
-const DEFAULT_WS_URL = 'wss://ws.binaryws.com/websockets/v3?app_id=61696'; // public v3 endpoint (change app_id if needed)
+const DEFAULT_WS_URL = 'wss://ws.binaryws.com/websockets/v3?app_id=' + (typeof localStorage !== 'undefined' ? localStorage.getItem('deriv_app_id') || '61696' : '61696');
 
 class DerivClient {
   constructor({ token, wsUrl = DEFAULT_WS_URL, reconnect = true, reconnectInterval = 3000 }) {

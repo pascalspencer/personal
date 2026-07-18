@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let lastResults = { matches: null, over: null, even: null };
 
-  const derivAppID = 61696;
+  const derivAppID = localStorage.getItem('deriv_app_id') || 61696;
   const connection = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${derivAppID}`);
 
   // --- WebSocket connection ---

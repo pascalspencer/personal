@@ -21,7 +21,7 @@ let singleToggle, bulkToggle, aiPredictToggle, resultsBox;
 let digitStatsDisplay, tickGrid;
 
 const HISTORY_LIMIT = 120;
-const derivAppID = 61696;
+const derivAppID = localStorage.getItem('deriv_app_id') || 61696;
 
 document.addEventListener("DOMContentLoaded", () => {
   // UI Injection

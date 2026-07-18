@@ -19,7 +19,7 @@ let resultsBox, digitStatsDisplay, tickGrid;
 let martingaleToggle, martingaleMultiplier;
 
 const HISTORY_LIMIT = 100;
-const derivAppID = 61696;
+const derivAppID = localStorage.getItem('deriv_app_id') || 61696;
 
 document.addEventListener("DOMContentLoaded", () => {
     // UI Injection

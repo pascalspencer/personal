@@ -16,7 +16,7 @@ let stakeInput, maxAttemptsInput, absenceInput, volatilityInput;
 let tickGrid, absenceDisplay, statusDisplay;
 
 const HISTORY_LIMIT = 120;
-const derivAppID = 61696;
+const derivAppID = localStorage.getItem('deriv_app_id') || 61696;
 
 document.addEventListener("DOMContentLoaded", () => {
   // Inject Super Matches UI

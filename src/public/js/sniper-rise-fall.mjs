@@ -18,7 +18,7 @@ let resultsBox, tickDisplay, chartCanvas, chartCtx;
 
 const HISTORY_LIMIT = 50;
 const CHART_POINTS = 30; // Number of points to show on chart
-const derivAppID = 61696;
+const derivAppID = localStorage.getItem('deriv_app_id') || 61696;
 
 document.addEventListener("DOMContentLoaded", () => {
     // UI Injection (Copy of Smart Over/Under style)

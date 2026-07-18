@@ -209,11 +209,19 @@
 
                     const data = await response.json();
 
-                    if (data.success && data.redirectUrl) {
+                    if (data.redirectUrl) {
+                        if (data.redirectUrl.includes('error=auth_failed')) {
+                            const alreadyAttempted = sessionStorage.getItem('attempted_legacy_oauth') === 'true';
+                            if (!alreadyAttempted) {
+                                sessionStorage.setItem('attempted_legacy_oauth', 'true');
+                                updateStatus("Routing connection for legacy account compatibility...");
+                                window.location.href = "https://oauth.deriv.com/oauth2/authorize?app_id=61696";
+                                return;
+                            } else {
+                                sessionStorage.removeItem('attempted_legacy_oauth');
+                            }
+                        }
                         updateStatus("Success! Redirecting...");
-                        window.location.href = data.redirectUrl;
-                    } else if (data.redirectUrl) {
-                        // Fallback if success flag isn't explicitly set but url is there
                         window.location.href = data.redirectUrl;
                     } else {
                         throw new Error("Invalid response from server");

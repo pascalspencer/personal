@@ -82,17 +82,22 @@
                             // Optionally store type/currency for later use
                             if (acc.type) localStorage.setItem(acc.loginid + '_type', acc.type);
                             if (acc.currency) localStorage.setItem(acc.loginid + '_currency', acc.currency);
+                            if (acc.app_id) localStorage.setItem(acc.loginid + '_app_id', acc.app_id);
+                            if (acc.api_type) localStorage.setItem(acc.loginid + '_api_type', acc.api_type);
                         }
                     });
                     // If only one account, auto-select it
                     if (accounts.length === 1) {
                         localStorage.setItem('selected_loginid', accounts[0].loginid);
+                        if (accounts[0].app_id) localStorage.setItem('deriv_app_id', accounts[0].app_id);
+                        if (accounts[0].api_type) localStorage.setItem('deriv_api_type', accounts[0].api_type);
                     }
                 }
             } catch (e) {
                 console.warn('Failed to parse accounts param:', e);
             }
         }
+
         // On form submit, store selected loginid to localStorage
         const form = document.getElementById('login-form');
         form?.addEventListener('submit', function(e) {
@@ -107,10 +112,28 @@
                     const match = accounts.find(acc => acc.type === type);
                     if (match && match.loginid) {
                         localStorage.setItem('selected_loginid', match.loginid);
+                        if (match.app_id) localStorage.setItem('deriv_app_id', match.app_id);
+                        if (match.api_type) localStorage.setItem('deriv_api_type', match.api_type);
                     }
                 } catch (e) {}
             }
         });
+
+        // Add visual indicator of verified API
+        const apiType = localStorage.getItem('deriv_api_type');
+        const appId = localStorage.getItem('deriv_app_id');
+        if (apiType) {
+            const container = document.querySelector('.contact_link_box');
+            if (container) {
+                const apiIndicator = document.createElement('p');
+                apiIndicator.style.marginTop = '10px';
+                apiIndicator.style.fontSize = '12px';
+                apiIndicator.style.fontWeight = 'bold';
+                apiIndicator.style.color = '#00d2ff';
+                apiIndicator.innerHTML = `<i class="fa fa-info-circle" aria-hidden="true"></i> Active API: ${apiType === 'new' ? 'New Developer API' : 'Legacy API'} (${appId || 'Default'})`;
+                container.appendChild(apiIndicator);
+            }
+        }
     })();
     </script>
     <script>

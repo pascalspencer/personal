@@ -79,7 +79,7 @@
                 <a class="nav-link" href="index.html">Home <span class="sr-only">(current)</span></a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="https://oauth.deriv.com/oauth2/authorize?app_id=61696"
+                <a class="nav-link" href="https://oauth.deriv.com/oauth2/authorize?app_id=33RwMjxnnFXzDwFDVX0Dx"
                   style="text-decoration: none;" style="cursor: pointer;" id="renderedContent"> <i class="fa fa-user"
                     aria-hidden="true"></i> Login</a>
               </li>
@@ -321,6 +321,12 @@
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCh39n5U-4IoWpsVGUHWdqB6puEkhRLdmI&callback=myMap">
   </script>
   <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      document.getElementById('renderedContent')?.addEventListener('click', () => {
+        sessionStorage.removeItem('attempted_legacy_oauth');
+      });
+    });
+
     document.addEventListener('contextmenu', function (event) {
       event.preventDefault();
     });
@@ -332,8 +338,6 @@
         event.preventDefault();
       }
     });
-
-
   </script>
 
   <!-- End Google Map -->

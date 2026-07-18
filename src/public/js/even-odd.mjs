@@ -237,7 +237,8 @@ function startTickStream() {
   // Only create new WebSocket if one doesn't exist or is closed
   if (!tickWs || tickWs.readyState === WebSocket.CLOSED) {
     try {
-      tickWs = new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=61696");
+      const derivAppID = localStorage.getItem('deriv_app_id') || '61696';
+      tickWs = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${derivAppID}`);
       console.log("Creating new WebSocket for symbol:", symbol);
     } catch (err) {
       console.error("Failed to create WebSocket:", err);

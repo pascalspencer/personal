@@ -11,44 +11,71 @@ const DerivAPI = require("@deriv/deriv-api/dist/DerivAPI");
 
 
 const app = express();
-const app_id = 61696;
-
-
-
+const old_app_id = 61696;
+const new_app_id = "33RwMjxnnFXzDwFDVX0Dx";
 
 // --- Robust WebSocket connection management ---
-let wsConnection = null;
-let wsReconnectAttempts = 0;
+let wsConnectionOld = null;
+let wsConnectionNew = null;
+let wsReconnectAttemptsOld = 0;
+let wsReconnectAttemptsNew = 0;
 const maxReconnects = 10;
 const reconnectDelay = 3000;
 
-function createWebSocket() {
-  wsConnection = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${app_id}`);
+function createWebSocketOld() {
+  wsConnectionOld = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${old_app_id}`);
 
-  wsConnection.onopen = () => {
-    wsReconnectAttempts = 0;
-    console.log("WebSocket connection established.");
+  wsConnectionOld.onopen = () => {
+    wsReconnectAttemptsOld = 0;
+    console.log("Old API WebSocket connection established.");
   };
 
-  wsConnection.onerror = (error) => {
-    console.error("WebSocket error:", error);
+  wsConnectionOld.onerror = (error) => {
+    console.error("Old API WebSocket error:", error);
   };
 
-  wsConnection.onclose = () => {
-    if (wsReconnectAttempts < maxReconnects) {
-      wsReconnectAttempts++;
-      console.warn(`WebSocket closed. Attempting reconnect #${wsReconnectAttempts} in ${reconnectDelay}ms.`);
-      setTimeout(createWebSocket, reconnectDelay);
+  wsConnectionOld.onclose = () => {
+    if (wsReconnectAttemptsOld < maxReconnects) {
+      wsReconnectAttemptsOld++;
+      console.warn(`Old API WebSocket closed. Attempting reconnect #${wsReconnectAttemptsOld} in ${reconnectDelay}ms.`);
+      setTimeout(createWebSocketOld, reconnectDelay);
     } else {
-      console.error("Max WebSocket reconnect attempts reached.");
+      console.error("Max Old API WebSocket reconnect attempts reached.");
     }
   };
 }
 
-createWebSocket();
+function createWebSocketNew() {
+  wsConnectionNew = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${new_app_id}`);
 
-const api = new DerivAPI({ connection: wsConnection });
-const basic = api.basic;
+  wsConnectionNew.onopen = () => {
+    wsReconnectAttemptsNew = 0;
+    console.log("New API WebSocket connection established.");
+  };
+
+  wsConnectionNew.onerror = (error) => {
+    console.error("New API WebSocket error:", error);
+  };
+
+  wsConnectionNew.onclose = () => {
+    if (wsReconnectAttemptsNew < maxReconnects) {
+      wsReconnectAttemptsNew++;
+      console.warn(`New API WebSocket closed. Attempting reconnect #${wsReconnectAttemptsNew} in ${reconnectDelay}ms.`);
+      setTimeout(createWebSocketNew, reconnectDelay);
+    } else {
+      console.error("Max New API WebSocket reconnect attempts reached.");
+    }
+  };
+}
+
+createWebSocketOld();
+createWebSocketNew();
+
+const apiOld = new DerivAPI({ connection: wsConnectionOld });
+const basicOld = apiOld.basic;
+
+const apiNew = new DerivAPI({ connection: wsConnectionNew });
+const basicNew = apiNew.basic;
 
 const active_symbols_request = {
   active_symbols: "brief",
@@ -92,12 +119,19 @@ app.get("/", (req, res) => {
 });
 
 
-// --- Keep WebSocket alive with periodic ping ---
+// --- Keep WebSockets alive with periodic ping ---
 const ping = () => {
   setInterval(() => {
-    if (wsConnection && wsConnection.readyState === WebSocket.OPEN) {
+    if (wsConnectionOld && wsConnectionOld.readyState === WebSocket.OPEN) {
       try {
-        wsConnection.send(JSON.stringify({ ping: 1 }));
+        wsConnectionOld.send(JSON.stringify({ ping: 1 }));
+      } catch (e) {
+        // Ignore send errors
+      }
+    }
+    if (wsConnectionNew && wsConnectionNew.readyState === WebSocket.OPEN) {
+      try {
+        wsConnectionNew.send(JSON.stringify({ ping: 1 }));
       } catch (e) {
         // Ignore send errors
       }
@@ -245,7 +279,11 @@ app.get('/trade/instruments', (req, res) => {
 // --- Fetch Active Symbols via DerivAPI ---
 const fetchActiveSymbols = async () => {
   try {
-    const response = await basic.activeSymbols({
+    const basicInstance = (basicOld && wsConnectionOld && wsConnectionOld.readyState === WebSocket.OPEN) ? basicOld : basicNew;
+    if (!basicInstance) {
+      throw new Error("No active API connection available");
+    }
+    const response = await basicInstance.activeSymbols({
       active_symbols: "brief",
       product_type: "basic"
     });
@@ -337,13 +375,13 @@ app.post("/api/process-redirect", async (req, res) => {
     });
   }
 
-  if (!basic) {
-    console.error("DerivAPI basic is not initialized.");
+  if (!basicOld && !basicNew) {
+    console.error("DerivAPI basic connections are not initialized.");
     return res.status(500).json({ error: "API not initialized" });
   }
 
   try {
-    // Map of loginid -> {token, currency, is_virtual}
+    // Map of loginid -> {token, currency, is_virtual, app_id, api_type}
     const loginMap = {};
     let currentLoginId = null;
     let selectedAccounts = [];
@@ -351,26 +389,56 @@ app.post("/api/process-redirect", async (req, res) => {
     // Authorize each token and collect account info
     for (const acc of accountObjs) {
       if (!acc.token) continue;
+
+      let response = null;
+      let verifiedAppId = null;
+      let verifiedApiType = null;
+
+      // 1. Try authorizing with New API App ID first
       try {
-        const response = await basic.authorize(acc.token);
-        if (response?.authorize) {
-          // Only add the loginid that matches the account in the query string
-          const loginid = response.authorize.loginid;
-          if (loginid && acc.account && loginid === acc.account) {
-            loginMap[loginid] = {
-              token: acc.token,
-              currency: acc.currency,
-              is_virtual: response.authorize.is_virtual
-            };
+        if (basicNew && wsConnectionNew && wsConnectionNew.readyState === WebSocket.OPEN) {
+          response = await basicNew.authorize(acc.token);
+          if (response?.authorize) {
+            verifiedAppId = new_app_id;
+            verifiedApiType = 'new';
           }
-          currentLoginId = loginid;
         }
       } catch (err) {
-        console.error("Authorization failed:", err.message);
+        console.log(`Authorization against new API failed: ${err.message}. Trying old API...`);
+      }
+
+      // 2. Try authorizing with Old API App ID
+      if (!verifiedAppId) {
+        try {
+          if (basicOld && wsConnectionOld && wsConnectionOld.readyState === WebSocket.OPEN) {
+            response = await basicOld.authorize(acc.token);
+            if (response?.authorize) {
+              verifiedAppId = old_app_id;
+              verifiedApiType = 'old';
+            }
+          }
+        } catch (err) {
+          console.error("Authorization against old API failed as well:", err.message);
+        }
+      }
+
+      if (response?.authorize) {
+        // Only add the loginid that matches the account in the query string
+        const loginid = response.authorize.loginid;
+        if (loginid && acc.account && loginid === acc.account) {
+          loginMap[loginid] = {
+            token: acc.token,
+            currency: acc.currency,
+            is_virtual: response.authorize.is_virtual,
+            app_id: verifiedAppId,
+            api_type: verifiedApiType
+          };
+        }
+        currentLoginId = loginid;
       }
     }
 
-    // Build list of available accounts (real, demo, others) using the original mapping
+    // Build list of available accounts using the original mapping
     selectedAccounts = accounts.map((loginid, idx) => {
       const info = loginMap[loginid];
       if (!info) return null;
@@ -378,15 +446,11 @@ app.post("/api/process-redirect", async (req, res) => {
         loginid,
         token: info.token,
         currency: info.currency,
-        type: info.is_virtual ? 'demo' : 'real'
+        type: info.is_virtual ? 'demo' : 'real',
+        app_id: info.app_id,
+        api_type: info.api_type
       };
     }).filter(Boolean);
-
-    // If more than 2 tokens/accounts, include all in sign-in
-    // (frontend should show all available accounts for selection)
-
-    // Validate that when an account is selected, its token matches
-    // (frontend: pass selected loginid, backend: find correct token)
 
     // If no valid login found
     if (!currentLoginId) {

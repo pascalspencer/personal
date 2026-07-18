@@ -83,6 +83,9 @@
 
   <form id="trade-form" aria-labelledby="form-heading">
     <h1 id="form-heading">Zodiac Algo-trade</h1>
+    <div id="api-connection-status" style="text-align: center; font-size: 0.85rem; color: #666; margin-bottom: 1rem; font-weight: 500;">
+      Checking connection...
+    </div>
 
     <!-- Top Toggle Only -->
     <div class="toggle-container">
@@ -282,6 +285,20 @@
     document.addEventListener("DOMContentLoaded", () => {
       const toggle = document.getElementById("mode-toggle");
       const modeDisplay = document.getElementById("mode-display");
+
+      // Display active API type
+      const statusEl = document.getElementById("api-connection-status");
+      if (statusEl) {
+        const apiType = localStorage.getItem("deriv_api_type");
+        const appId = localStorage.getItem("deriv_app_id");
+        if (apiType) {
+          statusEl.innerHTML = `Connected: <strong>${apiType === 'new' ? 'New Developers API' : 'Legacy API'}</strong> (${appId || '61696'})`;
+          statusEl.style.color = apiType === 'new' ? '#4CAF50' : '#ff9800';
+        } else {
+          statusEl.innerHTML = `Connected: <strong>Legacy API</strong> (61696)`;
+          statusEl.style.color = '#ff9800';
+        }
+      }
 
       // Load saved mode from localStorage
       const savedMode = localStorage.getItem("zodiac_mode") === "true";

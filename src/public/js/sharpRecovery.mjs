@@ -14,7 +14,7 @@ let isRecoveryMode = false;
 let currentStake = 0; // Tracks the current active stake (with Martingale)
 
 const HISTORY_LIMIT = 120;
-const derivAppID = 61696;
+const derivAppID = localStorage.getItem('deriv_app_id') || 61696;
 
 document.addEventListener("DOMContentLoaded", () => {
     // UI Injection
